@@ -203,7 +203,7 @@
   </header>
 
   <!-- MAIN CONTAINER WITH SIDE CONTROL PANEL -->
-  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <main class="flex-grow max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
     <!-- Dean View-Only Notice Banner -->
     <div id="deanNoticeBanner" class="hidden mb-6 bg-purple-50 border border-purple-300 rounded-xl p-4 shadow-sm flex items-center gap-3">
@@ -217,9 +217,76 @@
     </div>
 
     <div class="flex flex-col lg:flex-row gap-6 items-start">
-      
+
+      <!-- SIDE CONTROL PANEL (SIDEBAR) -->
+      <aside class="w-full lg:w-64 xl:w-72 flex-shrink-0 space-y-4">
+        
+        <!-- User Info Card -->
+        <div class="bg-gradient-to-br from-[#002244] to-[#00162e] text-white rounded-2xl p-4 border-2 border-[#c59b27] shadow-md relative overflow-hidden">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-[#c59b27] text-[#002244] font-black flex items-center justify-center text-base border-2 border-white shadow" id="sideUserAvatar">OF</div>
+            <div class="flex-grow">
+              <div class="font-extrabold text-sm text-white leading-tight" id="sideUserName">Omar Farouk</div>
+              <div class="text-xs text-[#dfb743] font-bold mt-0.5" id="sideUserRole">HR Vice Head</div>
+              <div class="text-[10px] text-slate-300 font-medium">Smart Village Admissions</div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-white/15 flex items-center gap-2 text-xs">
+            <button onclick="openProfileModal()" class="flex-1 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-slate-200 font-bold transition flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-user-pen text-[#c59b27]"></i>
+              <span>Edit Profile</span>
+            </button>
+
+            <button onclick="handleLogout()" class="py-1.5 px-3 bg-rose-600/90 hover:bg-rose-700 text-white rounded-lg font-bold transition flex items-center justify-center gap-1" title="Sign Out">
+              <i class="fa-solid fa-power-off"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Warnings Notifications Panel -->
+        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-3">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-sm">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-sm text-[#002244]">Warnings</h3>
+                <p class="text-[10px] text-slate-500">Disciplinary Notifications</p>
+              </div>
+            </div>
+            <div id="sideWarningActionBtn"></div>
+          </div>
+
+          <div id="sideWarningsContainer" class="space-y-2.5 max-h-72 overflow-y-auto custom-scrollbar pr-1 text-xs"></div>
+        </div>
+
+        <!-- Join Requests Panel -->
+        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-3">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-lg bg-amber-100 text-[#c59b27] flex items-center justify-center text-sm">
+                <i class="fa-solid fa-user-plus"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-sm text-[#002244]">Join Requests</h3>
+                <p class="text-[10px] text-slate-500">Meeting Room 007</p>
+              </div>
+            </div>
+            <button onclick="openModal('addRecruitModal')" class="px-2.5 py-1 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] transition flex items-center gap-1">
+              <i class="fa-solid fa-plus text-[10px]"></i>
+              <span>Submit</span>
+            </button>
+          </div>
+
+          <div id="sideRecruitsContainer" class="space-y-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1 text-xs"></div>
+        </div>
+
+      </aside>
+
       <!-- MAIN TAB CONTENT AREA -->
-      <div class="flex-grow w-full">
+      <div class="flex-grow w-full min-w-0">
 
         <!-- TAB 1: DASHBOARD OVERVIEW -->
         <div id="tab-dashboard" class="tab-content active space-y-6">
@@ -526,73 +593,6 @@
         </div>
 
       </div>
-
-      <!-- SIDE CONTROL PANEL (SIDEBAR) -->
-      <aside class="w-full lg:w-96 flex-shrink-0 space-y-5">
-        
-        <!-- User Info Card -->
-        <div class="bg-gradient-to-br from-[#002244] to-[#00162e] text-white rounded-2xl p-5 border-2 border-[#c59b27] shadow-lg relative overflow-hidden">
-          <div class="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-[#c59b27] text-[#002244] font-black flex items-center justify-center text-base border-2 border-white shadow" id="sideUserAvatar">OF</div>
-            <div class="flex-grow">
-              <div class="font-extrabold text-sm text-white leading-tight" id="sideUserName">Omar Farouk</div>
-              <div class="text-xs text-[#dfb743] font-bold mt-0.5" id="sideUserRole">HR Vice Head</div>
-              <div class="text-[10px] text-slate-300 font-medium">Smart Village Admissions</div>
-            </div>
-          </div>
-
-          <div class="mt-4 pt-3 border-t border-white/15 flex items-center gap-2 text-xs">
-            <button onclick="openProfileModal()" class="flex-1 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-slate-200 font-bold transition flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-user-pen text-[#c59b27]"></i>
-              <span>Edit Profile</span>
-            </button>
-
-            <button onclick="handleLogout()" class="py-1.5 px-3 bg-rose-600/90 hover:bg-rose-700 text-white rounded-lg font-bold transition flex items-center justify-center gap-1" title="Sign Out">
-              <i class="fa-solid fa-power-off"></i>
-            </button>
-          </div>
-        </div>
-
-        <!-- Warnings Notifications Panel -->
-        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-3">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-sm">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-              </div>
-              <div>
-                <h3 class="font-bold text-sm text-[#002244]">Warnings</h3>
-                <p class="text-[10px] text-slate-500">Disciplinary Notifications</p>
-              </div>
-            </div>
-            <div id="sideWarningActionBtn"></div>
-          </div>
-
-          <div id="sideWarningsContainer" class="space-y-2.5 max-h-72 overflow-y-auto custom-scrollbar pr-1 text-xs"></div>
-        </div>
-
-        <!-- Join Requests Panel -->
-        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-3">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-amber-100 text-[#c59b27] flex items-center justify-center text-sm">
-                <i class="fa-solid fa-user-plus"></i>
-              </div>
-              <div>
-                <h3 class="font-bold text-sm text-[#002244]">Join Requests</h3>
-                <p class="text-[10px] text-slate-500">Meeting Room 007</p>
-              </div>
-            </div>
-            <button onclick="openModal('addRecruitModal')" class="px-2.5 py-1 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] transition flex items-center gap-1">
-              <i class="fa-solid fa-plus text-[10px]"></i>
-              <span>Submit</span>
-            </button>
-          </div>
-
-          <div id="sideRecruitsContainer" class="space-y-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1 text-xs"></div>
-        </div>
-
-      </aside>
 
     </div>
   </main>

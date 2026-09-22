@@ -45,7 +45,7 @@ export default function App() {
       <Header />
 
       {/* Main Layout Grid with Side Control Panel */}
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-grow max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         {/* Dean View-Only Notice Banner */}
         {isDean && (
@@ -61,16 +61,16 @@ export default function App() {
         )}
 
         <div className="flex flex-col lg:flex-row gap-6 items-start">
+          {/* Left Side Control Panel */}
+          <Sidebar />
+
           {/* Main Active Tab Content */}
-          <div className="flex-grow w-full">
+          <div className="flex-grow w-full min-w-0">
             {activeTab === 'dashboard' && <DashboardTab />}
             {!isDean && activeTab === 'directory' && <DirectoryTab />}
             {!isDean && activeTab === 'attendance' && <AttendanceTab />}
             {!isDean && activeTab === 'copilot' && <CopilotTab />}
           </div>
-
-          {/* Right Side Control Panel */}
-          <Sidebar />
         </div>
       </main>
 

@@ -36,9 +36,9 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-full lg:w-96 flex-shrink-0 space-y-5">
+    <aside className="w-full lg:w-64 xl:w-72 flex-shrink-0 space-y-4">
       {/* User Profile Card */}
-      <div className="bg-gradient-to-br from-[#002244] to-[#00162e] text-white rounded-2xl p-5 border-2 border-[#c59b27] shadow-lg relative overflow-hidden">
+      <div className="bg-gradient-to-br from-[#002244] to-[#00162e] text-white rounded-2xl p-4 border-2 border-[#c59b27] shadow-md relative overflow-hidden">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-[#c59b27] text-[#002244] font-black flex items-center justify-center text-base border-2 border-white shadow">
             {initials || 'HR'}
