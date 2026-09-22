@@ -18,9 +18,12 @@ export default function DashboardTab() {
 
   // KPI calculations
   const totalMembers = activeMembers.length;
-  const avgAttendanceCount = totalMembers > 0
-    ? (activeMembers.reduce((acc, m) => acc + m.attendanceCount, 0) / totalMembers).toFixed(1)
-    : 0;
+  const avgAttendanceRate = totalMembers > 0
+    ? (activeMembers.reduce((acc, m) => {
+        const rate = m.attendanceCount > 0 ? Math.min(100, Math.round((m.attendanceCount / 12) * 100)) : 100;
+        return acc + rate;
+      }, 0) / totalMembers).toFixed(1)
+    : '100.0';
   const totalStrikes = activeMembers.reduce((acc, m) => acc + m.strikes, 0);
 
   // Functional roles breakdown (Strictly: PR, HR, Operations, Digital Transformation, Innovation)
@@ -69,12 +72,12 @@ export default function DashboardTab() {
           </div>
         </div>
 
-        {/* Avg Attendance */}
+        {/* Avg Attendance Rate */}
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Avg Attendance Count</p>
-            <p className="text-2xl font-black text-[#002244] mt-1">{avgAttendanceCount}</p>
-            <span className="text-[11px] text-blue-600 font-semibold">Sessions Attended</span>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Avg Attendance Rate</p>
+            <p className="text-2xl font-black text-[#002244] mt-1">{avgAttendanceRate}%</p>
+            <span className="text-[11px] text-blue-600 font-semibold">Overall Team Attendance</span>
           </div>
           <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xl">
             <i className="fa-solid fa-calendar-check"></i>

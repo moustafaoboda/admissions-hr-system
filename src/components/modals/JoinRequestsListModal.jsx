@@ -139,14 +139,16 @@ export default function JoinRequestsListModal() {
                     )}
                   </div>
 
-                  <button
-                    onClick={() => declineRecruit(rec.id)}
-                    className="px-2.5 py-1 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-700 font-bold text-[10px] rounded transition flex items-center gap-1"
-                    title="Remove Request"
-                  >
-                    <i className="fa-solid fa-trash-can text-[10px]"></i>
-                    <span>Remove Request</span>
-                  </button>
+                  {isHeadOrVice && (
+                    <button
+                      onClick={() => declineRecruit(rec.id)}
+                      className="px-2.5 py-1 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-700 font-bold text-[10px] rounded transition flex items-center gap-1"
+                      title="Remove Request"
+                    >
+                      <i className="fa-solid fa-trash-can text-[10px]"></i>
+                      <span>Remove Request</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ))

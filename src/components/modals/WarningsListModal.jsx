@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function WarningsListModal() {
@@ -12,15 +12,22 @@ export default function WarningsListModal() {
     dismissWarning
   } = useAuth();
 
+  const [subTab, setSubTab] = useState('confirmed'); // 'confirmed' | 'requests'
+
   if (activeModal !== 'warningsListModal') return null;
 
   const isViceHead = currentUser?.role === "HR Vice Head";
   const isHeadOrVice = currentUser?.role === "HR Head" || isViceHead;
 
+  const confirmedWarnings = warnings.filter(w => w.status === 'Confirmed Strike');
+  const pendingRequests = warnings.filter(w => w.status === 'Pending HR Approval');
+
   const handleOpenIssueWarning = () => {
-    setModalExtraData({ mode: 'issue' });
+    setModalExtraData({ mode: isHeadOrVice ? 'issue' : 'request' });
     setActiveModal('warning');
   };
+
+  const displayedList = subTab === 'confirmed' ? confirmedWarnings : pendingRequests;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
@@ -32,8 +39,8 @@ export default function WarningsListModal() {
               <i className="fa-solid fa-triangle-exclamation"></i>
             </div>
             <div>
-              <h3 className="font-bold text-sm sm:text-base">Warnings & Disciplinary Records</h3>
-              <p className="text-[10px] text-slate-300">Smart Village Admissions Disciplinary Log</p>
+              <h3 className="font-bold text-sm sm:text-base">Warnings & Disciplinary Management</h3>
+              <p className="text-[10px] text-slate-300">Smart Village Admissions Disciplinary Suite</p>
             </div>
           </div>
           <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-white transition p-1">
@@ -41,29 +48,47 @@ export default function WarningsListModal() {
           </button>
         </div>
 
-        {/* Modal Toolbar */}
-        <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
-          <div className="text-xs font-semibold text-slate-600">
-            Total Warnings: <span className="font-extrabold text-[#002244]">{warnings.length}</span>
+        {/* Modal Toolbar & Sub-tabs */}
+        <div className="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1 bg-slate-200/70 p-1 rounded-xl">
+            <button
+              onClick={() => setSubTab('confirmed')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                subTab === 'confirmed' ? 'bg-white text-[#002244] shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <i className="fa-solid fa-shield-halved text-rose-600"></i>
+              <span>Confirmed Warnings ({confirmedWarnings.length})</span>
+            </button>
+            <button
+              onClick={() => setSubTab('requests')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                subTab === 'requests' ? 'bg-white text-[#002244] shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <i className="fa-solid fa-clock-rotate-left text-amber-600"></i>
+              <span>Pending Requests ({pendingRequests.length})</span>
+            </button>
           </div>
+
           <button
             onClick={handleOpenIssueWarning}
             className="px-3 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center gap-1.5 transition shadow-sm"
           >
             <i className="fa-solid fa-plus text-xs"></i>
-            <span>Issue Warning</span>
+            <span>{isHeadOrVice ? 'Issue Warning' : 'Submit Warning Request'}</span>
           </button>
         </div>
 
         {/* Warnings List Content */}
         <div className="p-4 overflow-y-auto space-y-3 custom-scrollbar flex-grow text-xs">
-          {warnings.length === 0 ? (
+          {displayedList.length === 0 ? (
             <div className="py-12 text-center text-slate-400">
               <i className="fa-solid fa-circle-check text-3xl text-emerald-500 mb-2 block"></i>
-              No active warnings or disciplinary records.
+              {subTab === 'confirmed' ? 'No confirmed warning records logged.' : 'No pending warning requests.'}
             </div>
           ) : (
-            warnings.map(wrn => (
+            displayedList.map(wrn => (
               <div
                 key={wrn.id}
                 className={`p-3.5 rounded-xl border transition ${
@@ -98,19 +123,21 @@ export default function WarningsListModal() {
                     {wrn.status === 'Pending HR Approval' && isHeadOrVice && (
                       <button
                         onClick={() => approveWarningRequest(wrn.id)}
-                        className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded transition"
+                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded transition"
                       >
                         Approve Strike
                       </button>
                     )}
-                    <button
-                      onClick={() => dismissWarning(wrn.id)}
-                      className="px-2 py-1 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-700 font-bold text-[10px] rounded transition flex items-center gap-1"
-                      title="Remove / Dismiss Warning"
-                    >
-                      <i className="fa-solid fa-trash-can text-[10px]"></i>
-                      <span>Remove</span>
-                    </button>
+                    {isHeadOrVice && (
+                      <button
+                        onClick={() => dismissWarning(wrn.id)}
+                        className="px-2.5 py-1 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-700 font-bold text-[10px] rounded transition flex items-center gap-1"
+                        title="Remove / Dismiss Warning"
+                      >
+                        <i className="fa-solid fa-trash-can text-[10px]"></i>
+                        <span>Remove</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

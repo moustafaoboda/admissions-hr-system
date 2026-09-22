@@ -50,19 +50,6 @@ export default function App() {
       {/* Main Layout Grid with Side Control Panel */}
       <main className="flex-grow max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-        {/* Dean View-Only Notice Banner */}
-        {isDean && (
-          <div className="mb-6 bg-purple-50 border border-purple-300 rounded-xl p-4 shadow-sm flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-900 text-white flex items-center justify-center text-lg flex-shrink-0">
-              <i className="fa-solid fa-eye"></i>
-            </div>
-            <div>
-              <h4 className="font-bold text-purple-950 text-sm">Admission's Dean Oversight Mode</h4>
-              <p className="text-xs text-purple-800">You are viewing high-level admissions metrics for Smart Village. Operational edits and disciplinary actions are restricted to HR leadership.</p>
-            </div>
-          </div>
-        )}
-
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* Left Side Control Panel */}
           <Sidebar />

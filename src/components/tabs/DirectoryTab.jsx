@@ -7,6 +7,7 @@ export default function DirectoryTab() {
     members,
     dischargedMembers,
     updateMemberPerformance,
+    updateExtraDaysCount,
     deleteMember,
     setActiveModal,
     setModalExtraData
@@ -17,6 +18,8 @@ export default function DirectoryTab() {
   const [tempScore, setTempScore] = useState('');
 
   const isDean = currentUser?.role === "Admission's Dean";
+  const isViceHead = currentUser?.role === "HR Vice Head";
+  const isHeadOrVice = currentUser?.role === "HR Head" || isViceHead;
 
   const activeMembers = members.filter(m => m.status !== "Discharged");
 
@@ -31,11 +34,6 @@ export default function DirectoryTab() {
   const handleEditInfo = (memberId) => {
     setModalExtraData({ memberId });
     setActiveModal('editMember');
-  };
-
-  const handleExtraDays = (memberId) => {
-    setModalExtraData({ memberId });
-    setActiveModal('extraDays');
   };
 
   const handleIssueWarning = (memberId) => {
@@ -142,19 +140,27 @@ export default function DirectoryTab() {
                       <td className="py-3 px-4 font-medium text-slate-700 whitespace-nowrap">{m.phone || '+20 100 000 0000'}</td>
 
                       <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <span className="inline-block bg-blue-50 border border-blue-200 text-blue-800 font-extrabold px-2.5 py-0.5 rounded-lg">
-                          {m.attendanceCount} Sessions
-                        </span>
+                        {isHeadOrVice ? (
+                          <span className="inline-block bg-blue-50 border border-blue-200 text-blue-800 font-extrabold px-2.5 py-0.5 rounded-lg">
+                            {m.attendanceCount} Sessions
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px] font-medium"><i className="fa-solid fa-lock text-[10px] mr-1"></i>Restricted</span>
+                        )}
                       </td>
 
                       <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <span className={`font-bold ${rate >= 90 ? 'text-emerald-700' : rate >= 80 ? 'text-blue-700' : 'text-rose-600'}`}>
-                          {rate}%
-                        </span>
+                        {isHeadOrVice ? (
+                          <span className={`font-bold ${rate >= 90 ? 'text-emerald-700' : rate >= 80 ? 'text-blue-700' : 'text-rose-600'}`}>
+                            {rate}%
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px] font-medium"><i className="fa-solid fa-lock text-[10px] mr-1"></i>Restricted</span>
+                        )}
                       </td>
 
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex items-center flex-wrap gap-1">
                           {m.officialDays && m.officialDays.length > 0 ? (
                             m.officialDays.map(day => (
                               <span key={day} className="bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
@@ -164,22 +170,50 @@ export default function DirectoryTab() {
                           ) : (
                             <span className="text-slate-400 text-[10px]">None set</span>
                           )}
-                          {m.extraDays && m.extraDays.length > 0 && (
-                            m.extraDays.map(day => (
-                              <span key={`extra-${day}`} className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded" title="Extra Assigned Day">
-                                +{day.substring(0, 3)}
+
+                          {isHeadOrVice ? (
+                            <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-300 rounded-lg px-2 py-0.5 ml-1 shadow-sm">
+                              <span className="text-[10px] font-extrabold text-[#002244]">Extra:</span>
+                              <button
+                                type="button"
+                                onClick={() => updateExtraDaysCount(m.id, -1)}
+                                className="w-4 h-4 rounded bg-amber-200 hover:bg-amber-300 text-[#002244] font-black flex items-center justify-center text-xs transition leading-none"
+                                title="Decrease Extra Days (-)"
+                              >
+                                -
+                              </button>
+                              <span className="font-black text-xs text-[#002244] min-w-[14px] text-center">
+                                {m.extraDaysCount !== undefined ? m.extraDaysCount : (m.extraDays ? m.extraDays.length : 0)}
                               </span>
-                            ))
+                              <button
+                                type="button"
+                                onClick={() => updateExtraDaysCount(m.id, 1)}
+                                className="w-4 h-4 rounded bg-amber-200 hover:bg-amber-300 text-[#002244] font-black flex items-center justify-center text-xs transition leading-none"
+                                title="Increase Extra Days (+)"
+                              >
+                                +
+                              </button>
+                            </div>
+                          ) : (
+                            (m.extraDaysCount || (m.extraDays && m.extraDays.length)) ? (
+                              <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded" title="Extra Assigned Days">
+                                +{m.extraDaysCount !== undefined ? m.extraDaysCount : m.extraDays.length} Extra
+                              </span>
+                            ) : null
                           )}
                         </div>
                       </td>
 
                       <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
-                          m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'
-                        }`}>
-                          {m.strikes}
-                        </span>
+                        {isHeadOrVice ? (
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+                            m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'
+                          }`}>
+                            {m.strikes}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px] font-medium"><i className="fa-solid fa-lock text-[10px] mr-1"></i>Restricted</span>
+                        )}
                       </td>
 
                       <td className="py-3 px-4 text-center whitespace-nowrap">
@@ -217,13 +251,6 @@ export default function DirectoryTab() {
                               <i className="fa-solid fa-pen"></i> Edit Info
                             </button>
                             <button
-                              onClick={() => handleExtraDays(m.id)}
-                              className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] rounded text-[11px] font-bold transition"
-                              title="Manage Extra Days"
-                            >
-                              <i className="fa-solid fa-calendar-plus text-[#c59b27]"></i> Extra Days
-                            </button>
-                            <button
                               onClick={() => handleIssueWarning(m.id)}
                               className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded text-[11px] font-bold transition"
                               title="Issue Warning"
@@ -237,13 +264,15 @@ export default function DirectoryTab() {
                             >
                               <i className="fa-solid fa-user-minus"></i> Discharge
                             </button>
-                            <button
-                              onClick={() => deleteMember(m.id)}
-                              className="px-2 py-1 bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-slate-600 rounded text-[11px] font-bold transition"
-                              title="Delete Member"
-                            >
-                              <i className="fa-solid fa-trash-can"></i>
-                            </button>
+                            {isHeadOrVice && (
+                              <button
+                                onClick={() => deleteMember(m.id)}
+                                className="px-2 py-1 bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-slate-600 rounded text-[11px] font-bold transition"
+                                title="Delete Member"
+                              >
+                                <i className="fa-solid fa-trash-can"></i>
+                              </button>
+                            )}
                           </>
                         ) : (
                           <span className="text-slate-400 italic">View only</span>

@@ -328,6 +328,18 @@ export function AuthProvider({ children }) {
     showToast("Extra attendance days updated.");
   };
 
+  const updateExtraDaysCount = (id, delta) => {
+    setMembers(prev => prev.map(m => {
+      if (m.id === id) {
+        const current = m.extraDaysCount !== undefined ? m.extraDaysCount : (m.extraDays ? m.extraDays.length : 0);
+        const newCount = Math.max(0, current + delta);
+        return { ...m, extraDaysCount: newCount };
+      }
+      return m;
+    }));
+    showToast("Extra days counter updated.");
+  };
+
   const deleteMember = (id) => {
     const mem = members.find(m => m.id === id);
     setMembers(prev => prev.filter(m => m.id !== id));
@@ -387,6 +399,18 @@ export function AuthProvider({ children }) {
   const deleteAttendanceSession = async (sessionId) => {
     setAttendanceSessions(prev => prev.filter(s => s.id !== sessionId));
     showToast("Attendance session deleted.");
+  };
+
+  const updateAttendanceSession = async (sessionId, updatedData) => {
+    setAttendanceSessions(prev => prev.map(s => {
+      if (s.id === sessionId) {
+        const presentCount = updatedData.rollCall ? updatedData.rollCall.filter(r => r.isPresent).length : s.presentCount;
+        const totalCount = updatedData.rollCall ? updatedData.rollCall.length : s.totalCount;
+        return { ...s, ...updatedData, presentCount, totalCount };
+      }
+      return s;
+    }));
+    showToast("Attendance session details updated.");
   };
 
   const createAttendanceSession = async (title, date, sessionType, rollCallRecords) => {
@@ -619,6 +643,7 @@ export function AuthProvider({ children }) {
         addMember,
         editMemberInfo,
         updateMemberExtraDays,
+        updateExtraDaysCount,
         deleteMember,
         dischargeMember,
         updateMemberPerformance,
@@ -626,6 +651,7 @@ export function AuthProvider({ children }) {
         removeStarAmbassador,
         createAttendanceSession,
         deleteAttendanceSession,
+        updateAttendanceSession,
         submitWarning,
         approveWarningRequest,
         dismissWarning,
