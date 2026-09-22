@@ -7,10 +7,22 @@ export default function AddMemberModal() {
   const [role, setRole] = useState('HR');
   const [position, setPosition] = useState('Member');
   const [college, setCollege] = useState('Computing & IT');
-  const [term, setTerm] = useState(4);
-  const [extraDays, setExtraDays] = useState(0);
+  const [studentId, setStudentId] = useState('');
+  const [phone, setPhone] = useState('');
+  const [officialDays, setOfficialDays] = useState(["Saturday", "Monday", "Wednesday"]);
+  const [score, setScore] = useState(90);
 
   if (activeModal !== 'addMember') return null;
+
+  const daysList = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
+
+  const handleDayToggle = (day) => {
+    if (officialDays.includes(day)) {
+      setOfficialDays(officialDays.filter(d => d !== day));
+    } else {
+      setOfficialDays([...officialDays, day]);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -19,10 +31,14 @@ export default function AddMemberModal() {
       role,
       position,
       college,
-      term: Number(term),
-      extraDays: Number(extraDays)
+      studentId: studentId.trim() || `2024${Math.floor(100 + Math.random() * 900)}`,
+      phone: phone.trim() || '+20 100 000 0000',
+      officialDays,
+      score: Number(score) || 90
     });
     setName('');
+    setStudentId('');
+    setPhone('');
     setActiveModal(null);
   };
 
@@ -32,28 +48,29 @@ export default function AddMemberModal() {
         <div className="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
           <h3 className="font-bold text-sm flex items-center gap-2">
             <i className="fa-solid fa-user-plus text-[#c59b27]"></i>
-            <span>Add Admissions Ambassador</span>
+            <span>Add New Team Member</span>
           </h3>
           <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-white">
             <i className="fa-solid fa-xmark"></i>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-3 text-xs">
+        <form onSubmit={handleSubmit} className="p-5 space-y-3 text-xs max-h-[85vh] overflow-y-auto">
           <div>
-            <label className="block font-bold text-slate-700 mb-1">Full Student Name</label>
+            <label className="block font-bold text-slate-700 mb-1">Full Name</label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Ahmed Mahmoud"
               className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Role (Committee)</label>
+              <label className="block font-bold text-slate-700 mb-1">Functional Role</label>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
@@ -64,8 +81,6 @@ export default function AddMemberModal() {
                 <option value="Operations">Operations</option>
                 <option value="Digital Transformation">Digital Transformation</option>
                 <option value="Innovation">Innovation</option>
-                <option value="Vice President">Vice President</option>
-                <option value="President">President</option>
               </select>
             </div>
 
@@ -84,7 +99,7 @@ export default function AddMemberModal() {
           </div>
 
           <div>
-            <label className="block font-bold text-slate-700 mb-1">Smart Village College</label>
+            <label className="block font-bold text-slate-700 mb-1">Faculty</label>
             <select
               value={college}
               onChange={(e) => setCollege(e.target.value)}
@@ -96,35 +111,64 @@ export default function AddMemberModal() {
               <option value="Logistics & Transport">International Transport & Logistics</option>
               <option value="Law">Law & Legal Studies</option>
               <option value="Language & Comm">Language & Communication</option>
+              <option value="Arts & Design">Arts & Design</option>
             </select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Term / Semester</label>
+              <label className="block font-bold text-slate-700 mb-1">Student ID</label>
               <input
-                type="number"
-                min="1"
-                max="10"
-                value={term}
-                onChange={(e) => setTerm(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"
+                type="text"
+                placeholder="2024101"
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-mono"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Initial Extra Days</label>
+              <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
               <input
-                type="number"
-                min="0"
-                value={extraDays}
-                onChange={(e) => setExtraDays(e.target.value)}
+                type="text"
+                placeholder="+20 100 000 0000"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-3">
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Official Working Days (Sat–Thu)</label>
+            <div className="grid grid-cols-3 gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              {daysList.map(day => (
+                <label key={day} className="flex items-center gap-1.5 cursor-pointer text-slate-700 select-none">
+                  <input
+                    type="checkbox"
+                    checked={officialDays.includes(day)}
+                    onChange={() => handleDayToggle(day)}
+                    className="rounded text-[#002244]"
+                  />
+                  <span>{day}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Initial Performance Score (%)</label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={score}
+              onChange={(e) => setScore(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={() => setActiveModal(null)}
@@ -134,7 +178,7 @@ export default function AddMemberModal() {
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 bg-[#002244] text-[#c59b27] font-bold rounded-lg"
+              className="px-4 py-1.5 bg-[#002244] text-[#c59b27] font-bold rounded-lg shadow hover:bg-[#00162e] transition"
             >
               Enlist Member
             </button>
@@ -143,4 +187,3 @@ export default function AddMemberModal() {
       </div>
     </div>
   );
-}

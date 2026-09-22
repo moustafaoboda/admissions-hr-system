@@ -1278,6 +1278,7 @@
 
     function closeModal(id) { const el = document.getElementById(id); if (el) { el.classList.add("hidden"); el.classList.remove("flex"); } }
     function openModal(id) { const el = document.getElementById(id); if (el) { el.classList.remove("hidden"); el.classList.add("flex"); } }
+    function openAddMemberModal() { openModal("addMemberModal"); }
 
     function handleLoginSubmit(e) {
       e.preventDefault();
