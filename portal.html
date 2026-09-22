@@ -248,25 +248,7 @@
 
   <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-    <!-- Vice Head Quick Credentials Banner (Shown only for HR Vice Head) -->
-    <div id="viceHeadAdminBanner" class="hidden mb-6 bg-gradient-to-r from-amber-50 via-white to-amber-50/50 border-2 border-[#c59b27] rounded-xl p-4 sm:p-5 shadow-md flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-xl bg-[#c59b27] text-[#002244] flex items-center justify-center text-xl shadow flex-shrink-0">
-          <i class="fa-solid fa-shield-halved"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h3 class="font-extrabold text-[#002244] text-sm sm:text-base">HR Vice Head Credentials & Security Console</h3>
-            <span class="bg-[#002244] text-white text-[10px] font-bold px-2 py-0.5 rounded">Exclusive Access</span>
-          </div>
-          <p class="text-xs text-slate-600 mt-0.5">Directly inspect or modify all team passwords, change usernames, and register new system logins.</p>
-        </div>
-      </div>
-      <button onclick="openSystemUsersModal()" class="w-full sm:w-auto px-4 py-2 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] hover:text-[#dfb743] border border-[#c59b27] font-bold text-xs rounded-lg shadow transition flex items-center justify-center gap-2 whitespace-nowrap">
-        <i class="fa-solid fa-users-gear"></i>
-        <span>Manage Passwords & Users</span>
-      </button>
-    </div>
+
 
     <!-- Dean View-Only Notice Banner -->
     <div id="deanNoticeBanner" class="hidden mb-6 bg-purple-50 border border-purple-300 rounded-xl p-4 shadow-sm flex items-center gap-3">
@@ -1091,7 +1073,7 @@
       const isDean = currentUser.role === "Admission's Dean";
 
       document.getElementById("systemUsersBtn").style.display = isViceHead ? "inline-flex" : "none";
-      document.getElementById("viceHeadAdminBanner").style.display = isViceHead ? "flex" : "none";
+      const vhBanner = document.getElementById("viceHeadAdminBanner"); if (vhBanner) vhBanner.style.display = isViceHead ? "flex" : "none";
       document.getElementById("deanNoticeBanner").style.display = isDean ? "flex" : "none";
       document.getElementById("addStarAmbassadorBtn").style.display = isHeadOrVice ? "inline-flex" : "none";
 

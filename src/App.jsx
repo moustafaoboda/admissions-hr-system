@@ -47,30 +47,7 @@ export default function App() {
       {/* Main Container */}
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-        {/* Vice Head Credentials Banner */}
-        {isViceHead && (
-          <div className="mb-6 bg-gradient-to-r from-amber-50 via-white to-amber-50/50 border-2 border-[#c59b27] rounded-xl p-4 sm:p-5 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-[#c59b27] text-[#002244] flex items-center justify-center text-xl shadow flex-shrink-0">
-                <i className="fa-solid fa-shield-halved"></i>
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-extrabold text-[#002244] text-sm sm:text-base">HR Vice Head Credentials & Security Console</h3>
-                  <span className="bg-[#002244] text-white text-[10px] font-bold px-2 py-0.5 rounded">Exclusive Access</span>
-                </div>
-                <p className="text-xs text-slate-600 mt-0.5">Directly inspect or modify all team passwords, change usernames, and register new system logins.</p>
-              </div>
-            </div>
-            <button
-              onClick={() => useAuth().setActiveModal('systemUsers')}
-              className="w-full sm:w-auto px-4 py-2 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] hover:text-[#dfb743] border border-[#c59b27] font-bold text-xs rounded-lg shadow transition flex items-center justify-center gap-2 whitespace-nowrap"
-            >
-              <i className="fa-solid fa-users-gear"></i>
-              <span>Manage Passwords & Users</span>
-            </button>
-          </div>
-        )}
+
 
         {/* Dean View-Only Notice Banner */}
         {isDean && (
