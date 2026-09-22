@@ -14,28 +14,55 @@ export default function DashboardTab() {
   const isViceHead = currentUser?.role === "HR Vice Head";
   const isHeadOrVice = currentUser?.role === "HR Head" || isViceHead;
 
-  // KPI calculations
-  const totalMembers = members.length;
-  const avgAttendance = (members.reduce((acc, m) => acc + m.attendanceRate, 0) / (totalMembers || 1)).toFixed(1);
-  const totalStrikes = members.reduce((acc, m) => acc + m.strikes, 0);
-  const totalExtraShifts = members.reduce((acc, m) => acc + m.extraDays, 0);
+  const activeMembers = members.filter(m => m.status !== "Discharged");
 
-  // Functional roles breakdown
+  // KPI calculations
+  const totalMembers = activeMembers.length;
+  const avgAttendanceCount = totalMembers > 0
+    ? (activeMembers.reduce((acc, m) => acc + m.attendanceCount, 0) / totalMembers).toFixed(1)
+    : 0;
+  const totalStrikes = activeMembers.reduce((acc, m) => acc + m.strikes, 0);
+
+  // Functional roles breakdown (Strictly: PR, HR, Operations, Digital Transformation, Innovation)
+  const targetRoles = ["PR", "HR", "Operations", "Digital Transformation", "Innovation"];
   const rolesMap = {};
-  members.forEach(m => {
-    rolesMap[m.role] = (rolesMap[m.role] || 0) + 1;
+  targetRoles.forEach(r => rolesMap[r] = 0);
+  activeMembers.forEach(m => {
+    if (rolesMap[m.role] !== undefined) {
+      rolesMap[m.role]++;
+    }
+  });
+
+  // Faculties breakdown (Including Arts & Design)
+  const facultiesList = [
+    "Computing & IT",
+    "Engineering & Tech",
+    "Management & Tech",
+    "Logistics & Transport",
+    "Law",
+    "Language & Comm",
+    "Arts & Design"
+  ];
+  const facultyMap = {};
+  facultiesList.forEach(f => facultyMap[f] = 0);
+  activeMembers.forEach(m => {
+    if (facultyMap[m.college] !== undefined) {
+      facultyMap[m.college]++;
+    } else {
+      facultyMap[m.college] = 1;
+    }
   });
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
+      {/* Key KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Members */}
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Staff</p>
             <p className="text-2xl font-black text-[#002244] mt-1">{totalMembers}</p>
-            <span className="text-[11px] text-emerald-600 font-semibold"><i class="fa-solid fa-building-circle-check"></i> Smart Village</span>
+            <span className="text-[11px] text-emerald-600 font-semibold"><i className="fa-solid fa-building-circle-check"></i> Smart Village</span>
           </div>
           <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#002244] flex items-center justify-center text-xl">
             <i className="fa-solid fa-id-badge"></i>
@@ -45,9 +72,9 @@ export default function DashboardTab() {
         {/* Avg Attendance */}
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Avg Attendance</p>
-            <p className="text-2xl font-black text-[#002244] mt-1">{avgAttendance}%</p>
-            <span className="text-[11px] text-blue-600 font-semibold">Meetings & Shifts</span>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Avg Attendance Count</p>
+            <p className="text-2xl font-black text-[#002244] mt-1">{avgAttendanceCount}</p>
+            <span className="text-[11px] text-blue-600 font-semibold">Sessions Attended</span>
           </div>
           <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xl">
             <i className="fa-solid fa-calendar-check"></i>
@@ -57,7 +84,7 @@ export default function DashboardTab() {
         {/* Warnings & Strikes */}
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Strikes</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Warnings Issued</p>
             <p className="text-2xl font-black text-rose-600 mt-1">{totalStrikes}</p>
             <span className="text-[11px] text-slate-500 font-medium">Smart Village Roster</span>
           </div>
@@ -141,7 +168,7 @@ export default function DashboardTab() {
         </div>
       </div>
 
-      {/* Quick Roles & Campus Overview */}
+      {/* Roles Breakdown, Faculties, and Orientations / EDU Gate / Meetings */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Committee Distribution */}
         <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
@@ -150,64 +177,71 @@ export default function DashboardTab() {
             <span>Functional Roles Breakdown</span>
           </h4>
           <div className="space-y-2.5 text-xs">
-            {Object.entries(rolesMap).map(([role, count]) => (
+            {targetRoles.map(role => (
               <div key={role} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
                 <span className="font-semibold text-slate-700">{role}</span>
-                <span className="bg-[#002244] text-[#c59b27] font-bold text-[10px] px-2 py-0.5 rounded-full">{count} Staff</span>
+                <span className="bg-[#002244] text-[#c59b27] font-bold text-[10px] px-2 py-0.5 rounded-full">
+                  {rolesMap[role]} Members
+                </span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Faculties Active */}
+        {/* Faculties (Including Arts & Design) */}
         <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
           <h4 className="font-bold text-sm text-[#002244] mb-3 flex items-center gap-2">
             <i className="fa-solid fa-graduation-cap text-[#002244]"></i>
-            <span>Smart Village Campus Faculties</span>
+            <span>Faculties</span>
           </h4>
           <div className="space-y-2 text-xs">
-            <div className="p-2 bg-slate-50 rounded-lg flex justify-between items-center">
-              <span className="font-medium text-slate-700">Computing & Information Tech</span>
-              <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">6 Members</span>
-            </div>
-            <div className="p-2 bg-slate-50 rounded-lg flex justify-between items-center">
-              <span className="font-medium text-slate-700">Engineering & Technology</span>
-              <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">5 Members</span>
-            </div>
-            <div className="p-2 bg-slate-50 rounded-lg flex justify-between items-center">
-              <span className="font-medium text-slate-700">Management & Technology</span>
-              <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">4 Members</span>
-            </div>
-            <div className="p-2 bg-slate-50 rounded-lg flex justify-between items-center">
-              <span className="font-medium text-slate-700">International Transport & Logistics</span>
-              <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">2 Members</span>
-            </div>
-            <div className="p-2 bg-slate-50 rounded-lg flex justify-between items-center">
-              <span className="font-medium text-slate-700">Law & Legal Studies</span>
-              <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">1 Member</span>
-            </div>
+            {facultiesList.map(faculty => (
+              <div key={faculty} className="p-2 bg-slate-50 rounded-lg flex justify-between items-center">
+                <span className="font-medium text-slate-700">{faculty}</span>
+                <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">
+                  {facultyMap[faculty]} Members
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Daily Operations Log */}
+        {/* Orientations, EDU Gate, Meetings */}
         <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
           <div>
             <h4 className="font-bold text-sm text-[#002244] mb-3 flex items-center gap-2">
-              <i className="fa-solid fa-bolt text-[#c59b27]"></i>
-              <span>Daily Operations Log</span>
+              <i className="fa-solid fa-[#c59b27] fa-calendar-check text-[#c59b27]"></i>
+              <span>Events & Operational Logs</span>
             </h4>
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs space-y-2">
-              <div className="flex justify-between text-slate-600">
-                <span>Active Shift:</span>
-                <span className="font-bold text-slate-800">Admissions Welcome Hall</span>
+            <div className="space-y-2.5 text-xs">
+              <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-lg">
+                <div className="flex justify-between items-center font-bold text-[#002244]">
+                  <span className="flex items-center gap-1.5">
+                    <i className="fa-solid fa-[#c59b27] fa-compass text-amber-600"></i> Orientations
+                  </span>
+                  <span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[10px]">Active</span>
+                </div>
+                <p className="text-[11px] text-slate-600 mt-1">Campus tours & parent welcome briefings in Hall A.</p>
               </div>
-              <div className="flex justify-between text-slate-600">
-                <span>Interview Venue:</span>
-                <span className="font-bold text-blue-800">Meeting Room 007</span>
+
+              <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-lg">
+                <div className="flex justify-between items-center font-bold text-blue-950">
+                  <span className="flex items-center gap-1.5">
+                    <i className="fa-solid fa-school-flag text-blue-600"></i> EDU Gate
+                  </span>
+                  <span className="bg-blue-100 text-blue-900 px-2 py-0.5 rounded text-[10px]">Scheduled</span>
+                </div>
+                <p className="text-[11px] text-slate-600 mt-1">Annual admissions exhibition & university portal drive.</p>
               </div>
-              <div className="flex justify-between text-slate-600">
-                <span>Extra Shifts Logged:</span>
-                <span className="font-bold text-emerald-700">+{totalExtraShifts} Days</span>
+
+              <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-lg">
+                <div className="flex justify-between items-center font-bold text-emerald-950">
+                  <span className="flex items-center gap-1.5">
+                    <i className="fa-solid fa-comments text-emerald-600"></i> Meetings
+                  </span>
+                  <span className="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded text-[10px]">Weekly</span>
+                </div>
+                <p className="text-[11px] text-slate-600 mt-1">General assembly & committee sync in Meeting Room 007.</p>
               </div>
             </div>
           </div>

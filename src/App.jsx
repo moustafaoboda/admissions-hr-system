@@ -1,12 +1,15 @@
 import React from 'react';
 import { useAuth } from './context/AuthContext';
 import Header from './components/Header';
+import Sidebar from './components/Sidebar';
 import Toast from './components/Toast';
 
 // Modals
 import LoginModal from './components/modals/LoginModal';
 import ProfileModal from './components/modals/ProfileModal';
 import AddMemberModal from './components/modals/AddMemberModal';
+import EditMemberModal from './components/modals/EditMemberModal';
+import DischargeModal from './components/modals/DischargeModal';
 import AddStarModal from './components/modals/AddStarModal';
 import AddAttendanceModal from './components/modals/AddAttendanceModal';
 import WarningModal from './components/modals/WarningModal';
@@ -18,15 +21,12 @@ import SystemUsersModal from './components/modals/SystemUsersModal';
 import DashboardTab from './components/tabs/DashboardTab';
 import DirectoryTab from './components/tabs/DirectoryTab';
 import AttendanceTab from './components/tabs/AttendanceTab';
-import WarningsTab from './components/tabs/WarningsTab';
-import RecruitmentTab from './components/tabs/RecruitmentTab';
 import CopilotTab from './components/tabs/CopilotTab';
 
 export default function App() {
   const { currentUser, activeTab } = useAuth();
 
   const isDean = currentUser?.role === "Admission's Dean";
-  const isViceHead = currentUser?.role === "HR Vice Head";
 
   if (!currentUser) {
     return (
@@ -44,10 +44,8 @@ export default function App() {
       {/* Navigation Header */}
       <Header />
 
-      {/* Main Container */}
+      {/* Main Layout Grid with Side Control Panel */}
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
-
 
         {/* Dean View-Only Notice Banner */}
         {isDean && (
@@ -62,18 +60,25 @@ export default function App() {
           </div>
         )}
 
-        {/* Render Selected Tab */}
-        {activeTab === 'dashboard' && <DashboardTab />}
-        {!isDean && activeTab === 'directory' && <DirectoryTab />}
-        {!isDean && activeTab === 'attendance' && <AttendanceTab />}
-        {!isDean && activeTab === 'warnings' && <WarningsTab />}
-        {!isDean && activeTab === 'recruitment' && <RecruitmentTab />}
-        {!isDean && activeTab === 'copilot' && <CopilotTab />}
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          {/* Main Active Tab Content */}
+          <div className="flex-grow w-full">
+            {activeTab === 'dashboard' && <DashboardTab />}
+            {!isDean && activeTab === 'directory' && <DirectoryTab />}
+            {!isDean && activeTab === 'attendance' && <AttendanceTab />}
+            {!isDean && activeTab === 'copilot' && <CopilotTab />}
+          </div>
+
+          {/* Right Side Control Panel */}
+          <Sidebar />
+        </div>
       </main>
 
       {/* Global Modals */}
       <ProfileModal />
       <AddMemberModal />
+      <EditMemberModal />
+      <DischargeModal />
       <AddStarModal />
       <AddAttendanceModal />
       <WarningModal />

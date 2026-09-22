@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navigation() {
-  const { currentUser, activeTab, switchTab, recruits } = useAuth();
+  const { currentUser, activeTab, switchTab } = useAuth();
 
   if (!currentUser) return null;
 
@@ -30,7 +30,7 @@ export default function Navigation() {
               }`}
             >
               <i className="fa-solid fa-users"></i>
-              <span>Team Directory</span>
+              <span>Team Members</span>
             </button>
 
             <button
@@ -40,30 +40,7 @@ export default function Navigation() {
               }`}
             >
               <i className="fa-solid fa-clipboard-user"></i>
-              <span>Attendance Sessions</span>
-            </button>
-
-            <button
-              onClick={() => switchTab('warnings')}
-              className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
-                activeTab === 'warnings' ? 'active' : ''
-              }`}
-            >
-              <i className="fa-solid fa-triangle-exclamation"></i>
-              <span>Disciplinary & Strikes</span>
-            </button>
-
-            <button
-              onClick={() => switchTab('recruitment')}
-              className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
-                activeTab === 'recruitment' ? 'active' : ''
-              }`}
-            >
-              <i className="fa-solid fa-user-plus"></i>
-              <span>Join Requests</span>
-              <span className="bg-[#c59b27] text-[#002244] text-[10px] font-black px-1.5 py-0.2 rounded-full">
-                {recruits.length}
-              </span>
+              <span>Attendance</span>
             </button>
 
             <button
