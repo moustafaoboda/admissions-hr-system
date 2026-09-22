@@ -597,6 +597,34 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const addRecruit = async (newRec) => {
+    const recruit = {
+      id: `rec-${Date.now()}`,
+      name: newRec.name,
+      college: newRec.college,
+      term: newRec.term,
+      targetRole: newRec.targetRole,
+      interviewSchedule: null,
+      interviewVenue: null,
+      status: 'Pending Schedule',
+      hrRecommendation: newRec.hrRecommendation || null
+    };
+
+    setRecruits(prev => [recruit, ...prev]);
+    showToast(`Join request submitted for ${recruit.name}.`);
+
+    if (isSupabaseConfigured) {
+      await supabase.from('join_requests').insert([{
+        name: recruit.name,
+        college: recruit.college,
+        term: recruit.term,
+        target_role: recruit.targetRole,
+        status: recruit.status,
+        hr_recommendation: recruit.hrRecommendation
+      }]);
+    }
+  };
+
   // System Users Console Actions (HR Vice Head Exclusive)
   const addSystemUser = async (name, username, password, role) => {
     if (systemUsers.some(u => u.username.toLowerCase() === username.toLowerCase())) {
@@ -704,6 +732,7 @@ export function AuthProvider({ children }) {
         enlistRecruit,
         declineRecruit,
         requestRecruitRecommendation,
+        addRecruit,
         addSystemUser,
         updateSystemUser,
         deleteSystemUser,

@@ -28,8 +28,17 @@ export default function RecruitmentTab() {
           <h2 className="text-lg font-bold text-[#002244]">Admissions Team Join Requests</h2>
           <p className="text-xs text-slate-500">Review student applications, schedule on-campus interviews in Room 007, and process enlistments.</p>
         </div>
-        <div className="text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-          <span className="font-bold text-[#002244]">Interview Room:</span> Smart Village - Meeting Room 007
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+            <span className="font-bold text-[#002244]">Interview Room:</span> Smart Village - Meeting Room 007
+          </div>
+          <button
+            onClick={() => setActiveModal('addRecruit')}
+            className="px-3.5 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] shadow transition flex items-center gap-1.5"
+          >
+            <i className="fa-solid fa-user-plus text-xs"></i>
+            <span>Submit Join Application</span>
+          </button>
         </div>
       </div>
 

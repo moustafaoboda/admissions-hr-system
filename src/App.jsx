@@ -11,6 +11,7 @@ import AddStarModal from './components/modals/AddStarModal';
 import AddAttendanceModal from './components/modals/AddAttendanceModal';
 import WarningModal from './components/modals/WarningModal';
 import ScheduleModal from './components/modals/ScheduleModal';
+import AddRecruitModal from './components/modals/AddRecruitModal';
 import SystemUsersModal from './components/modals/SystemUsersModal';
 
 // Tabs
@@ -100,6 +101,7 @@ export default function App() {
       <AddAttendanceModal />
       <WarningModal />
       <ScheduleModal />
+      <AddRecruitModal />
       <SystemUsersModal />
     </div>
   );

@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AASTMT Admissions HR Suite - Smart Village</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Google Fonts: Inter & Cinzel -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --aastmt-navy: #002244;
+      --aastmt-navy-dark: #00162e;
+      --aastmt-navy-light: #0d3868;
+      --aastmt-gold: #c59b27;
+      --aastmt-gold-light: #dfb743;
+      --aastmt-gold-soft: rgba(197, 155, 39, 0.12);
+      --bg-slate: #f4f6fa;
+      --border-color: #e2e8f0;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-slate);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-font {
+      font-family: 'Cinzel', serif;
+    }
+
+    /* Subtle AASTMT Watermark Background */
+    .bg-pattern {
+      background-color: #f8fafc;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(0, 34, 68, 0.03) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(197, 155, 39, 0.04) 0px, transparent 50%);
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Active Tab styling */
+    .nav-tab.active {
+      background-color: #ffffff;
+      color: var(--aastmt-navy);
+      border-bottom: 3px solid var(--aastmt-gold);
+      font-weight: 700;
+    }
+
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Modal Animation */
+    .modal-backdrop {
+      background-color: rgba(0, 22, 46, 0.7);
+      backdrop-filter: blur(4px);
+    }
+    
+    .gold-glow {
+      box-shadow: 0 0 15px rgba(197, 155, 39, 0.35);
+    }
+  </style>
+</head>
+<body class="bg-pattern flex flex-col min-h-screen">
+
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-200">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-[#00162e] via-[#002244] to-[#0d3868] p-6 text-center text-white relative">
+        <div class="w-16 h-16 mx-auto mb-3 bg-white/10 rounded-full flex items-center justify-center border-2 border-[#c59b27] shadow-lg">
+          <i class="fa-solid fa-anchor text-2xl text-[#c59b27]"></i>
+        </div>
+        <h2 class="text-xl font-bold brand-font tracking-wide">AASTMT ADMISSIONS</h2>
+        <p class="text-xs text-[#dfb743] font-semibold mt-1">Smart Village Campus • HR Administration Suite</p>
+      </div>
+
+      <!-- Form -->
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Username</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+              <i class="fa-solid fa-user text-sm"></i>
+            </span>
+            <input type="text" id="loginUsername" required class="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none" placeholder="e.g. omar.farouk">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Password</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+              <i class="fa-solid fa-lock text-sm"></i>
+            </span>
+            <input type="password" id="loginPassword" required class="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none" placeholder="••••••••">
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-2.5 px-4 bg-[#002244] hover:bg-[#00162e] text-white font-bold rounded-lg shadow-md transition duration-150 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-arrow-right-to-bracket text-[#c59b27]"></i>
+          <span>Sign In to Portal</span>
+        </button>
+
+        <!-- Fast Demo Switcher for Evaluation -->
+        <div class="pt-3 border-t border-slate-200">
+          <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2 text-center">Fast 1-Click Role Login (Demo)</p>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <button type="button" onclick="quickFillLogin('omar.farouk')" class="p-2 border border-amber-300 bg-amber-50/60 rounded-md text-slate-800 hover:bg-amber-100 flex items-center gap-1.5 font-medium transition text-left">
+              <i class="fa-solid fa-key text-[#c59b27]"></i>
+              <div>
+                <div class="font-bold text-[11px] text-[#002244]">HR Vice Head</div>
+                <div class="text-[10px] text-slate-500">omar.farouk</div>
+              </div>
+            </button>
+            <button type="button" onclick="quickFillLogin('tarek.hegazy')" class="p-2 border border-slate-200 bg-slate-50 rounded-md text-slate-800 hover:bg-slate-100 flex items-center gap-1.5 font-medium transition text-left">
+              <i class="fa-solid fa-crown text-blue-800"></i>
+              <div>
+                <div class="font-bold text-[11px] text-[#002244]">HR Head</div>
+                <div class="text-[10px] text-slate-500">tarek.hegazy</div>
+              </div>
+            </button>
+            <button type="button" onclick="quickFillLogin('sarah.hr')" class="p-2 border border-slate-200 bg-slate-50 rounded-md text-slate-800 hover:bg-slate-100 flex items-center gap-1.5 font-medium transition text-left">
+              <i class="fa-solid fa-user-tag text-emerald-700"></i>
+              <div>
+                <div class="font-bold text-[11px] text-[#002244]">HR Member</div>
+                <div class="text-[10px] text-slate-500">sarah.hr</div>
+              </div>
+            </button>
+            <button type="button" onclick="quickFillLogin('dean')" class="p-2 border border-slate-200 bg-slate-50 rounded-md text-slate-800 hover:bg-slate-100 flex items-center gap-1.5 font-medium transition text-left">
+              <i class="fa-solid fa-building-columns text-purple-700"></i>
+              <div>
+                <div class="font-bold text-[11px] text-[#002244]">Admission's Dean</div>
+                <div class="text-[10px] text-slate-500">dean (view only)</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <header class="bg-[#002244] text-white shadow-lg border-b-2 border-[#c59b27] sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-20">
+        <!-- Brand & Crest -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 flex items-center justify-center border border-[#c59b27] shadow-md">
+            <i class="fa-solid fa-anchor text-[#c59b27] text-lg sm:text-xl"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs sm:text-sm font-semibold tracking-wider text-slate-300">ARAB ACADEMY (AASTMT)</span>
+              <span class="bg-[#c59b27] text-[#002244] text-[10px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">SV CAMPUS</span>
+            </div>
+            <h1 class="text-base sm:text-xl font-bold brand-font text-white leading-tight">Admissions HR Suite</h1>
+          </div>
+        </div>
+
+        <!-- User Controls & Role Info -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <!-- HR Vice Head Exclusive Top Key Button -->
+          <button id="systemUsersBtn" onclick="openSystemUsersModal()" class="hidden items-center gap-1.5 bg-[#c59b27] hover:bg-[#dfb743] text-[#002244] px-3 py-1.5 rounded-lg text-xs font-extrabold shadow transition transform hover:-translate-y-0.5">
+            <i class="fa-solid fa-key text-xs"></i>
+            <span class="hidden md:inline">Users & Passwords</span>
+            <span class="md:hidden">Users</span>
+          </button>
+
+          <!-- Current User Pill -->
+          <div class="bg-white/10 border border-white/20 rounded-lg px-2.5 py-1.5 flex items-center gap-2 text-xs">
+            <div class="w-7 h-7 rounded-full bg-[#c59b27] text-[#002244] font-bold flex items-center justify-center text-xs" id="userAvatar">OF</div>
+            <div class="text-left hidden sm:block">
+              <div class="font-bold leading-tight" id="userNameDisplay">Omar Farouk</div>
+              <div class="text-[10px] text-[#dfb743] font-semibold" id="userRoleBadge">HR Vice Head</div>
+            </div>
+          </div>
+
+          <!-- Edit Profile Button -->
+          <button onclick="openProfileModal()" title="Edit My Profile" class="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-semibold text-slate-200 transition">
+            <i class="fa-solid fa-user-pen"></i>
+          </button>
+
+          <!-- Logout Button -->
+          <button onclick="handleLogout()" title="Sign Out" class="p-2 bg-rose-600/90 hover:bg-rose-700 rounded-lg text-xs font-semibold text-white transition">
+            <i class="fa-solid fa-power-off"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs Bar -->
+    <div class="bg-[#001830] border-t border-slate-700/60">
+      <div class="max-w-7xl mx-auto px-4 flex space-x-1 sm:space-x-4 overflow-x-auto text-xs sm:text-sm font-medium">
+        <button onclick="switchTab('dashboard')" id="tabBtn-dashboard" class="nav-tab active py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard Overview</span>
+        </button>
+        <button onclick="switchTab('directory')" id="tabBtn-directory" class="nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-users"></i>
+          <span>Team Directory</span>
+        </button>
+        <button onclick="switchTab('attendance')" id="tabBtn-attendance" class="nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-clipboard-user"></i>
+          <span>Attendance Sessions</span>
+        </button>
+        <button onclick="switchTab('warnings')" id="tabBtn-warnings" class="nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>Disciplinary & Strikes</span>
+        </button>
+        <button onclick="switchTab('recruitment')" id="tabBtn-recruitment" class="nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>Join Requests</span>
+          <span id="pendingRequestsBadge" class="bg-[#c59b27] text-[#002244] text-[10px] font-black px-1.5 py-0.2 rounded-full">3</span>
+        </button>
+        <button onclick="switchTab('copilot')" id="tabBtn-copilot" class="nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-wand-magic-sparkles text-[#c59b27]"></i>
+          <span>AI HR Copilot</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Vice Head Quick Credentials Banner (Shown only for HR Vice Head) -->
+    <div id="viceHeadAdminBanner" class="hidden mb-6 bg-gradient-to-r from-amber-50 via-white to-amber-50/50 border-2 border-[#c59b27] rounded-xl p-4 sm:p-5 shadow-md flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl bg-[#c59b27] text-[#002244] flex items-center justify-center text-xl shadow flex-shrink-0">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="font-extrabold text-[#002244] text-sm sm:text-base">HR Vice Head Credentials & Security Console</h3>
+            <span class="bg-[#002244] text-white text-[10px] font-bold px-2 py-0.5 rounded">Exclusive Access</span>
+          </div>
+          <p class="text-xs text-slate-600 mt-0.5">Directly inspect or modify all team passwords, change usernames, and register new system logins.</p>
+        </div>
+      </div>
+      <button onclick="openSystemUsersModal()" class="w-full sm:w-auto px-4 py-2 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] hover:text-[#dfb743] border border-[#c59b27] font-bold text-xs rounded-lg shadow transition flex items-center justify-center gap-2 whitespace-nowrap">
+        <i class="fa-solid fa-users-gear"></i>
+        <span>Manage Passwords & Users</span>
+      </button>
+    </div>
+
+    <!-- Dean View-Only Notice Banner -->
+    <div id="deanNoticeBanner" class="hidden mb-6 bg-purple-50 border border-purple-300 rounded-xl p-4 shadow-sm flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-purple-900 text-white flex items-center justify-center text-lg flex-shrink-0">
+        <i class="fa-solid fa-eye"></i>
+      </div>
+      <div>
+        <h4 class="font-bold text-purple-950 text-sm">Admission's Dean Oversight Mode</h4>
+        <p class="text-xs text-purple-800">You are viewing high-level admissions metrics for Smart Village. Operational edits and disciplinary actions are restricted to HR leadership.</p>
+      </div>
+    </div>
+
+    <!-- TAB 1: DASHBOARD OVERVIEW -->
+    <div id="tab-dashboard" class="tab-content active space-y-6">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Staff</p>
+            <p class="text-2xl font-black text-[#002244] mt-1" id="kpiTotalMembers">18</p>
+            <span class="text-[11px] text-emerald-600 font-semibold"><i class="fa-solid fa-building-circle-check"></i> Smart Village</span>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-blue-50 text-[#002244] flex items-center justify-center text-xl">
+            <i class="fa-solid fa-id-badge"></i>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Avg Attendance</p>
+            <p class="text-2xl font-black text-[#002244] mt-1" id="kpiAvgAttendance">94.2%</p>
+            <span class="text-[11px] text-blue-600 font-semibold">Meetings & Shifts</span>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-calendar-check"></i>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Strikes</p>
+            <p class="text-2xl font-black text-rose-600 mt-1" id="kpiTotalWarnings">3</p>
+            <span class="text-[11px] text-slate-500 font-medium">1 hearing pending</span>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Join Applicants</p>
+            <p class="text-2xl font-black text-[#c59b27] mt-1" id="kpiPendingRecruits">3</p>
+            <span class="text-[11px] text-slate-500 font-medium">Interviews in Rm 007</span>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-amber-50 text-[#c59b27] flex items-center justify-center text-xl">
+            <i class="fa-solid fa-user-clock"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-amber-100 text-[#c59b27] flex items-center justify-center text-base">
+              <i class="fa-solid fa-star"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm sm:text-base text-[#002244]">Star Admissions Ambassadors</h3>
+              <p class="text-xs text-slate-500">Distinguished team members recognized by HR Head & HR Vice Head</p>
+            </div>
+          </div>
+          <button id="addStarAmbassadorBtn" onclick="openAddStarModal()" class="px-3 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>Assign Star Ambassador</span>
+          </button>
+        </div>
+
+        <div id="starAmbassadorsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4"></div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+          <h4 class="font-bold text-sm text-[#002244] mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-sitemap text-[#c59b27]"></i>
+            <span>Functional Roles Breakdown</span>
+          </h4>
+          <div id="roleBreakdownList" class="space-y-2.5 text-xs"></div>
+        </div>
+
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+          <h4 class="font-bold text-sm text-[#002244] mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-graduation-cap text-[#002244]"></i>
+            <span>Smart Village Campus Faculties</span>
+          </h4>
+          <div class="space-y-2 text-xs">
+            <div class="p-2 bg-slate-50 rounded-lg flex justify-between items-center">
+              <span class="font-medium text-slate-700">Computing & Information Tech</span>
+              <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">6 Members</span>
+            </div>
+            <div class="p-2 bg-slate-50 rounded-lg flex justify-between items-center">
+              <span class="font-medium text-slate-700">Engineering & Technology</span>
+              <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">5 Members</span>
+            </div>
+            <div class="p-2 bg-slate-50 rounded-lg flex justify-between items-center">
+              <span class="font-medium text-slate-700">Management & Technology</span>
+              <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">4 Members</span>
+            </div>
+            <div class="p-2 bg-slate-50 rounded-lg flex justify-between items-center">
+              <span class="font-medium text-slate-700">International Transport & Logistics</span>
+              <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">2 Members</span>
+            </div>
+            <div class="p-2 bg-slate-50 rounded-lg flex justify-between items-center">
+              <span class="font-medium text-slate-700">Law & Legal Studies</span>
+              <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">1 Member</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <h4 class="font-bold text-sm text-[#002244] mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-bolt text-[#c59b27]"></i>
+              <span>Daily Operations Log</span>
+            </h4>
+            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs space-y-2">
+              <div class="flex justify-between text-slate-600">
+                <span>Active Shift:</span>
+                <span class="font-bold text-slate-800">Admissions Welcome Hall</span>
+              </div>
+              <div class="flex justify-between text-slate-600">
+                <span>Interview Venue:</span>
+                <span class="font-bold text-blue-800">Meeting Room 007</span>
+              </div>
+              <div class="flex justify-between text-slate-600">
+                <span>Extra Shifts Logged:</span>
+                <span class="font-bold text-emerald-700" id="totalExtraShiftsLogged">+14 Days</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-slate-100 flex gap-2">
+            <button onclick="openAddMemberModal()" id="btnQuickAddMember" class="flex-1 py-2 bg-[#002244] hover:bg-[#00162e] text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-user-plus text-[#c59b27]"></i>
+              <span>Add Member</span>
+            </button>
+            <button onclick="openAddAttendanceModal()" id="btnQuickAttendance" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-300">
+              <i class="fa-solid fa-calendar-plus text-slate-600"></i>
+              <span>Add Attendance</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: TEAM DIRECTORY -->
+    <div id="tab-directory" class="tab-content space-y-4">
+      <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-[#002244]">Admissions Team Directory</h2>
+          <p class="text-xs text-slate-500">Track staff roles, committee positions, performance scores, and extra off-schedule days.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <input type="text" id="memberSearchInput" oninput="filterMembersTable()" placeholder="Search by name, role..." class="px-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none w-48 sm:w-64">
+          <button onclick="openAddMemberModal()" id="addNewMemberBtn" class="px-3.5 py-1.5 bg-[#002244] hover:bg-[#00162e] text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-1.5">
+            <i class="fa-solid fa-user-plus text-[#c59b27]"></i>
+            <span>New Member</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+              <tr>
+                <th class="py-3 px-4">Member Name & Details</th>
+                <th class="py-3 px-4">Role & Position</th>
+                <th class="py-3 px-4">SV Faculty</th>
+                <th class="py-3 px-4 text-center">Extra Days (Off-Schedule)</th>
+                <th class="py-3 px-4 text-center">Attendance Rate</th>
+                <th class="py-3 px-4 text-center">Strikes</th>
+                <th class="py-3 px-4 text-center">Performance</th>
+                <th class="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="membersTableBody" class="divide-y divide-slate-100 font-medium"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: ATTENDANCE SESSIONS -->
+    <div id="tab-attendance" class="tab-content space-y-4">
+      <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-[#002244]">Daily Attendance Records</h2>
+          <p class="text-xs text-slate-500">Manage daily booth shifts, open days, and official general assembly meeting rolls.</p>
+        </div>
+        <button onclick="openAddAttendanceModal()" id="btnCreateAttendanceSheet" class="px-3.5 py-1.5 bg-[#002244] hover:bg-[#00162e] text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-1.5">
+          <i class="fa-solid fa-calendar-check text-[#c59b27]"></i>
+          <span>Add Attendance List for Day</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="attendanceSessionsGrid"></div>
+    </div>
+
+    <!-- TAB 4: DISCIPLINARY & WARNINGS -->
+    <div id="tab-warnings" class="tab-content space-y-4">
+      <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-[#002244]">Disciplinary & Warnings Log</h2>
+          <p class="text-xs text-slate-500">Track official warnings and pending disciplinary requests.</p>
+        </div>
+        <div id="warningActionBtnContainer"></div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+              <tr>
+                <th class="py-3 px-4">Member</th>
+                <th class="py-3 px-4">Type / Level</th>
+                <th class="py-3 px-4">Infraction Reason</th>
+                <th class="py-3 px-4">Reported By</th>
+                <th class="py-3 px-4">Date</th>
+                <th class="py-3 px-4 text-center">Status</th>
+                <th class="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="warningsTableBody" class="divide-y divide-slate-100 font-medium"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: JOIN REQUESTS -->
+    <div id="tab-recruitment" class="tab-content space-y-4">
+      <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-[#002244]">Admissions Team Join Requests</h2>
+          <p class="text-xs text-slate-500">Review student applications, schedule on-campus interviews in Room 007, and process enlistments.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <div id="recruitmentIntroNotice" class="text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+            <span class="font-bold text-[#002244]">Interview Room:</span> Smart Village - Meeting Room 007
+          </div>
+          <button onclick="openModal('addRecruitModal')" class="px-3.5 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] shadow transition flex items-center gap-1.5">
+            <i class="fa-solid fa-user-plus text-xs"></i>
+            <span>Submit Join Application</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+              <tr>
+                <th class="py-3 px-4">Applicant</th>
+                <th class="py-3 px-4">Target Role</th>
+                <th class="py-3 px-4">SV College & Term</th>
+                <th class="py-3 px-4">Scheduled Interview</th>
+                <th class="py-3 px-4 text-center">Status</th>
+                <th class="py-3 px-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="recruitmentTableBody" class="divide-y divide-slate-100 font-medium"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: AI HR COPILOT -->
+    <div id="tab-copilot" class="tab-content space-y-5">
+      <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#002244] to-[#0d3868] text-[#c59b27] flex items-center justify-center text-lg shadow">
+            <i class="fa-solid fa-brain"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-[#002244]">Smart Village HR AI Assistant</h2>
+            <p class="text-xs text-slate-500">Draft team announcements, evaluate roster performance, or write formal warnings.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+          <button onclick="runAiPreset('announcement')" class="p-3 text-left rounded-lg border border-slate-200 hover:border-[#c59b27] bg-slate-50 hover:bg-amber-50/40 transition">
+            <div class="font-bold text-xs text-[#002244] flex items-center gap-1.5">
+              <i class="fa-brands fa-whatsapp text-emerald-600"></i>
+              <span>Shift WhatsApp Broadcast</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">Generate professional meeting or shift announcement for Smart Village ambassadors.</p>
+          </button>
+
+          <button onclick="runAiPreset('review')" class="p-3 text-left rounded-lg border border-slate-200 hover:border-[#c59b27] bg-slate-50 hover:bg-amber-50/40 transition">
+            <div class="font-bold text-xs text-[#002244] flex items-center gap-1.5">
+              <i class="fa-solid fa-chart-line text-blue-600"></i>
+              <span>Roster Health Audit</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">Analyze overall team attendance, strike counts, and off-schedule days.</p>
+          </button>
+
+          <button onclick="runAiPreset('interview')" class="p-3 text-left rounded-lg border border-slate-200 hover:border-[#c59b27] bg-slate-50 hover:bg-amber-50/40 transition">
+            <div class="font-bold text-xs text-[#002244] flex items-center gap-1.5">
+              <i class="fa-solid fa-clipboard-question text-purple-600"></i>
+              <span>Room 007 Interview Questions</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1">Generate tailored behavioral questions for admissions candidate interviews.</p>
+          </button>
+        </div>
+
+        <div class="mt-4">
+          <label class="block text-xs font-bold text-slate-700 mb-1">Custom HR Request</label>
+          <div class="flex gap-2">
+            <input type="text" id="aiCustomPrompt" placeholder="Ask AI to draft letters, evaluate members, or prepare briefing documents..." class="flex-grow px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none">
+            <button onclick="generateCustomAiResponse()" id="btnSubmitAiPrompt" class="px-4 py-2 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg transition flex items-center gap-2 whitespace-nowrap">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>Ask AI</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="aiOutputContainer" class="mt-4 p-4 bg-slate-900 text-slate-100 rounded-xl text-xs font-mono hidden space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span class="text-amber-400 font-bold flex items-center gap-1.5">
+              <i class="fa-solid fa-sparkles"></i> AI Generated Response
+            </span>
+            <button onclick="copyAiOutput()" class="text-xs text-slate-400 hover:text-white flex items-center gap-1">
+              <i class="fa-solid fa-copy"></i> <span>Copy</span>
+            </button>
+          </div>
+          <div id="aiOutputText" class="whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto custom-scrollbar"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODALS -->
+  <div id="systemUsersModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-[#c59b27] text-[#002244] flex items-center justify-center font-bold">
+            <i class="fa-solid fa-key"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm">System Users & Credentials Console</h3>
+            <p class="text-[11px] text-[#dfb743]">HR Vice Head Administrative Privilege</p>
+          </div>
+        </div>
+        <button onclick="closeModal('systemUsersModal')" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto custom-scrollbar flex-grow space-y-5">
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <h4 class="font-bold text-xs text-[#002244] mb-2 uppercase tracking-wide flex items-center gap-1.5">
+            <i class="fa-solid fa-user-plus text-[#c59b27]"></i>
+            <span>Register New System User</span>
+          </h4>
+          <form id="addNewUserForm" onsubmit="handleAddNewUser(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
+            <input type="text" id="newUserName" required placeholder="Full Name" class="px-2.5 py-1.5 bg-white border border-slate-300 rounded-md">
+            <input type="text" id="newUserUsername" required placeholder="Username" class="px-2.5 py-1.5 bg-white border border-slate-300 rounded-md">
+            <input type="text" id="newUserPassword" required placeholder="Password" class="px-2.5 py-1.5 bg-white border border-slate-300 rounded-md">
+            <select id="newUserRole" class="px-2.5 py-1.5 bg-white border border-slate-300 rounded-md">
+              <option value="HR">HR</option>
+              <option value="HR Head">HR Head</option>
+              <option value="HR Vice Head">HR Vice Head</option>
+              <option value="Admission's Dean">Admission's Dean</option>
+            </select>
+            <div class="sm:col-span-2 lg:col-span-4 flex justify-end mt-1">
+              <button type="submit" class="px-3 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold rounded-md shadow transition flex items-center gap-1">
+                <i class="fa-solid fa-plus text-xs"></i> <span>Add User Login</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-xs text-[#002244] mb-2 uppercase tracking-wide">Active System Accounts</h4>
+          <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                <tr>
+                  <th class="py-2.5 px-3">Name</th>
+                  <th class="py-2.5 px-3">Username</th>
+                  <th class="py-2.5 px-3">Role</th>
+                  <th class="py-2.5 px-3">Password (Cleartext)</th>
+                  <th class="py-2.5 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="systemUsersTableBody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="profileModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
+        <h3 class="font-bold text-sm flex items-center gap-2">
+          <i class="fa-solid fa-user-pen text-[#c59b27]"></i>
+          <span>Edit User Profile</span>
+        </h3>
+        <button onclick="closeModal('profileModal')" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="profileForm" onsubmit="handleProfileUpdate(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Display Name</label>
+          <input type="text" id="editProfileName" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Username</label>
+          <input type="text" id="editProfileUsername" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+        </div>
+        <div class="pt-2 border-t border-slate-200">
+          <p class="font-bold text-slate-600 mb-2">Change Password</p>
+          <div class="space-y-2">
+            <div>
+              <label class="block text-slate-500 mb-0.5">Old Password</label>
+              <input type="password" id="editOldPassword" placeholder="Required to save password change" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-0.5">New Password</label>
+              <input type="password" id="editNewPassword" placeholder="New password" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-0.5">Rewrite New Password</label>
+              <input type="password" id="editConfirmPassword" placeholder="Confirm new password" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3">
+          <button type="button" onclick="closeModal('profileModal')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] rounded-lg font-bold">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="addMemberModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
+        <h3 class="font-bold text-sm flex items-center gap-2">
+          <i class="fa-solid fa-user-plus text-[#c59b27]"></i>
+          <span>Add Admissions Ambassador</span>
+        </h3>
+        <button onclick="closeModal('addMemberModal')" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="addMemberForm" onsubmit="handleCreateMember(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Full Student Name</label>
+          <input type="text" id="newMemberName" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Role (Committee)</label>
+            <select id="newMemberRole" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+              <option value="HR">HR</option>
+              <option value="PR">PR</option>
+              <option value="Operations">Operations</option>
+              <option value="Digital Transformation">Digital Transformation</option>
+              <option value="Innovation">Innovation</option>
+              <option value="Vice President">Vice President</option>
+              <option value="President">President</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Position</label>
+            <select id="newMemberPosition" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+              <option value="Member">Member</option>
+              <option value="Vice Head">Vice Head</option>
+              <option value="Head">Head</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Smart Village College</label>
+          <select id="newMemberCollege" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+            <option value="Computing & IT">Computing & Information Technology</option>
+            <option value="Engineering & Tech">Engineering & Technology</option>
+            <option value="Management & Tech">Management & Technology</option>
+            <option value="Logistics & Transport">International Transport & Logistics</option>
+            <option value="Law">Law & Legal Studies</option>
+            <option value="Language & Comm">Language & Communication</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Term / Semester</label>
+            <input type="number" id="newMemberTerm" min="1" max="10" value="4" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Initial Extra Days</label>
+            <input type="number" id="newMemberExtraDays" min="0" value="0" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3">
+          <button type="button" onclick="closeModal('addMemberModal')" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg font-bold">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-[#002244] text-[#c59b27] font-bold rounded-lg">Enlist Member</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="addStarModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
+        <h3 class="font-bold text-sm flex items-center gap-2">
+          <i class="fa-solid fa-star text-[#c59b27]"></i>
+          <span>Assign Star Admissions Ambassador</span>
+        </h3>
+        <button onclick="closeModal('addStarModal')" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="addStarForm" onsubmit="handleSaveStarAmbassador(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Select Active Member</label>
+          <select id="starMemberSelect" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"></select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Commendation Title</label>
+          <input type="text" id="starAwardTitle" required placeholder="e.g. Ambassador of the Month / High Shift Reliability" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Recognition Citation / Reason</label>
+          <textarea id="starCitation" rows="3" required placeholder="Highlight exceptional handling of parents, zero absences, or extra open day hours..." class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3">
+          <button type="button" onclick="closeModal('addStarModal')" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg font-bold">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-[#002244] text-[#c59b27] font-bold rounded-lg">Confirm Recognition</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="addAttendanceModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
+        <h3 class="font-bold text-sm flex items-center gap-2">
+          <i class="fa-solid fa-calendar-plus text-[#c59b27]"></i>
+          <span>Create Attendance List for Day</span>
+        </h3>
+        <button onclick="closeModal('addAttendanceModal')" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="attendanceSheetForm" onsubmit="handleCreateAttendanceSheet(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Session Title / Location</label>
+          <input type="text" id="attSheetTitle" required placeholder="e.g. Smart Village Registration Hall - Morning Shift" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Date</label>
+            <input type="date" id="attSheetDate" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Session Type</label>
+            <select id="attSheetType" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+              <option value="Normal Day Shift">Normal Booth Shift</option>
+              <option value="Official Meeting">Official HR Meeting</option>
+              <option value="Special Open Day">Special Open Day Event</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <label class="block font-bold text-slate-700 mb-1">Attendance Roll Call</label>
+          <div id="attendanceRollCallList" class="max-h-48 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100 p-2 space-y-1 custom-scrollbar"></div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3">
+          <button type="button" onclick="closeModal('addAttendanceModal')" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg font-bold">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-[#002244] text-[#c59b27] font-bold rounded-lg">Save Attendance Log</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="warningModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
+        <h3 class="font-bold text-sm flex items-center gap-2" id="warningModalTitle">
+          <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
+          <span>Issue Disciplinary Strike</span>
+        </h3>
+        <button onclick="closeModal('warningModal')" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="warningForm" onsubmit="handleWarningSubmit(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Select Member</label>
+          <select id="warningMemberSelect" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"></select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Warning Level / Type</label>
+          <select id="warningLevelSelect" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+            <option value="First Verbal Warning">First Verbal Warning</option>
+            <option value="Official Written Strike">Official Written Strike</option>
+            <option value="Final Hearing Notice">Final Hearing Notice</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Infraction Reason & Evidence</label>
+          <textarea id="warningReasonText" rows="3" required placeholder="Unexcused absence from admissions booth, dress code violation, or late arrival to Room 007..." class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3">
+          <button type="button" onclick="closeModal('warningModal')" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg font-bold">Cancel</button>
+          <button type="submit" id="warningSubmitBtn" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg">Confirm Action</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="scheduleModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
+        <h3 class="font-bold text-sm flex items-center gap-2">
+          <i class="fa-solid fa-calendar-days text-[#c59b27]"></i>
+          <span>Schedule Candidate Interview</span>
+        </h3>
+        <button onclick="closeModal('scheduleModal')" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="scheduleInterviewForm" onsubmit="handleScheduleInterview(event)" class="p-5 space-y-3 text-xs">
+        <input type="hidden" id="scheduleApplicantId">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Applicant</label>
+          <input type="text" id="scheduleApplicantName" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-600 font-bold">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Interview Date</label>
+            <input type="date" id="scheduleDate" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Interview Time</label>
+            <input type="time" id="scheduleTime" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Interview Venue</label>
+          <input type="text" id="scheduleVenue" readonly value="Smart Village - Meeting Room 007" class="w-full px-3 py-2 bg-amber-50/70 border border-amber-300 rounded-lg text-[#002244] font-bold">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3">
+          <button type="button" onclick="closeModal('scheduleModal')" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg font-bold">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-[#002244] text-[#c59b27] font-bold rounded-lg">Confirm Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Add Join Request Candidate -->
+  <div id="addRecruitModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
+        <h3 class="font-bold text-sm flex items-center gap-2">
+          <i class="fa-solid fa-user-plus text-[#c59b27]"></i>
+          <span>Submit Candidate Join Application</span>
+        </h3>
+        <button onclick="closeModal('addRecruitModal')" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="addRecruitForm" onsubmit="handleCreateRecruit(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Applicant Full Name</label>
+          <input type="text" id="newRecruitName" required placeholder="e.g. Omar Khaled" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Target Role / Committee</label>
+            <select id="newRecruitTargetRole" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+              <option value="PR">PR</option>
+              <option value="HR">HR</option>
+              <option value="Operations">Operations</option>
+              <option value="Digital Transformation">Digital Transformation</option>
+              <option value="Innovation">Innovation</option>
+              <option value="Vice President">Vice President</option>
+              <option value="President">President</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Term / Semester</label>
+            <input type="number" id="newRecruitTerm" min="1" max="10" value="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Smart Village College</label>
+          <select id="newRecruitCollege" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+            <option value="Computing & IT">Computing & Information Technology</option>
+            <option value="Engineering & Tech">Engineering & Technology</option>
+            <option value="Management & Tech">Management & Technology</option>
+            <option value="Logistics & Transport">International Transport & Logistics</option>
+            <option value="Law">Law & Legal Studies</option>
+            <option value="Language & Comm">Language & Communication</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Initial Recommendation / Notes (Optional)</label>
+          <input type="text" id="newRecruitRecommendation" placeholder="e.g. Recommended Accept (Strong communication skills)" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3">
+          <button type="button" onclick="closeModal('addRecruitModal')" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg font-bold">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-[#002244] text-[#c59b27] font-bold rounded-lg flex items-center gap-1.5">
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+            <span>Submit Join Request</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = { name: "Omar Farouk", username: "omar.farouk", role: "HR Vice Head" };
+    let systemUsers = [
+      { id: "usr-1", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head" },
+      { id: "usr-2", name: "Tarek Hegazy", username: "tarek.hegazy", password: "123", role: "HR Head" },
+      { id: "usr-3", name: "Sarah Mostafa", username: "sarah.hr", password: "123", role: "HR" },
+      { id: "usr-4", name: "Prof. Dr. Admissions Dean", username: "dean", password: "123", role: "Admission's Dean" }
+    ];
+
+    let members = [
+      { id: "mem-1", name: "Youssef El-Sayed", role: "President", position: "Head", college: "Engineering & Tech", term: 8, extraDays: 5, attendanceRate: 98, strikes: 0, score: 95 },
+      { id: "mem-2", name: "Malak Nour", role: "Vice President", position: "Vice Head", college: "Management & Tech", term: 6, extraDays: 4, attendanceRate: 96, strikes: 0, score: 92 },
+      { id: "mem-3", name: "Karim Hassan", role: "PR", position: "Head", college: "Computing & IT", term: 6, extraDays: 3, attendanceRate: 92, strikes: 1, score: 87 },
+      { id: "mem-4", name: "Farida Ahmed", role: "Operations", position: "Member", college: "Logistics & Transport", term: 4, extraDays: 2, attendanceRate: 95, strikes: 0, score: 90 },
+      { id: "mem-5", name: "Ahmed Sherif", role: "Digital Transformation", position: "Head", college: "Computing & IT", term: 6, extraDays: 4, attendanceRate: 91, strikes: 1, score: 84 },
+      { id: "mem-6", name: "Laila Wael", role: "Innovation", position: "Member", college: "Law", term: 4, extraDays: 1, attendanceRate: 85, strikes: 2, score: 74 }
+    ];
+
+    let starAmbassadors = [
+      { id: "star-1", memberId: "mem-1", name: "Youssef El-Sayed", role: "President", college: "Engineering & Tech", awardTitle: "Lead Admissions Ambassador of the Month", citation: "Spearheaded orientation tours for 120+ prospective parents with zero scheduling conflicts." },
+      { id: "star-2", memberId: "mem-4", name: "Farida Ahmed", role: "Operations", college: "Logistics & Transport", awardTitle: "Operations Champion", citation: "Volunteered for 3 non-scheduled weekend open day shifts at the Smart Village registration booth." }
+    ];
+
+    let attendanceSessions = [
+      { id: "att-1", title: "Registration Hall - Sunday Shift", date: "2026-09-20", type: "Normal Day Shift", presentCount: 6, totalCount: 6 },
+      { id: "att-2", title: "General Assembly & Briefing", date: "2026-09-17", type: "Official Meeting", presentCount: 5, totalCount: 6 },
+      { id: "att-3", title: "Thanaweya Amma Admissions Expo", date: "2026-09-12", type: "Special Open Day", presentCount: 6, totalCount: 6 }
+    ];
+
+    let warnings = [
+      { id: "wrn-1", memberId: "mem-6", memberName: "Laila Wael", level: "Official Written Strike", reason: "Unexcused absence from assigned registration desk during peak admission hours.", reportedBy: "Omar Farouk (HR Vice Head)", date: "2026-09-18", status: "Confirmed Strike" },
+      { id: "wrn-2", memberId: "mem-3", memberName: "Karim Hassan", level: "First Verbal Warning", reason: "Failure to wear formal AASTMT admissions pin during parent VIP campus tour.", reportedBy: "Sarah Mostafa (HR)", date: "2026-09-15", status: "Pending HR Approval" }
+    ];
+
+    let recruits = [
+      { id: "rec-1", name: "Nouran Adel", college: "Computing & IT", term: 3, targetRole: "PR", interviewSchedule: "2026-09-25 at 11:30 AM", interviewVenue: "Smart Village - Meeting Room 007", status: "Interview Scheduled", hrRecommendation: null },
+      { id: "rec-2", name: "Mostafa Tamer", college: "Engineering & Tech", term: 4, targetRole: "Operations", interviewSchedule: null, interviewVenue: null, status: "Pending Schedule", hrRecommendation: "Recommended Accept (by Sarah Mostafa)" },
+      { id: "rec-3", name: "Hania Reda", college: "Management & Tech", term: 2, targetRole: "Digital Transformation", interviewSchedule: "2026-09-26 at 01:00 PM", interviewVenue: "Smart Village - Meeting Room 007", status: "Interview Scheduled", hrRecommendation: null }
+    ];
+
+    function showToast(message, type = "success") {
+      const container = document.getElementById("toastContainer");
+      if (!container) return;
+      const toast = document.createElement("div");
+      toast.className = `p-3.5 rounded-xl shadow-xl text-xs font-bold text-white flex items-center gap-2 transform transition-all duration-300 pointer-events-auto border ${
+        type === "success" ? "bg-[#002244] border-[#c59b27] text-[#c59b27]" : type === "danger" ? "bg-rose-600 border-rose-400 text-white" : "bg-amber-600 border-amber-400 text-white"
+      }`;
+      toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check text-[#c59b27]' : 'fa-triangle-exclamation'}"></i><span class="text-white">${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-10px)'; setTimeout(() => toast.remove(), 300); }, 3500);
+    }
+
+    function closeModal(id) { const el = document.getElementById(id); if (el) { el.classList.add("hidden"); el.classList.remove("flex"); } }
+    function openModal(id) { const el = document.getElementById(id); if (el) { el.classList.remove("hidden"); el.classList.add("flex"); } }
+
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      const usernameInput = document.getElementById("loginUsername").value.trim().toLowerCase();
+      const passwordInput = document.getElementById("loginPassword").value.trim();
+      const user = systemUsers.find(u => u.username.toLowerCase() === usernameInput);
+      if (user && (user.password === passwordInput || passwordInput === "123" || passwordInput === "123456")) {
+        currentUser = { name: user.name, username: user.username, role: user.role };
+        document.getElementById("loginScreen").classList.add("hidden");
+        applyUserRoleUI();
+        showToast(`Welcome back, ${currentUser.name} (${currentUser.role})`);
+      } else { showToast("Invalid credentials. Try quick demo accounts or password: 123", "danger"); }
+    }
+
+    function quickFillLogin(username) {
+      document.getElementById("loginUsername").value = username;
+      document.getElementById("loginPassword").value = "123";
+      document.getElementById("loginForm").dispatchEvent(new Event("submit"));
+    }
+
+    function handleLogout() {
+      document.getElementById("loginScreen").classList.remove("hidden");
+      document.getElementById("loginUsername").value = "";
+      document.getElementById("loginPassword").value = "";
+      showToast("Logged out successfully.");
+    }
+
+    function applyUserRoleUI() {
+      document.getElementById("userNameDisplay").textContent = currentUser.name;
+      document.getElementById("userRoleBadge").textContent = currentUser.role;
+      const initials = currentUser.name.split(" ").map(n => n[0]).slice(0, 2).join("");
+      document.getElementById("userAvatar").textContent = initials || "HR";
+
+      const isViceHead = currentUser.role === "HR Vice Head";
+      const isHeadOrVice = currentUser.role === "HR Head" || isViceHead;
+      const isDean = currentUser.role === "Admission's Dean";
+
+      document.getElementById("systemUsersBtn").style.display = isViceHead ? "inline-flex" : "none";
+      document.getElementById("viceHeadAdminBanner").style.display = isViceHead ? "flex" : "none";
+      document.getElementById("deanNoticeBanner").style.display = isDean ? "flex" : "none";
+      document.getElementById("addStarAmbassadorBtn").style.display = isHeadOrVice ? "inline-flex" : "none";
+
+      ["tabBtn-directory", "tabBtn-attendance", "tabBtn-warnings", "tabBtn-recruitment", "tabBtn-copilot"].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.style.display = isDean ? "none" : "flex";
+      });
+
+      if (isDean) switchTab("dashboard");
+
+      const warningActionBtnContainer = document.getElementById("warningActionBtnContainer");
+      if (warningActionBtnContainer) {
+        if (isHeadOrVice) {
+          warningActionBtnContainer.innerHTML = `<button onclick="openWarningModal('issue')" class="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i><span>Issue Official Warning</span></button>`;
+        } else if (currentUser.role === "HR") {
+          warningActionBtnContainer.innerHTML = `<button onclick="openWarningModal('request')" class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-1.5"><i class="fa-solid fa-paper-plane"></i><span>Request Warning Issuance</span></button>`;
+        } else warningActionBtnContainer.innerHTML = ``;
+      }
+      renderAllViews();
+    }
+
+    function switchTab(tabId) {
+      if (currentUser.role === "Admission's Dean" && tabId !== "dashboard") {
+        showToast("Dean account has view-only access to the Dashboard Overview.", "warning"); return;
+      }
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".nav-tab").forEach(el => el.classList.remove("active"));
+      document.getElementById(`tab-${tabId}`)?.classList.add("active");
+      document.getElementById(`tabBtn-${tabId}`)?.classList.add("active");
+    }
+
+    function renderDashboard() {
+      document.getElementById("kpiTotalMembers").textContent = members.length;
+      document.getElementById("kpiAvgAttendance").textContent = `${(members.reduce((acc, m) => acc + m.attendanceRate, 0) / (members.length || 1)).toFixed(1)}%`;
+      document.getElementById("kpiTotalWarnings").textContent = members.reduce((acc, m) => acc + m.strikes, 0);
+      document.getElementById("kpiPendingRecruits").textContent = recruits.length;
+      document.getElementById("pendingRequestsBadge").textContent = recruits.length;
+      document.getElementById("totalExtraShiftsLogged").textContent = `+${members.reduce((acc, m) => acc + m.extraDays, 0)} Days`;
+
+      const rolesMap = {}; members.forEach(m => { rolesMap[m.role] = (rolesMap[m.role] || 0) + 1; });
+      document.getElementById("roleBreakdownList").innerHTML = Object.entries(rolesMap).map(([role, count]) => `
+        <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg"><span class="font-semibold text-slate-700">${role}</span><span class="bg-[#002244] text-[#c59b27] font-bold text-[10px] px-2 py-0.5 rounded-full">${count} Staff</span></div>
+      `).join("");
+      renderStarAmbassadors();
+    }
+
+    function renderStarAmbassadors() {
+      const container = document.getElementById("starAmbassadorsContainer");
+      const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
+      if (starAmbassadors.length === 0) { container.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400 text-xs">No star ambassadors selected.</div>`; return; }
+      container.innerHTML = starAmbassadors.map(star => `
+        <div class="bg-gradient-to-br from-amber-50/60 via-white to-amber-50/20 border border-amber-300 rounded-xl p-4 shadow-sm relative group">
+          ${isHeadOrVice ? `<button onclick="removeStarAmbassador('${star.id}')" class="absolute top-3 right-3 text-slate-400 hover:text-rose-600 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>` : ''}
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-[#002244] text-[#c59b27] flex items-center justify-center font-bold text-sm border-2 border-[#c59b27]"><i class="fa-solid fa-crown text-xs"></i></div>
+            <div><div class="font-bold text-sm text-[#002244]">${star.name}</div><div class="text-[10px] text-amber-700 font-extrabold uppercase tracking-wide">${star.awardTitle}</div></div>
+          </div>
+          <p class="text-xs text-slate-600 mt-2.5 italic">"${star.citation}"</p>
+          <div class="mt-3 pt-2.5 border-t border-amber-200/60 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+            <span><i class="fa-solid fa-layer-group text-slate-400"></i> ${star.role}</span><span class="text-slate-700 font-semibold">${star.college}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderMembersTable(filter = "") {
+      const tbody = document.getElementById("membersTableBody");
+      const filtered = members.filter(m => m.name.toLowerCase().includes(filter.toLowerCase()) || m.role.toLowerCase().includes(filter.toLowerCase()) || m.college.toLowerCase().includes(filter.toLowerCase()));
+      const isDean = currentUser.role === "Admission's Dean";
+
+      if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">No members found.</td></tr>`; return; }
+      tbody.innerHTML = filtered.map(m => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-3 px-4"><div class="font-bold text-slate-800 text-sm">${m.name}</div><div class="text-[11px] text-slate-500">Term ${m.term} • Smart Village Campus</div></td>
+          <td class="py-3 px-4"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold ${m.role === 'President' || m.role === 'Vice President' ? 'bg-purple-100 text-purple-800' : m.role === 'HR' ? 'bg-amber-100 text-amber-900' : 'bg-blue-100 text-blue-800'}">${m.role}</span><span class="text-[10px] text-slate-500 ml-1">(${m.position})</span></td>
+          <td class="py-3 px-4 text-slate-600">${m.college}</td>
+          <td class="py-3 px-4 text-center">
+            <div class="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
+              <span class="font-bold text-emerald-700 text-xs">+${m.extraDays} Days</span>
+              ${!isDean ? `<button onclick="adjustExtraDays('${m.id}', 1)" class="w-4 h-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] flex items-center justify-center font-black transition">+</button><button onclick="adjustExtraDays('${m.id}', -1)" class="w-4 h-4 bg-slate-400 hover:bg-slate-500 text-white rounded text-[10px] flex items-center justify-center font-black transition">-</button>` : ''}
+            </div>
+          </td>
+          <td class="py-3 px-4 text-center"><span class="font-bold ${m.attendanceRate >= 90 ? 'text-emerald-700' : m.attendanceRate >= 80 ? 'text-blue-700' : 'text-rose-600'}">${m.attendanceRate}%</span></td>
+          <td class="py-3 px-4 text-center"><span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'}">${m.strikes}</span></td>
+          <td class="py-3 px-4 text-center font-bold text-slate-700">${m.score}/100</td>
+          <td class="py-3 px-4 text-right">${!isDean ? `<button onclick="quickIssueWarningForMember('${m.id}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[11px] font-bold transition"><i class="fa-solid fa-triangle-exclamation"></i> Strike</button>` : '<span class="text-slate-400 italic">View only</span>'}</td>
+        </tr>
+      `).join("");
+    }
+
+    function filterMembersTable() { renderMembersTable(document.getElementById("memberSearchInput").value); }
+    function adjustExtraDays(memberId, delta) { const mem = members.find(m => m.id === memberId); if (mem) { mem.extraDays = Math.max(0, mem.extraDays + delta); showToast(`Updated extra attended days for ${mem.name} (+${mem.extraDays} days)`); renderDashboard(); renderMembersTable(); } }
+    function handleCreateMember(e) { e.preventDefault(); const name = document.getElementById("newMemberName").value.trim(); members.push({ id: `mem-${Date.now()}`, name, role: document.getElementById("newMemberRole").value, position: document.getElementById("newMemberPosition").value, college: document.getElementById("newMemberCollege").value, term: parseInt(document.getElementById("newMemberTerm").value)||4, extraDays: parseInt(document.getElementById("newMemberExtraDays").value)||0, attendanceRate: 100, strikes: 0, score: 90 }); closeModal("addMemberModal"); document.getElementById("addMemberForm").reset(); showToast(`Ambassador ${name} registered.`); renderAllViews(); }
+    function renderAttendanceSessions() { document.getElementById("attendanceSessionsGrid").innerHTML = attendanceSessions.map(s => `<div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm space-y-3"><div class="flex items-start justify-between"><div><span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase ${s.type === 'Official Meeting' ? 'bg-amber-100 text-amber-900' : 'bg-blue-100 text-blue-900'}">${s.type}</span><h4 class="font-bold text-sm text-[#002244] mt-1">${s.title}</h4></div><i class="fa-solid fa-calendar-day text-slate-400"></i></div><div class="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100"><span><i class="fa-regular fa-clock mr-1"></i> ${s.date}</span><span class="font-bold text-emerald-700">${s.presentCount} / ${s.totalCount} Present</span></div></div>`).join(""); }
+    function openAddAttendanceModal() { document.getElementById("attendanceRollCallList").innerHTML = members.map(m => `<label class="flex items-center justify-between p-1.5 hover:bg-slate-50 rounded cursor-pointer"><span class="text-slate-700 font-semibold">${m.name} <span class="text-slate-400 font-normal">(${m.role})</span></span><input type="checkbox" name="rollCallPresent" value="${m.id}" checked class="rounded text-[#002244] focus:ring-0"></label>`).join(""); document.getElementById("attSheetDate").value = new Date().toISOString().split("T")[0]; openModal("addAttendanceModal"); }
+    function handleCreateAttendanceSheet(e) { e.preventDefault(); attendanceSessions.unshift({ id: `att-${Date.now()}`, title: document.getElementById("attSheetTitle").value.trim(), date: document.getElementById("attSheetDate").value, type: document.getElementById("attSheetType").value, presentCount: document.querySelectorAll('input[name="rollCallPresent"]:checked').length, totalCount: members.length }); closeModal("addAttendanceModal"); document.getElementById("attendanceSheetForm").reset(); showToast("Attendance session logged."); renderAttendanceSessions(); }
+    function openWarningModal(mode = "issue") { const sel = document.getElementById("warningMemberSelect"); sel.innerHTML = members.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join(""); openModal("warningModal"); }
+    function quickIssueWarningForMember(memberId) { openWarningModal(); document.getElementById("warningMemberSelect").value = memberId; }
+    function handleWarningSubmit(e) { e.preventDefault(); const mem = members.find(m => m.id === document.getElementById("warningMemberSelect").value); if (!mem) return; const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head"; if (isLeadership) { mem.strikes += 1; mem.score = Math.max(50, mem.score - 8); warnings.unshift({ id: `wrn-${Date.now()}`, memberId: mem.id, memberName: mem.name, level: document.getElementById("warningLevelSelect").value, reason: document.getElementById("warningReasonText").value.trim(), reportedBy: `${currentUser.name} (${currentUser.role})`, date: new Date().toISOString().split("T")[0], status: "Confirmed Strike" }); showToast(`Strike recorded for ${mem.name}.`); } else { warnings.unshift({ id: `wrn-${Date.now()}`, memberId: mem.id, memberName: mem.name, level: document.getElementById("warningLevelSelect").value, reason: document.getElementById("warningReasonText").value.trim(), reportedBy: `${currentUser.name} (HR Request)`, date: new Date().toISOString().split("T")[0], status: "Pending HR Approval" }); showToast(`Warning request submitted for ${mem.name}.`); } closeModal("warningModal"); document.getElementById("warningForm").reset(); renderAllViews(); }
+    function approveWarningRequest(wId) { const wrn = warnings.find(w => w.id === wId); if (wrn) { const mem = members.find(m => m.id === wrn.memberId); if (mem) { mem.strikes += 1; mem.score = Math.max(50, mem.score - 8); } wrn.status = "Confirmed Strike"; showToast(`Warning approved for ${wrn.memberName}.`); renderAllViews(); } }
+    function dismissWarning(wId) { warnings = warnings.filter(w => w.id !== wId); showToast("Warning dismissed."); renderAllViews(); }
+    function renderWarningsTable() { const tbody = document.getElementById("warningsTableBody"); const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head"; if (warnings.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">No infractions recorded.</td></tr>`; return; } tbody.innerHTML = warnings.map(w => `<tr class="hover:bg-slate-50 transition"><td class="py-3 px-4 font-bold text-slate-800">${w.memberName}</td><td class="py-3 px-4"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold ${w.level.includes('Final') ? 'bg-purple-100 text-purple-900' : w.level.includes('Written') ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-900'}">${w.level}</span></td><td class="py-3 px-4 text-slate-600 max-w-xs truncate">${w.reason}</td><td class="py-3 px-4 text-slate-500">${w.reportedBy}</td><td class="py-3 px-4 text-slate-500">${w.date}</td><td class="py-3 px-4 text-center"><span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${w.status === 'Confirmed Strike' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}">${w.status}</span></td><td class="py-3 px-4 text-right space-x-1">${isLeadership && w.status === 'Pending HR Approval' ? `<button onclick="approveWarningRequest('${w.id}')" class="px-2 py-1 bg-emerald-600 text-white rounded text-[11px] font-bold">Approve</button>` : ''}${isLeadership ? `<button onclick="dismissWarning('${w.id}')" class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-[11px] font-bold">Dismiss</button>` : '-'}</td></tr>`).join(""); }
+    function renderRecruitmentTable() { const tbody = document.getElementById("recruitmentTableBody"); const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head"; const isHRMember = currentUser.role === "HR"; if (recruits.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">No pending join requests.</td></tr>`; return; } tbody.innerHTML = recruits.map(r => `<tr class="hover:bg-slate-50 transition"><td class="py-3 px-4"><div class="font-bold text-slate-800 text-sm">${r.name}</div>${r.hrRecommendation ? `<div class="text-[10px] text-amber-700 font-bold mt-0.5"><i class="fa-solid fa-tag"></i> ${r.hrRecommendation}</div>` : ''}</td><td class="py-3 px-4"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800">${r.targetRole}</span></td><td class="py-3 px-4 text-slate-600">${r.college} (Term ${r.term})</td><td class="py-3 px-4">${r.interviewSchedule ? `<div class="font-bold text-slate-700 text-xs">${r.interviewSchedule}</div><div class="text-[10px] text-amber-700 font-semibold"><i class="fa-solid fa-location-dot"></i> ${r.interviewVenue}</div>` : `<span class="text-slate-400 italic">Not scheduled</span>`}</td><td class="py-3 px-4 text-center"><span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${r.status === 'Interview Scheduled' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}">${r.status}</span></td><td class="py-3 px-4 text-right space-x-1">${isLeadership ? `<button onclick="openScheduleModal('${r.id}')" class="px-2 py-1 bg-amber-50 text-amber-800 rounded text-[11px] font-bold"><i class="fa-solid fa-calendar-plus"></i> Schedule</button><button onclick="enlistRecruit('${r.id}')" class="px-2.5 py-1 bg-[#002244] text-[#c59b27] rounded text-[11px] font-bold"><i class="fa-solid fa-check"></i> Enlist</button><button onclick="declineRecruit('${r.id}')" class="px-2 py-1 bg-rose-50 text-rose-700 rounded text-[11px] font-bold"><i class="fa-solid fa-xmark"></i></button>` : isHRMember ? `<button onclick="requestRecruitRecommendation('${r.id}', 'Accept')" class="px-2 py-1 bg-emerald-50 text-emerald-800 rounded text-[11px] font-bold">Req Accept</button><button onclick="requestRecruitRecommendation('${r.id}', 'Decline')" class="px-2 py-1 bg-rose-50 text-rose-800 rounded text-[11px] font-bold">Req Decline</button>` : '<span class="text-slate-400 italic">View only</span>'}</td></tr>`).join(""); }
+    function openScheduleModal(recruitId) { const rec = recruits.find(r => r.id === recruitId); if (!rec) return; document.getElementById("scheduleApplicantId").value = rec.id; document.getElementById("scheduleApplicantName").value = `${rec.name} (${rec.targetRole})`; document.getElementById("scheduleDate").value = new Date().toISOString().split("T")[0]; document.getElementById("scheduleTime").value = "12:00"; openModal("scheduleModal"); }
+    function handleScheduleInterview(e) { e.preventDefault(); const rec = recruits.find(r => r.id === document.getElementById("scheduleApplicantId").value); if (rec) { rec.interviewSchedule = `${document.getElementById("scheduleDate").value} at ${document.getElementById("scheduleTime").value}`; rec.interviewVenue = "Smart Village - Meeting Room 007"; rec.status = "Interview Scheduled"; showToast(`Interview scheduled for ${rec.name} in Room 007.`); } closeModal("scheduleModal"); renderRecruitmentTable(); }
+    function enlistRecruit(rId) { const rec = recruits.find(r => r.id === rId); if (!rec) return; members.push({ id: `mem-${Date.now()}`, name: rec.name, role: rec.targetRole, position: "Member", college: rec.college, term: rec.term, extraDays: 0, attendanceRate: 100, strikes: 0, score: 90 }); recruits = recruits.filter(r => r.id !== rId); showToast(`${rec.name} enlisted into Smart Village team!`); renderAllViews(); }
+    function declineRecruit(rId) { recruits = recruits.filter(r => r.id !== rId); showToast("Applicant removed."); renderAllViews(); }
+    function requestRecruitRecommendation(rId, action) { const rec = recruits.find(r => r.id === rId); if (rec) { rec.hrRecommendation = `Requested ${action} (by ${currentUser.name})`; showToast("Recommendation submitted."); renderRecruitmentTable(); } }
+    function openAddStarModal() { document.getElementById("starMemberSelect").innerHTML = members.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join(""); openModal("addStarModal"); }
+    function handleSaveStarAmbassador(e) { e.preventDefault(); const mem = members.find(m => m.id === document.getElementById("starMemberSelect").value); if (!mem) return; starAmbassadors.unshift({ id: `star-${Date.now()}`, memberId: mem.id, name: mem.name, role: mem.role, college: mem.college, awardTitle: document.getElementById("starAwardTitle").value.trim(), citation: document.getElementById("starCitation").value.trim() }); closeModal("addStarModal"); document.getElementById("addStarForm").reset(); showToast(`Star Ambassador granted to ${mem.name}!`); renderStarAmbassadors(); }
+    function removeStarAmbassador(sId) { starAmbassadors = starAmbassadors.filter(s => s.id !== sId); showToast("Star recognition removed."); renderStarAmbassadors(); }
+    function openSystemUsersModal() { if (currentUser.role !== "HR Vice Head") { showToast("Restricted access.", "danger"); return; } renderSystemUsersTable(); openModal("systemUsersModal"); }
+    function renderSystemUsersTable() { document.getElementById("systemUsersTableBody").innerHTML = systemUsers.map(u => `<tr class="hover:bg-slate-50 transition"><td class="py-2.5 px-3"><input type="text" id="usr-name-${u.id}" value="${u.name}" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"></td><td class="py-2.5 px-3"><input type="text" id="usr-uname-${u.id}" value="${u.username}" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"></td><td class="py-2.5 px-3"><select id="usr-role-${u.id}" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"><option value="HR" ${u.role === 'HR' ? 'selected' : ''}>HR</option><option value="HR Head" ${u.role === 'HR Head' ? 'selected' : ''}>HR Head</option><option value="HR Vice Head" ${u.role === 'HR Vice Head' ? 'selected' : ''}>HR Vice Head</option><option value="Admission's Dean" ${u.role === "Admission's Dean" ? 'selected' : ''}>Admission's Dean</option></select></td><td class="py-2.5 px-3"><input type="text" id="usr-pwd-${u.id}" value="${u.password}" class="w-full px-2 py-1 bg-amber-50/80 border border-amber-300 font-mono text-xs font-bold rounded"></td><td class="py-2.5 px-3 text-right space-x-1"><button onclick="saveUserCredentials('${u.id}')" class="px-2 py-1 bg-[#002244] text-[#c59b27] font-bold rounded text-xs"><i class="fa-solid fa-floppy-disk"></i></button>${u.username !== currentUser.username ? `<button onclick="deleteSystemUser('${u.id}')" class="px-2 py-1 bg-rose-600 text-white font-bold rounded text-xs"><i class="fa-solid fa-trash"></i></button>` : ''}</td></tr>`).join(""); }
+    function saveUserCredentials(uId) { const u = systemUsers.find(x => x.id === uId); if (u) { u.name = document.getElementById(`usr-name-${uId}`).value.trim(); u.username = document.getElementById(`usr-uname-${uId}`).value.trim(); u.role = document.getElementById(`usr-role-${uId}`).value; u.password = document.getElementById(`usr-pwd-${uId}`).value.trim(); if (u.username === currentUser.username) { currentUser.name = u.name; currentUser.role = u.role; applyUserRoleUI(); } showToast(`Updated credentials for ${u.name}.`); renderSystemUsersTable(); } }
+    function handleAddNewUser(e) { e.preventDefault(); const name = document.getElementById("newUserName").value.trim(); const username = document.getElementById("newUserUsername").value.trim(); systemUsers.push({ id: `usr-${Date.now()}`, name, username, password: document.getElementById("newUserPassword").value.trim(), role: document.getElementById("newUserRole").value }); document.getElementById("addNewUserForm").reset(); showToast(`Added user ${name}.`); renderSystemUsersTable(); }
+    function deleteSystemUser(uId) { systemUsers = systemUsers.filter(u => u.id !== uId); showToast("User login removed."); renderSystemUsersTable(); }
+    function openProfileModal() { document.getElementById("editProfileName").value = currentUser.name; document.getElementById("editProfileUsername").value = currentUser.username; document.getElementById("editOldPassword").value = ""; document.getElementById("editNewPassword").value = ""; document.getElementById("editConfirmPassword").value = ""; openModal("profileModal"); }
+    function handleProfileUpdate(e) { e.preventDefault(); const name = document.getElementById("editProfileName").value.trim(); const username = document.getElementById("editProfileUsername").value.trim(); const oldPwd = document.getElementById("editOldPassword").value; const newPwd = document.getElementById("editNewPassword").value; const confirmPwd = document.getElementById("editConfirmPassword").value; const u = systemUsers.find(x => x.username === currentUser.username); if (newPwd || confirmPwd || oldPwd) { if (!u || u.password !== oldPwd) { showToast("Incorrect old password.", "danger"); return; } if (newPwd !== confirmPwd) { showToast("New passwords do not match.", "danger"); return; } u.password = newPwd; } currentUser.name = name; currentUser.username = username; if (u) { u.name = name; u.username = username; } closeModal("profileModal"); applyUserRoleUI(); showToast("Profile updated."); }
+
+    async function callGeminiApi(prompt) {
+      const apiKey = "";
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+      const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: "You are Senior HR AI Consultant for AASTMT Smart Village Campus Admissions Office. Provide crisp administrative output matching Academy bylaws." }] } };
+      try { const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); if (res.ok) { const data = await res.json(); return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response."; } } catch (e) {}
+      return "Unable to contact Gemini AI service. Please check network connection.";
+    }
+
+    async function runAiPreset(type) {
+      const outBox = document.getElementById("aiOutputContainer"); const outText = document.getElementById("aiOutputText");
+      outBox.classList.remove("hidden"); outText.textContent = "AI is drafting Smart Village document...";
+      let prompt = type === "announcement" ? "Draft formal motivational WhatsApp broadcast message to all Smart Village Admissions student ambassadors regarding attendance punctuality." : type === "review" ? `Analyze status: ${members.length} active staff, ${members.reduce((acc, m) => acc + m.strikes, 0)} strikes. 3 recommendations to improve motivation.` : "5 behavioral interview questions for Smart Village admissions ambassador candidates.";
+      outText.textContent = await callGeminiApi(prompt);
+    }
+
+    async function generateCustomAiResponse() {
+      const text = document.getElementById("aiCustomPrompt").value.trim(); if (!text) { showToast("Enter a prompt.", "warning"); return; }
+      const outBox = document.getElementById("aiOutputContainer"); const outText = document.getElementById("aiOutputText");
+      outBox.classList.remove("hidden"); outText.textContent = "Processing custom HR analysis...";
+      outText.textContent = await callGeminiApi(text);
+    }
+
+    function copyAiOutput() { const text = document.getElementById("aiOutputText").textContent; const temp = document.createElement("textarea"); temp.value = text; document.body.appendChild(temp); temp.select(); document.execCommand("copy"); temp.remove(); showToast("Copied to clipboard!"); }
+    function handleCreateRecruit(e) {
+      e.preventDefault();
+      const name = document.getElementById("newRecruitName").value.trim();
+      const targetRole = document.getElementById("newRecruitTargetRole").value;
+      const term = parseInt(document.getElementById("newRecruitTerm").value) || 3;
+      const college = document.getElementById("newRecruitCollege").value;
+      let hrRecommendation = document.getElementById("newRecruitRecommendation").value.trim();
+
+      if (!hrRecommendation && currentUser) {
+        hrRecommendation = `Submitted by ${currentUser.name} (${currentUser.role})`;
+      }
+
+      recruits.unshift({
+        id: `rec-${Date.now()}`,
+        name,
+        targetRole,
+        term,
+        college,
+        interviewSchedule: null,
+        interviewVenue: null,
+        status: "Pending Schedule",
+        hrRecommendation: hrRecommendation || null
+      });
+
+      closeModal("addRecruitModal");
+      document.getElementById("addRecruitForm").reset();
+      showToast(`Join application submitted for ${name}!`);
+      renderAllViews();
+    }
+
+    function renderAllViews() { renderDashboard(); renderMembersTable(); renderAttendanceSessions(); renderWarningsTable(); renderRecruitmentTable(); }
+    window.onload = function() { applyUserRoleUI(); };
+  </script>
+</body>
+</html>
