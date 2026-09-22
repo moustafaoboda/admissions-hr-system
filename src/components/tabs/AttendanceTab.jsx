@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function AttendanceTab() {
-  const { attendanceSessions, setActiveModal } = useAuth();
+  const { attendanceSessions, deleteAttendanceSession, setActiveModal } = useAuth();
   const [selectedSessionId, setSelectedSessionId] = useState(null);
 
   const activeSession = attendanceSessions.find(s => s.id === selectedSessionId);
@@ -29,7 +29,7 @@ export default function AttendanceTab() {
           <div
             key={session.id}
             onClick={() => setSelectedSessionId(selectedSessionId === session.id ? null : session.id)}
-            className={`bg-white rounded-xl p-4 border shadow-sm space-y-3 cursor-pointer transition ${
+            className={`bg-white rounded-xl p-4 border shadow-sm space-y-3 cursor-pointer transition relative group ${
               selectedSessionId === session.id ? 'border-[#002244] ring-2 ring-[#002244]/10 bg-amber-50/20' : 'border-slate-200 hover:border-slate-300'
             }`}
           >
@@ -46,7 +46,20 @@ export default function AttendanceTab() {
                 </span>
                 <h4 className="font-bold text-sm text-[#002244] mt-1.5">{session.title}</h4>
               </div>
-              <i className="fa-solid fa-calendar-day text-slate-400 text-base"></i>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteAttendanceSession(session.id);
+                  }}
+                  className="text-slate-300 hover:text-rose-600 transition p-1"
+                  title="Delete Attendance Session"
+                >
+                  <i className="fa-solid fa-trash-can text-xs"></i>
+                </button>
+                <i className="fa-solid fa-calendar-day text-slate-400 text-base"></i>
+              </div>
             </div>
 
             <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100 font-medium">

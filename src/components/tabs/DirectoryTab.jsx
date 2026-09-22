@@ -7,6 +7,7 @@ export default function DirectoryTab() {
     members,
     dischargedMembers,
     updateMemberPerformance,
+    deleteMember,
     setActiveModal,
     setModalExtraData
   } = useAuth();
@@ -30,6 +31,11 @@ export default function DirectoryTab() {
   const handleEditInfo = (memberId) => {
     setModalExtraData({ memberId });
     setActiveModal('editMember');
+  };
+
+  const handleExtraDays = (memberId) => {
+    setModalExtraData({ memberId });
+    setActiveModal('extraDays');
   };
 
   const handleIssueWarning = (memberId) => {
@@ -158,6 +164,13 @@ export default function DirectoryTab() {
                           ) : (
                             <span className="text-slate-400 text-[10px]">None set</span>
                           )}
+                          {m.extraDays && m.extraDays.length > 0 && (
+                            m.extraDays.map(day => (
+                              <span key={`extra-${day}`} className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded" title="Extra Assigned Day">
+                                +{day.substring(0, 3)}
+                              </span>
+                            ))
+                          )}
                         </div>
                       </td>
 
@@ -204,6 +217,13 @@ export default function DirectoryTab() {
                               <i className="fa-solid fa-pen"></i> Edit Info
                             </button>
                             <button
+                              onClick={() => handleExtraDays(m.id)}
+                              className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] rounded text-[11px] font-bold transition"
+                              title="Manage Extra Days"
+                            >
+                              <i className="fa-solid fa-calendar-plus text-[#c59b27]"></i> Extra Days
+                            </button>
+                            <button
                               onClick={() => handleIssueWarning(m.id)}
                               className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded text-[11px] font-bold transition"
                               title="Issue Warning"
@@ -216,6 +236,13 @@ export default function DirectoryTab() {
                               title="Discharge Member"
                             >
                               <i className="fa-solid fa-user-minus"></i> Discharge
+                            </button>
+                            <button
+                              onClick={() => deleteMember(m.id)}
+                              className="px-2 py-1 bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-slate-600 rounded text-[11px] font-bold transition"
+                              title="Delete Member"
+                            >
+                              <i className="fa-solid fa-trash-can"></i>
                             </button>
                           </>
                         ) : (

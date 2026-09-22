@@ -12,6 +12,8 @@ export default function AddAttendanceModal() {
 
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+  const [filterByDay, setFilterByDay] = useState(true);
+
   useEffect(() => {
     if (date) {
       const d = new Date(date);
@@ -21,7 +23,14 @@ export default function AddAttendanceModal() {
 
   useEffect(() => {
     if (members && members.length > 0) {
-      setRollCall(members.map(m => ({
+      let filtered = members;
+      if (filterByDay && dayName) {
+        filtered = members.filter(m => 
+          (m.officialDays || []).includes(dayName) || 
+          (m.extraDays || []).includes(dayName)
+        );
+      }
+      setRollCall(filtered.map(m => ({
         memberId: m.id,
         name: m.name,
         role: m.role,
@@ -30,7 +39,7 @@ export default function AddAttendanceModal() {
         excuseReason: ''
       })));
     }
-  }, [members, activeModal]);
+  }, [members, activeModal, dayName, filterByDay]);
 
   if (activeModal !== 'addAttendance') return null;
 
@@ -123,9 +132,19 @@ export default function AddAttendanceModal() {
           </div>
 
           <div className="flex-grow overflow-y-auto custom-scrollbar border border-slate-200 rounded-xl">
-            <div className="bg-slate-100 p-2.5 font-bold text-slate-700 border-b border-slate-200 flex items-center justify-between">
-              <span>Member Roll Call List ({rollCall.filter(r=>r.isPresent).length} / {rollCall.length} Present)</span>
-              <span className="text-[11px] text-amber-700 font-semibold">{dayName} Session</span>
+            <div className="bg-slate-100 p-2.5 font-bold text-slate-700 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+              <span>Member Roll Call List ({rollCall.filter(r=>r.isPresent).length} / {rollCall.length} Scheduled Present)</span>
+              <div className="flex items-center gap-2 text-xs">
+                <label className="flex items-center gap-1.5 cursor-pointer font-semibold text-[#002244] bg-white px-2 py-1 rounded border border-slate-200">
+                  <input
+                    type="checkbox"
+                    checked={filterByDay}
+                    onChange={(e) => setFilterByDay(e.target.checked)}
+                    className="rounded text-[#002244]"
+                  />
+                  <span>Show Only {dayName} Scheduled Members</span>
+                </label>
+              </div>
             </div>
 
             <div className="divide-y divide-slate-100">

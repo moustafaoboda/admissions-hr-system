@@ -309,6 +309,7 @@ export function AuthProvider({ children }) {
       phone: newMem.phone || '+20 100 000 0000',
       attendanceCount: 0,
       officialDays: newMem.officialDays && newMem.officialDays.length ? newMem.officialDays : ["Sunday", "Tuesday", "Thursday"],
+      extraDays: newMem.extraDays || [],
       strikes: 0,
       score: newMem.score || 90,
       status: "Active"
@@ -320,6 +321,17 @@ export function AuthProvider({ children }) {
   const editMemberInfo = (id, updatedFields) => {
     setMembers(prev => prev.map(m => m.id === id ? { ...m, ...updatedFields } : m));
     showToast("Member information updated successfully.");
+  };
+
+  const updateMemberExtraDays = (id, extraDays) => {
+    setMembers(prev => prev.map(m => m.id === id ? { ...m, extraDays } : m));
+    showToast("Extra attendance days updated.");
+  };
+
+  const deleteMember = (id) => {
+    const mem = members.find(m => m.id === id);
+    setMembers(prev => prev.filter(m => m.id !== id));
+    showToast(`Member ${mem?.name || ''} deleted.`);
   };
 
   const dischargeMember = (id, dischargeType, reason) => {
@@ -370,6 +382,11 @@ export function AuthProvider({ children }) {
   const removeStarAmbassador = async (starId) => {
     setStarAmbassadors(prev => prev.filter(s => s.id !== starId));
     showToast("Star recognition removed.");
+  };
+
+  const deleteAttendanceSession = async (sessionId) => {
+    setAttendanceSessions(prev => prev.filter(s => s.id !== sessionId));
+    showToast("Attendance session deleted.");
   };
 
   const createAttendanceSession = async (title, date, sessionType, rollCallRecords) => {
@@ -601,11 +618,14 @@ export function AuthProvider({ children }) {
         setModalExtraData,
         addMember,
         editMemberInfo,
+        updateMemberExtraDays,
+        deleteMember,
         dischargeMember,
         updateMemberPerformance,
         addStarAmbassador,
         removeStarAmbassador,
         createAttendanceSession,
+        deleteAttendanceSession,
         submitWarning,
         approveWarningRequest,
         dismissWarning,

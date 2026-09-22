@@ -74,60 +74,6 @@ export default function LoginModal() {
             <i className="fa-solid fa-arrow-right-to-bracket text-[#c59b27]"></i>
             <span>Sign In to Portal</span>
           </button>
-
-          {/* Fast Demo Switcher */}
-          <div className="pt-3 border-t border-slate-200">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2 text-center">Fast 1-Click Role Login (Demo)</p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => quickFill('omar.farouk')}
-                className="p-2 border border-amber-300 bg-amber-50/60 rounded-md text-slate-800 hover:bg-amber-100 flex items-center gap-1.5 font-medium transition text-left"
-              >
-                <i className="fa-solid fa-key text-[#c59b27]"></i>
-                <div>
-                  <div className="font-bold text-[11px] text-[#002244]">HR Vice Head</div>
-                  <div className="text-[10px] text-slate-500">omar.farouk</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => quickFill('tarek.hegazy')}
-                className="p-2 border border-slate-200 bg-slate-50 rounded-md text-slate-800 hover:bg-slate-100 flex items-center gap-1.5 font-medium transition text-left"
-              >
-                <i className="fa-solid fa-crown text-blue-800"></i>
-                <div>
-                  <div className="font-bold text-[11px] text-[#002244]">HR Head</div>
-                  <div className="text-[10px] text-slate-500">tarek.hegazy</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => quickFill('sarah.hr')}
-                className="p-2 border border-slate-200 bg-slate-50 rounded-md text-slate-800 hover:bg-slate-100 flex items-center gap-1.5 font-medium transition text-left"
-              >
-                <i className="fa-solid fa-user-tag text-emerald-700"></i>
-                <div>
-                  <div className="font-bold text-[11px] text-[#002244]">HR Member</div>
-                  <div className="text-[10px] text-slate-500">sarah.hr</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => quickFill('dean')}
-                className="p-2 border border-slate-200 bg-slate-50 rounded-md text-slate-800 hover:bg-slate-100 flex items-center gap-1.5 font-medium transition text-left"
-              >
-                <i className="fa-solid fa-building-columns text-purple-700"></i>
-                <div>
-                  <div className="font-bold text-[11px] text-[#002244]">Admission's Dean</div>
-                  <div className="text-[10px] text-slate-500">dean (view only)</div>
-                </div>
-              </button>
-            </div>
-          </div>
         </form>
       </div>
     </div>

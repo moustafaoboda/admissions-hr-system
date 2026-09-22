@@ -81,91 +81,58 @@ export default function Sidebar() {
 
       {!isDean && (
         <>
-          {/* Warnings Control Panel */}
-          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-3">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-sm">
+          {/* Warnings Control Panel Button Card */}
+          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 hover:border-slate-300 transition">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-base font-bold shadow-sm">
                   <i className="fa-solid fa-triangle-exclamation"></i>
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-[#002244]">Warnings</h3>
-                  <p className="text-[10px] text-slate-500">Disciplinary Logs</p>
+                  <p className="text-[10px] text-slate-500">Disciplinary Notifications</p>
                 </div>
               </div>
+
+              <span className="px-2 py-0.5 bg-rose-100 text-rose-800 text-xs font-black rounded-full border border-rose-300">
+                {warnings.length}
+              </span>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+              <button
+                onClick={() => setActiveModal('warningsListModal')}
+                className="w-full py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold text-xs rounded-xl border border-rose-200 flex items-center justify-center gap-2 transition"
+              >
+                <i className="fa-solid fa-[#002244] fa-window-restore text-rose-600"></i>
+                <span>Open Warnings ({warnings.length})</span>
+              </button>
 
               {isHeadOrVice ? (
                 <button
                   onClick={() => handleOpenWarning('issue')}
-                  className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-1"
+                  className="w-full py-1.5 px-3 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center justify-center gap-1.5 transition"
                 >
                   <i className="fa-solid fa-plus text-[10px]"></i>
-                  <span>Issue</span>
+                  <span>Issue New Warning</span>
                 </button>
               ) : isHRMember ? (
                 <button
                   onClick={() => handleOpenWarning('request')}
-                  className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-1"
+                  className="w-full py-1.5 px-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg shadow flex items-center justify-center gap-1.5 transition"
                 >
                   <i className="fa-solid fa-paper-plane text-[10px]"></i>
-                  <span>Request</span>
+                  <span>Request Warning</span>
                 </button>
               ) : null}
             </div>
-
-            <div className="space-y-2.5 max-h-72 overflow-y-auto custom-scrollbar pr-1 text-xs">
-              {warnings.length === 0 ? (
-                <div className="text-center py-4 text-slate-400 text-xs">No active warning notifications.</div>
-              ) : (
-                warnings.map(w => (
-                  <div key={w.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-800">{w.memberName}</span>
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
-                        w.level.includes('Final') ? 'bg-purple-100 text-purple-900' :
-                        w.level.includes('Written') ? 'bg-rose-100 text-rose-800' :
-                        'bg-amber-100 text-amber-900'
-                      }`}>
-                        {w.level}
-                      </span>
-                    </div>
-
-                    <p className="text-slate-600 text-[11px] italic leading-tight">"{w.reason}"</p>
-
-                    <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200/60">
-                      <span>{w.date} • {w.reportedBy.split(' ')[0]}</span>
-                      <span className={`font-bold ${w.status === 'Confirmed Strike' ? 'text-rose-700' : 'text-amber-700'}`}>
-                        {w.status}
-                      </span>
-                    </div>
-
-                    {isHeadOrVice && w.status === 'Pending HR Approval' && (
-                      <div className="flex gap-1.5 pt-1.5">
-                        <button
-                          onClick={() => approveWarningRequest(w.id)}
-                          className="flex-1 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded text-[10px]"
-                        >
-                          Approve Warning
-                        </button>
-                        <button
-                          onClick={() => dismissWarning(w.id)}
-                          className="py-1 px-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded text-[10px]"
-                        >
-                          Dismiss
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
           </div>
 
-          {/* Join Requests Control Panel */}
-          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-3">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-amber-100 text-[#c59b27] flex items-center justify-center text-sm">
+          {/* Join Requests Control Panel Button Card */}
+          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 hover:border-slate-300 transition">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 text-[#c59b27] flex items-center justify-center text-base font-bold shadow-sm">
                   <i className="fa-solid fa-user-plus"></i>
                 </div>
                 <div>
@@ -174,89 +141,27 @@ export default function Sidebar() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setActiveModal('addRecruit')}
-                className="px-2.5 py-1 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] transition flex items-center gap-1"
-              >
-                <i className="fa-solid fa-plus text-[10px]"></i>
-                <span>Submit</span>
-              </button>
+              <span className="px-2 py-0.5 bg-amber-100 text-amber-900 text-xs font-black rounded-full border border-amber-300">
+                {recruits.length}
+              </span>
             </div>
 
-            <div className="space-y-2.5 max-h-80 overflow-y-auto custom-scrollbar pr-1 text-xs">
-              {recruits.length === 0 ? (
-                <div className="text-center py-4 text-slate-400 text-xs">No pending join requests.</div>
-              ) : (
-                recruits.map(r => (
-                  <div key={r.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-800 text-xs">{r.name}</span>
-                      <span className="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded text-[10px]">{r.targetRole}</span>
-                    </div>
+            <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+              <button
+                onClick={() => setActiveModal('recruitsListModal')}
+                className="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 text-[#002244] font-bold text-xs rounded-xl border border-amber-200 flex items-center justify-center gap-2 transition"
+              >
+                <i className="fa-solid fa-folder-open text-[#c59b27]"></i>
+                <span>Open Join Requests ({recruits.length})</span>
+              </button>
 
-                    <div className="text-[10px] text-slate-600">{r.college} (Term {r.term})</div>
-
-                    {r.interviewSchedule ? (
-                      <div className="bg-amber-50 p-2 rounded-lg border border-amber-200 text-[10px] text-amber-900 font-bold flex items-center gap-1">
-                        <i className="fa-solid fa-calendar-check text-[#c59b27]"></i>
-                        <span>{r.interviewSchedule}</span>
-                      </div>
-                    ) : (
-                      <div className="text-[10px] text-slate-400 italic">Interview Not Scheduled</div>
-                    )}
-
-                    {r.hrRecommendation && (
-                      <div className="text-[10px] text-amber-700 font-bold">
-                        <i className="fa-solid fa-tag"></i> {r.hrRecommendation}
-                      </div>
-                    )}
-
-                    <div className="flex flex-wrap gap-1 pt-1.5 border-t border-slate-200/60">
-                      {isHeadOrVice ? (
-                        <>
-                          <button
-                            onClick={() => handleOpenSchedule(r.id)}
-                            className="flex-1 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold rounded text-[10px] flex items-center justify-center gap-1"
-                          >
-                            <i className="fa-solid fa-calendar-plus text-[9px]"></i> Schedule Rm 007
-                          </button>
-                          <button
-                            onClick={() => enlistRecruit(r.id)}
-                            className="py-1 px-2.5 bg-[#002244] text-[#c59b27] font-bold rounded text-[10px]"
-                            title="Enlist Member"
-                          >
-                            Enlist
-                          </button>
-                          <button
-                            onClick={() => declineRecruit(r.id)}
-                            className="py-1 px-2 bg-rose-100 text-rose-700 font-bold rounded text-[10px]"
-                            title="Decline"
-                          >
-                            <i className="fa-solid fa-xmark"></i>
-                          </button>
-                        </>
-                      ) : isHRMember ? (
-                        <>
-                          <button
-                            onClick={() => requestRecruitRecommendation(r.id, 'Accept')}
-                            className="flex-1 py-1 bg-emerald-100 text-emerald-800 font-bold rounded text-[10px]"
-                          >
-                            Req Accept
-                          </button>
-                          <button
-                            onClick={() => requestRecruitRecommendation(r.id, 'Decline')}
-                            className="flex-1 py-1 bg-rose-100 text-rose-800 font-bold rounded text-[10px]"
-                          >
-                            Req Decline
-                          </button>
-                        </>
-                      ) : (
-                        <span className="text-slate-400 italic text-[10px]">View only</span>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
+              <button
+                onClick={() => setActiveModal('addRecruit')}
+                className="w-full py-1.5 px-3 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center justify-center gap-1.5 transition"
+              >
+                <i className="fa-solid fa-plus text-[10px]"></i>
+                <span>Submit Join Request</span>
+              </button>
             </div>
           </div>
         </>
