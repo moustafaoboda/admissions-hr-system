@@ -236,6 +236,35 @@ const INITIAL_EVENTS = [
   }
 ];
 
+const INITIAL_MONITORING_NOTES = [
+  {
+    id: "note-1",
+    memberId: "mem-1",
+    memberName: "Youssef El-Sayed",
+    memberRole: "Operations",
+    memberCollege: "Engineering & Tech",
+    category: "Performance & Quality",
+    note: "Demonstrated exemplary leadership directing crowd flow during rush hours at Registration Hall A.",
+    authorName: "Omar Farouk",
+    authorRole: "HR Vice Head",
+    date: "2026-10-05",
+    time: "14:30"
+  },
+  {
+    id: "note-2",
+    memberId: "mem-5",
+    memberName: "Ahmed Sherif",
+    memberRole: "Digital Transformation",
+    memberCollege: "Computing & IT",
+    category: "Operational Execution",
+    note: "Promptly updated digital kiosk systems and verified barcode scanning readiness before the morning shift.",
+    authorName: "Sarah Mostafa",
+    authorRole: "HR",
+    date: "2026-10-04",
+    time: "11:15"
+  }
+];
+
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -249,6 +278,8 @@ export function AuthProvider({ children }) {
   const [attendanceSessions, setAttendanceSessions] = useState(INITIAL_ATTENDANCE_SESSIONS);
   const [warnings, setWarnings] = useState(INITIAL_WARNINGS);
   const [events, setEvents] = useState(INITIAL_EVENTS);
+  const [monitoringNotes, setMonitoringNotes] = useState(INITIAL_MONITORING_NOTES);
+  const [monitoringSelectedMemberId, setMonitoringSelectedMemberId] = useState("");
   const [recruits, setRecruits] = useState([]);
 
   // Modals state
@@ -564,6 +595,51 @@ export function AuthProvider({ children }) {
     showToast("Event removed from logs.");
   };
 
+  const addMonitoringNote = async ({ memberId, category, note }) => {
+    const mem = members.find(m => m.id === memberId);
+    const newNote = {
+      id: `note-${Date.now()}`,
+      memberId,
+      memberName: mem ? mem.name : 'Unknown Member',
+      memberRole: mem ? mem.role : '',
+      memberCollege: mem ? mem.college : '',
+      category: category || 'General Observation',
+      note: note.trim(),
+      authorName: currentUser.name,
+      authorRole: currentUser.role,
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    setMonitoringNotes(prev => [newNote, ...prev]);
+    showToast(`Monitoring note logged for ${mem ? mem.name : 'member'}`);
+  };
+
+  const updateMonitoringNote = async (id, updatedFields) => {
+    setMonitoringNotes(prev => prev.map(n => {
+      if (n.id === id) {
+        let memberDetails = {};
+        if (updatedFields.memberId && updatedFields.memberId !== n.memberId) {
+          const mem = members.find(m => m.id === updatedFields.memberId);
+          if (mem) {
+            memberDetails = {
+              memberName: mem.name,
+              memberRole: mem.role,
+              memberCollege: mem.college
+            };
+          }
+        }
+        return { ...n, ...updatedFields, ...memberDetails };
+      }
+      return n;
+    }));
+    showToast("Monitoring note updated.");
+  };
+
+  const deleteMonitoringNote = async (id) => {
+    setMonitoringNotes(prev => prev.filter(n => n.id !== id));
+    showToast("Monitoring note deleted.");
+  };
+
   const scheduleInterview = async (applicantId, date, time) => {
     const scheduleStr = `${date} at ${time}`;
     const venue = "Smart Village - Meeting Room 007";
@@ -694,6 +770,12 @@ export function AuthProvider({ children }) {
         attendanceSessions,
         warnings,
         events,
+        monitoringNotes,
+        monitoringSelectedMemberId,
+        setMonitoringSelectedMemberId,
+        addMonitoringNote,
+        updateMonitoringNote,
+        deleteMonitoringNote,
         recruits,
         activeModal,
         setActiveModal,

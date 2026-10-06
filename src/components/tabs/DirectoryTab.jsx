@@ -10,7 +10,9 @@ export default function DirectoryTab() {
     updateExtraDaysCount,
     deleteMember,
     setActiveModal,
-    setModalExtraData
+    setModalExtraData,
+    switchTab,
+    setMonitoringSelectedMemberId
   } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -243,6 +245,16 @@ export default function DirectoryTab() {
                       <td className="py-3 px-4 text-right whitespace-nowrap space-x-1">
                         {!isDean ? (
                           <>
+                            <button
+                              onClick={() => {
+                                setMonitoringSelectedMemberId(m.id);
+                                switchTab('monitoring');
+                              }}
+                              className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold transition"
+                              title="Write Monitoring Note"
+                            >
+                              <i className="fa-solid fa-clipboard-check"></i> Note
+                            </button>
                             <button
                               onClick={() => handleEditInfo(m.id)}
                               className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded text-[11px] font-bold transition"

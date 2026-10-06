@@ -44,6 +44,16 @@ export default function Navigation() {
             </button>
 
             <button
+              onClick={() => switchTab('monitoring')}
+              className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
+                activeTab === 'monitoring' ? 'active' : ''
+              }`}
+            >
+              <i className="fa-solid fa-clipboard-check text-[#c59b27]"></i>
+              <span>Monitoring</span>
+            </button>
+
+            <button
               onClick={() => switchTab('copilot')}
               className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'copilot' ? 'active' : ''

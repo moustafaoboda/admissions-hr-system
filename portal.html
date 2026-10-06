@@ -160,6 +160,10 @@
           <i class="fa-solid fa-clipboard-user"></i>
           <span>Attendance</span>
         </button>
+        <button onclick="switchTab('monitoring')" id="tabBtn-monitoring" class="nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-clipboard-check text-[#c59b27]"></i>
+          <span>Monitoring</span>
+        </button>
         <button onclick="switchTab('copilot')" id="tabBtn-copilot" class="nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
           <i class="fa-solid fa-wand-magic-sparkles text-[#c59b27]"></i>
           <span>AI HR Copilot</span>
@@ -484,7 +488,139 @@
           </div>
         </div>
 
-        <!-- TAB 4: AI HR COPILOT -->
+        <!-- TAB 4: MONITORING -->
+        <div id="tab-monitoring" class="tab-content space-y-6">
+          <!-- Top Header & KPI Summary -->
+          <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-amber-100 text-[#c59b27] flex items-center justify-center text-sm font-bold shadow-sm">
+                  <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <h2 class="text-lg font-bold text-[#002244]">Member Monitoring & Notes</h2>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Track direct observations, performance evaluations, and field remarks on team members. Each note records the HR author's name next to it automatically.</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <div class="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                <span class="text-slate-500 font-medium">Total Notes Logged:</span>
+                <span id="monitoringTotalCount" class="font-extrabold text-[#002244] ml-1">0</span>
+              </div>
+              <button onclick="document.getElementById('monitoringTargetMember').focus()" class="px-3.5 py-1.5 bg-[#002244] hover:bg-[#00162e] text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-1.5">
+                <i class="fa-solid fa-pen-nib text-[#c59b27]"></i>
+                <span>Write New Note</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <!-- Left Column: Write Note Form -->
+            <div id="monitoringFormCard" class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm space-y-4 lg:sticky lg:top-24">
+              <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="font-bold text-sm text-[#002244] flex items-center gap-2">
+                  <i class="fa-solid fa-comment-medical text-[#c59b27]"></i>
+                  <span>New Monitoring Note</span>
+                </h3>
+                <span class="text-[10px] bg-amber-50 text-amber-800 font-bold px-2 py-0.5 rounded border border-amber-200">
+                  Direct Field Log
+                </span>
+              </div>
+
+              <form id="monitoringNoteForm" onsubmit="handleCreateMonitoringNote(event)" class="space-y-4">
+                <!-- Select Member -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Choose Member <span class="text-rose-500">*</span>
+                  </label>
+                  <select id="monitoringTargetMember" required class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none font-medium">
+                    <option value="">-- Select Team Member --</option>
+                  </select>
+                </div>
+
+                <!-- Category / Tag -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Note Category
+                  </label>
+                  <select id="monitoringCategory" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none font-medium">
+                    <option value="General Observation">General Observation</option>
+                    <option value="Performance & Quality">Performance & Quality</option>
+                    <option value="Behavior & Professionalism">Behavior & Professionalism</option>
+                    <option value="Attendance & Punctuality">Attendance & Punctuality</option>
+                    <option value="Operational Execution">Operational Execution</option>
+                    <option value="Commendation & Praise">Commendation & Praise</option>
+                    <option value="Follow-up Required">Follow-up Required</option>
+                  </select>
+                </div>
+
+                <!-- Note Text -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Note / Observation <span class="text-rose-500">*</span>
+                  </label>
+                  <textarea id="monitoringNoteText" required rows="4" placeholder="Write detailed observation, feedback, or operational notes regarding this member..." class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none resize-none"></textarea>
+                </div>
+
+                <!-- Author Identity Preview Banner -->
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-full bg-[#002244] text-[#c59b27] flex items-center justify-center font-bold text-[10px]">
+                      <i class="fa-solid fa-user-pen"></i>
+                    </div>
+                    <div>
+                      <div class="text-[10px] text-slate-400 font-semibold uppercase">Note Author</div>
+                      <div class="font-bold text-slate-800" id="monitoringAuthorNamePreview">Omar Farouk</div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] bg-blue-50 text-blue-700 font-extrabold px-2 py-0.5 rounded border border-blue-200" id="monitoringAuthorRolePreview">
+                    HR Vice Head
+                  </span>
+                </div>
+
+                <button type="submit" class="w-full py-2.5 px-4 bg-[#002244] hover:bg-[#00162e] text-white font-bold text-xs rounded-lg shadow transition flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-floppy-disk text-[#c59b27]"></i>
+                  <span>Save Note</span>
+                </button>
+              </form>
+            </div>
+
+            <!-- Right Column: Monitoring Notes Feed -->
+            <div class="lg:col-span-2 space-y-4">
+              <!-- Search & Filter Controls -->
+              <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center gap-3">
+                <div class="relative flex-grow w-full sm:w-auto">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                  <input type="text" id="monitoringSearchInput" oninput="renderMonitoringNotes()" placeholder="Search notes, members, or authors..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none">
+                </div>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                  <select id="monitoringMemberFilter" onchange="renderMonitoringNotes()" class="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none">
+                    <option value="">All Members</option>
+                  </select>
+
+                  <select id="monitoringCategoryFilter" onchange="renderMonitoringNotes()" class="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none">
+                    <option value="">All Categories</option>
+                    <option value="General Observation">General Observation</option>
+                    <option value="Performance & Quality">Performance & Quality</option>
+                    <option value="Behavior & Professionalism">Behavior & Professionalism</option>
+                    <option value="Attendance & Punctuality">Attendance & Punctuality</option>
+                    <option value="Operational Execution">Operational Execution</option>
+                    <option value="Commendation & Praise">Commendation & Praise</option>
+                    <option value="Follow-up Required">Follow-up Required</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Notes Feed List -->
+              <div id="monitoringNotesContainer" class="space-y-3">
+                <!-- Dynamically generated note cards -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 5: AI HR COPILOT -->
         <div id="tab-copilot" class="tab-content space-y-5">
           <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
             <div class="flex items-center gap-3">
@@ -1282,6 +1418,66 @@
         </div>
       </form>
     </div>
+  <!-- EDIT MONITORING NOTE MODAL -->
+  <div id="editMonitoringNoteModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
+        <h3 class="font-bold text-sm flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-[#c59b27]"></i>
+          <span>Edit Monitoring Note</span>
+        </h3>
+        <button onclick="closeModal('editMonitoringNoteModal')" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="editMonitoringNoteForm" onsubmit="handleUpdateMonitoringNote(event)" class="p-6 space-y-4 text-xs">
+        <input type="hidden" id="editNoteTargetId">
+
+        <div>
+          <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Target Member</label>
+          <select id="editNoteTargetMember" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none font-medium"></select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Category</label>
+          <select id="editNoteCategory" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none font-medium">
+            <option value="General Observation">General Observation</option>
+            <option value="Performance & Quality">Performance & Quality</option>
+            <option value="Behavior & Professionalism">Behavior & Professionalism</option>
+            <option value="Attendance & Punctuality">Attendance & Punctuality</option>
+            <option value="Operational Execution">Operational Execution</option>
+            <option value="Commendation & Praise">Commendation & Praise</option>
+            <option value="Follow-up Required">Follow-up Required</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Note / Observation Content</label>
+          <textarea id="editNoteContent" required rows="4" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none resize-none"></textarea>
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-slate-600 text-[11px] flex items-center justify-between">
+          <span>Originally Written by: <strong id="editNoteAuthorBadge" class="text-slate-900 font-bold"></strong></span>
+          <span id="editNoteDateBadge" class="text-slate-500 font-mono"></span>
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-slate-200">
+          <button type="button" onclick="deleteCurrentMonitoringNote()" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg border border-rose-200 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-trash-can"></i>
+            <span>Delete Note</span>
+          </button>
+
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="closeModal('editMonitoringNoteModal')" class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg transition">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold rounded-lg border border-[#c59b27] transition flex items-center gap-1.5 shadow">
+              <i class="fa-solid fa-check"></i>
+              <span>Save Changes</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script>
@@ -1328,6 +1524,255 @@
       { id: "evt-2", title: "EDU Gate", type: "EDU Gate", status: "Scheduled", description: "Annual admissions exhibition & university portal drive.", location: "Exhibition Hall & Booth 4", date: "2026-10-15", color: "blue" },
       { id: "evt-3", title: "Meetings", type: "Meetings", status: "Weekly", description: "General assembly & committee sync in Meeting Room 007.", location: "Meeting Room 007", date: "Every Wednesday", color: "emerald" }
     ];
+
+    let monitoringNotes = [
+      {
+        id: "note-1",
+        memberId: "mem-1",
+        memberName: "Youssef El-Sayed",
+        memberRole: "Operations",
+        memberCollege: "Engineering & Tech",
+        category: "Performance & Quality",
+        note: "Demonstrated exemplary leadership directing crowd flow during rush hours at Registration Hall A.",
+        authorName: "Omar Farouk",
+        authorRole: "HR Vice Head",
+        date: "2026-10-05",
+        time: "14:30"
+      },
+      {
+        id: "note-2",
+        memberId: "mem-5",
+        memberName: "Ahmed Sherif",
+        memberRole: "Digital Transformation",
+        memberCollege: "Computing & IT",
+        category: "Operational Execution",
+        note: "Promptly updated digital kiosk systems and verified barcode scanning readiness before the morning shift.",
+        authorName: "Sarah Mostafa",
+        authorRole: "HR",
+        date: "2026-10-04",
+        time: "11:15"
+      }
+    ];
+
+    function populateMonitoringMemberSelect() {
+      const activeM = members.filter(m => m.status !== "Discharged");
+      const targetSelect = document.getElementById("monitoringTargetMember");
+      const filterSelect = document.getElementById("monitoringMemberFilter");
+      const editSelect = document.getElementById("editNoteTargetMember");
+
+      if (targetSelect) {
+        const cur = targetSelect.value;
+        targetSelect.innerHTML = `<option value="">-- Select Team Member --</option>` + activeM.map(m => `<option value="${m.id}">${m.name} (${m.role} • ${m.college})</option>`).join("");
+        if (cur) targetSelect.value = cur;
+      }
+
+      if (filterSelect) {
+        const curF = filterSelect.value;
+        filterSelect.innerHTML = `<option value="">All Members</option>` + activeM.map(m => `<option value="${m.id}">${m.name}</option>`).join("");
+        if (curF) filterSelect.value = curF;
+      }
+
+      if (editSelect) {
+        const curE = editSelect.value;
+        editSelect.innerHTML = `<option value="">-- Select Team Member --</option>` + activeM.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join("");
+        if (curE) editSelect.value = curE;
+      }
+    }
+
+    function renderMonitoringNotes() {
+      const search = (document.getElementById("monitoringSearchInput")?.value || "").toLowerCase().trim();
+      const memberFilter = document.getElementById("monitoringMemberFilter")?.value || "";
+      const catFilter = document.getElementById("monitoringCategoryFilter")?.value || "";
+      const container = document.getElementById("monitoringNotesContainer");
+      const countEl = document.getElementById("monitoringTotalCount");
+
+      if (countEl) countEl.textContent = monitoringNotes.length;
+      if (!container) return;
+
+      let filtered = monitoringNotes.filter(n => {
+        if (memberFilter && n.memberId !== memberFilter) return false;
+        if (catFilter && n.category !== catFilter) return false;
+        if (search) {
+          const matchName = (n.memberName || "").toLowerCase().includes(search);
+          const matchAuthor = (n.authorName || "").toLowerCase().includes(search);
+          const matchText = (n.note || "").toLowerCase().includes(search);
+          const matchRole = (n.memberRole || "").toLowerCase().includes(search);
+          const matchCat = (n.category || "").toLowerCase().includes(search);
+          if (!matchName && !matchAuthor && !matchText && !matchRole && !matchCat) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-xl p-8 border border-slate-200 text-center text-slate-400 text-xs">
+            <i class="fa-solid fa-clipboard-list text-3xl mb-2 text-slate-300"></i>
+            <p class="font-bold text-slate-600">No monitoring notes found.</p>
+            <p class="text-[11px] text-slate-400 mt-1">Select a member on the left to record your first field observation note.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(n => {
+        const initials = (n.memberName || "Member").split(" ").map(x => x[0]).slice(0, 2).join("");
+        
+        let badgeColor = "bg-blue-100 text-blue-800 border-blue-200";
+        if (n.category.includes("Commendation")) badgeColor = "bg-emerald-100 text-emerald-800 border-emerald-200";
+        else if (n.category.includes("Warning") || n.category.includes("Behavior")) badgeColor = "bg-rose-100 text-rose-800 border-rose-200";
+        else if (n.category.includes("Follow-up")) badgeColor = "bg-amber-100 text-amber-800 border-amber-200";
+        else if (n.category.includes("Performance")) badgeColor = "bg-purple-100 text-purple-800 border-purple-200";
+
+        return `
+          <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:border-[#002244] transition space-y-3">
+            <div class="flex items-start justify-between gap-3">
+              <!-- Member Info -->
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-[#002244] text-[#c59b27] font-extrabold flex items-center justify-center text-xs shadow-sm flex-shrink-0 border-2 border-[#c59b27]">
+                  ${initials}
+                </div>
+                <div>
+                  <div class="flex items-center flex-wrap gap-1.5">
+                    <h4 class="font-extrabold text-sm text-[#002244]">${n.memberName}</h4>
+                    <span class="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded border border-slate-200">${n.memberRole || 'Member'}</span>
+                    <span class="text-[10px] text-slate-500 font-medium hidden sm:inline">• ${n.memberCollege || 'SV Campus'}</span>
+                  </div>
+                  <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
+                    <span><i class="fa-regular fa-calendar mr-1"></i>${n.date}</span>
+                    ${n.time ? `<span><i class="fa-regular fa-clock mr-1"></i>${n.time}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Category Badge & Edit Action -->
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="text-[10px] font-bold px-2.5 py-1 rounded-full border ${badgeColor}">${n.category}</span>
+                <button onclick="openEditMonitoringNoteModal('${n.id}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[11px] inline-flex items-center gap-1 transition" title="Edit Note">
+                  <i class="fa-solid fa-pen-to-square text-[10px]"></i>
+                  <span class="hidden sm:inline">Edit</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Note Text Content -->
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs text-slate-800 leading-relaxed whitespace-pre-wrap">
+              ${n.note}
+            </div>
+
+            <!-- Footer: Written by HR Member (Prominently displayed) -->
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs flex-wrap gap-2">
+              <div class="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50/40 border border-amber-200/80 px-2.5 py-1 rounded-lg">
+                <i class="fa-solid fa-pen-fancy text-[#c59b27] text-xs"></i>
+                <span class="text-slate-600 text-[11px] font-medium">Written by:</span>
+                <span class="font-extrabold text-[#002244] text-[11px]">${n.authorName}</span>
+                <span class="text-[10px] bg-[#002244] text-[#c59b27] font-extrabold px-1.5 py-0.5 rounded shadow-xs">${n.authorRole}</span>
+              </div>
+              <div class="text-[10px] text-slate-400 font-mono">
+                Note #${n.id}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function handleCreateMonitoringNote(e) {
+      e.preventDefault();
+      const mId = document.getElementById("monitoringTargetMember").value;
+      const mem = members.find(m => m.id === mId);
+      if (!mem) {
+        showToast("Please choose a member.", "warning");
+        return;
+      }
+      const noteText = document.getElementById("monitoringNoteText").value.trim();
+      if (!noteText) {
+        showToast("Note content cannot be empty.", "warning");
+        return;
+      }
+      const cat = document.getElementById("monitoringCategory").value;
+
+      const newNote = {
+        id: `note-${Date.now()}`,
+        memberId: mem.id,
+        memberName: mem.name,
+        memberRole: mem.role,
+        memberCollege: mem.college,
+        category: cat,
+        note: noteText,
+        authorName: currentUser.name,
+        authorRole: currentUser.role,
+        date: new Date().toISOString().split("T")[0],
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      monitoringNotes.unshift(newNote);
+      document.getElementById("monitoringNoteText").value = "";
+      showToast(`Monitoring note logged for ${mem.name}`);
+      renderMonitoringNotes();
+    }
+
+    function quickWriteMonitoringNoteForMember(mId) {
+      switchTab("monitoring");
+      populateMonitoringMemberSelect();
+      const targetSelect = document.getElementById("monitoringTargetMember");
+      if (targetSelect) {
+        targetSelect.value = mId;
+        document.getElementById("monitoringNoteText")?.focus();
+      }
+    }
+
+    function openEditMonitoringNoteModal(noteId) {
+      const note = monitoringNotes.find(n => n.id === noteId);
+      if (!note) return;
+      populateMonitoringMemberSelect();
+      document.getElementById("editNoteTargetId").value = note.id;
+      document.getElementById("editNoteTargetMember").value = note.memberId;
+      document.getElementById("editNoteCategory").value = note.category;
+      document.getElementById("editNoteContent").value = note.note;
+      document.getElementById("editNoteAuthorBadge").textContent = `${note.authorName} (${note.authorRole})`;
+      document.getElementById("editNoteDateBadge").textContent = `${note.date} ${note.time || ''}`;
+      openModal("editMonitoringNoteModal");
+    }
+
+    function handleUpdateMonitoringNote(e) {
+      e.preventDefault();
+      const id = document.getElementById("editNoteTargetId").value;
+      const note = monitoringNotes.find(n => n.id === id);
+      if (!note) return;
+
+      const mId = document.getElementById("editNoteTargetMember").value;
+      const mem = members.find(m => m.id === mId);
+      if (mem) {
+        note.memberId = mem.id;
+        note.memberName = mem.name;
+        note.memberRole = mem.role;
+        note.memberCollege = mem.college;
+      }
+      note.category = document.getElementById("editNoteCategory").value;
+      note.note = document.getElementById("editNoteContent").value.trim();
+
+      closeModal("editMonitoringNoteModal");
+      showToast("Monitoring note updated.");
+      renderMonitoringNotes();
+    }
+
+    function deleteCurrentMonitoringNote() {
+      const id = document.getElementById("editNoteTargetId").value;
+      if (confirm("Delete this monitoring note permanently?")) {
+        monitoringNotes = monitoringNotes.filter(n => n.id !== id);
+        closeModal("editMonitoringNoteModal");
+        showToast("Monitoring note deleted.");
+        renderMonitoringNotes();
+      }
+    }
+
+    function deleteMonitoringNote(id) {
+      if (confirm("Delete this monitoring note permanently?")) {
+        monitoringNotes = monitoringNotes.filter(n => n.id !== id);
+        showToast("Monitoring note deleted.");
+        renderMonitoringNotes();
+      }
+    }
 
     function showToast(message, type = "success") {
       const container = document.getElementById("toastContainer");
@@ -1386,10 +1831,15 @@
       document.getElementById("deanNoticeBanner").style.display = isDean ? "flex" : "none";
       document.getElementById("addStarAmbassadorBtn").style.display = isHeadOrVice ? "inline-flex" : "none";
 
-      ["tabBtn-directory", "tabBtn-attendance", "tabBtn-copilot"].forEach(id => {
+      ["tabBtn-directory", "tabBtn-attendance", "tabBtn-monitoring", "tabBtn-copilot"].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.style.display = isDean ? "none" : "flex";
       });
+
+      const noteAuthorEl = document.getElementById("monitoringAuthorNamePreview");
+      if (noteAuthorEl) noteAuthorEl.textContent = currentUser.name;
+      const noteAuthorRoleEl = document.getElementById("monitoringAuthorRolePreview");
+      if (noteAuthorRoleEl) noteAuthorRoleEl.textContent = currentUser.role;
 
       if (isDean) switchTab("dashboard");
 
@@ -1498,6 +1948,7 @@
             <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-slate-700">${m.score}/100</td>
             <td class="py-3 px-4 text-right whitespace-nowrap space-x-1">
               ${!isDean ? `
+                <button onclick="quickWriteMonitoringNoteForMember('${m.id}')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold transition" title="Write Monitoring Note"><i class="fa-solid fa-clipboard-check"></i> Note</button>
                 <button onclick="openEditMemberModal('${m.id}')" class="px-2 py-1 bg-blue-50 text-blue-800 rounded text-[11px] font-bold" title="Edit Info"><i class="fa-solid fa-pen"></i> Edit Info</button>
                 <button onclick="quickIssueWarningForMember('${m.id}')" class="px-2 py-1 bg-amber-50 text-amber-800 rounded text-[11px] font-bold" title="Issue Warning"><i class="fa-solid fa-triangle-exclamation"></i> Warning</button>
                 <button onclick="openDischargeModal('${m.id}')" class="px-2 py-1 bg-rose-50 text-rose-700 rounded text-[11px] font-bold" title="Discharge Member"><i class="fa-solid fa-user-minus"></i> Discharge</button>
@@ -2226,6 +2677,8 @@
       renderMembersTable();
       renderAttendanceSessions();
       renderSideWarnings();
+      populateMonitoringMemberSelect();
+      renderMonitoringNotes();
     }
 
     window.onload = function() { applyUserRoleUI(); };

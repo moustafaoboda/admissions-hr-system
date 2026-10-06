@@ -20,11 +20,13 @@ import AddEventModal from './components/modals/AddEventModal';
 import EditEventModal from './components/modals/EditEventModal';
 import EditWarningModal from './components/modals/EditWarningModal';
 import EditDischargedModal from './components/modals/EditDischargedModal';
+import EditMonitoringNoteModal from './components/modals/EditMonitoringNoteModal';
 
 // Tabs
 import DashboardTab from './components/tabs/DashboardTab';
 import DirectoryTab from './components/tabs/DirectoryTab';
 import AttendanceTab from './components/tabs/AttendanceTab';
+import MonitoringTab from './components/tabs/MonitoringTab';
 import CopilotTab from './components/tabs/CopilotTab';
 
 export default function App() {
@@ -60,6 +62,7 @@ export default function App() {
             {activeTab === 'dashboard' && <DashboardTab />}
             {!isDean && activeTab === 'directory' && <DirectoryTab />}
             {!isDean && activeTab === 'attendance' && <AttendanceTab />}
+            {!isDean && activeTab === 'monitoring' && <MonitoringTab />}
             {!isDean && activeTab === 'copilot' && <CopilotTab />}
           </div>
         </div>
@@ -80,6 +83,7 @@ export default function App() {
       <EditEventModal />
       <EditWarningModal />
       <EditDischargedModal />
+      <EditMonitoringNoteModal />
     </div>
   );
 }
