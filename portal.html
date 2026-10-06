@@ -168,6 +168,10 @@
           <i class="fa-solid fa-wand-magic-sparkles text-[#c59b27]"></i>
           <span>AI HR Copilot</span>
         </button>
+        <button onclick="switchTab('activityLog')" id="tabBtn-activityLog" class="nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-clock-rotate-left text-[#c59b27]"></i>
+          <span>Activity Log</span>
+        </button>
       </div>
     </div>
   </header>
@@ -204,7 +208,7 @@
         </div>
 
         <!-- Warnings Notifications Button Card -->
-        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 hover:border-slate-300 transition">
+        <div id="sideWarningCard" class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 hover:border-slate-300 transition">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2.5">
               <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-base font-bold shadow-sm">
@@ -226,6 +230,30 @@
             </button>
 
             <div id="sideWarningActionBtn"></div>
+          </div>
+        </div>
+
+        <!-- Warning Requests Card -->
+        <div id="sideWarningRequestsCard" class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 hover:border-slate-300 transition">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-base font-bold shadow-sm">
+                <i class="fa-solid fa-bell"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-sm text-[#002244]">Warning Requests</h3>
+                <p class="text-[10px] text-slate-500">Submitted by HR Members</p>
+              </div>
+            </div>
+
+            <span id="sideWarningRequestsCountBadge" class="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-black rounded-full border border-amber-300">0</span>
+          </div>
+
+          <div class="pt-2 border-t border-slate-100 flex flex-col gap-2">
+            <button onclick="openWarningRequestsModal()" class="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs rounded-xl border border-amber-200 flex items-center justify-center gap-2 transition">
+              <i class="fa-solid fa-envelope-open-text text-amber-600"></i>
+              <span>Review Warning Requests</span>
+            </button>
           </div>
         </div>
       </aside>
@@ -325,23 +353,12 @@
                     <i class="fa-solid fa-calendar-check text-[#c59b27]"></i>
                     <span>Events & Operational Logs</span>
                   </h4>
-                  <button onclick="openAddEventModal()" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded text-[11px] font-bold flex items-center gap-1 transition">
+                  <button id="dashboardAddEventBtn" onclick="openAddEventModal()" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded text-[11px] font-bold flex items-center gap-1 transition">
                     <i class="fa-solid fa-plus text-[10px]"></i>
                     <span>Add Event</span>
                   </button>
                 </div>
-                <div id="dashboardEventsList" class="space-y-2.5 text-xs max-h-72 overflow-y-auto custom-scrollbar pr-1"></div>
-              </div>
-
-              <div class="mt-4 pt-4 border-t border-slate-100 flex gap-2">
-                <button onclick="openAddEventModal()" class="flex-1 py-2 bg-[#002244] hover:bg-[#00162e] text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
-                  <i class="fa-solid fa-calendar-plus text-[#c59b27]"></i>
-                  <span>Add Event</span>
-                </button>
-                <button onclick="openAddAttendanceModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-300">
-                  <i class="fa-solid fa-calendar-plus text-slate-600"></i>
-                  <span>Add Attendance</span>
-                </button>
+                <div id="dashboardEventsList" class="space-y-2.5 text-xs max-h-80 overflow-y-auto custom-scrollbar pr-1"></div>
               </div>
             </div>
           </div>
@@ -366,7 +383,7 @@
           <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto custom-scrollbar">
               <table class="w-full text-left text-xs">
-                <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                <thead id="membersTableHead" class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
                   <tr>
                     <th class="py-3 px-4">Name</th>
                     <th class="py-3 px-4">Role & Position</th>
@@ -684,12 +701,159 @@
           </div>
         </div>
 
+        <!-- TAB 6: ACTIVITY LOG -->
+        <div id="tab-activityLog" class="tab-content space-y-6">
+          <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-amber-100 text-[#c59b27] flex items-center justify-center text-sm font-bold shadow-sm">
+                  <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <h2 class="text-lg font-bold text-[#002244]">System Activity & Audit Log</h2>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">
+                Real-time tracking of every modification made across the Admissions HR Suite. Unstarred logs auto-delete after 7 days; click the star icon to permanently retain an activity.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2 text-xs">
+              <span class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 font-medium">
+                Total Logs: <strong class="text-[#002244]" id="activityTotalCount">0</strong>
+              </span>
+              <span class="px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 font-bold">
+                Starred: <strong id="activityStarredCount">0</strong>
+              </span>
+            </div>
+          </div>
+
+          <!-- Controls Bar -->
+          <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center gap-3">
+            <div class="relative flex-grow w-full sm:w-auto">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+              <input type="text" id="activitySearchInput" oninput="renderActivityLogs()" placeholder="Search activities, authors, or details..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none">
+            </div>
+
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <select id="activityCategoryFilter" onchange="renderActivityLogs()" class="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none">
+                <option value="">All Categories</option>
+                <option value="Members">Members</option>
+                <option value="Attendance">Attendance</option>
+                <option value="Warnings">Warnings</option>
+                <option value="Monitoring">Monitoring</option>
+                <option value="Events">Events</option>
+                <option value="Ambassadors">Ambassadors</option>
+              </select>
+
+              <label class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 cursor-pointer select-none">
+                <input type="checkbox" id="activityStarredOnlyFilter" onchange="renderActivityLogs()" class="rounded text-[#c59b27]">
+                <span>Starred Only</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Activity Log Items Container -->
+          <div id="activityLogsContainer" class="space-y-3"></div>
+        </div>
+
       </div>
 
     </div>
   </main>
 
   <!-- MODALS -->
+  <!-- WARNING REQUESTS POPUP MODAL -->
+  <div id="warningRequestsModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[85vh] overflow-hidden border border-slate-200">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27] flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center text-sm border border-amber-400/30">
+            <i class="fa-solid fa-bell"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm sm:text-base">Warning Requests from HR Members</h3>
+            <p class="text-[10px] text-slate-300">Pending Disciplinary Requests Awaiting HR Leadership Action</p>
+          </div>
+        </div>
+        <button onclick="closeModal('warningRequestsModal')" class="text-slate-400 hover:text-white transition p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-shrink-0 text-xs">
+        <div class="font-semibold text-slate-600">
+          Pending Requests: <span id="warningRequestsModalCount" class="font-extrabold text-[#002244]">0</span>
+        </div>
+        <span class="text-[10px] text-slate-500 italic">Review requests submitted by junior HR ambassadors</span>
+      </div>
+      <div id="warningRequestsModalContainer" class="p-4 overflow-y-auto space-y-3 custom-scrollbar flex-grow text-xs"></div>
+      <div class="p-3 bg-slate-50 border-t border-slate-200 text-right flex-shrink-0">
+        <button onclick="closeModal('warningRequestsModal')" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-lg transition">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT ACTIVITY LOG MODAL -->
+  <div id="editActivityModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
+        <h3 class="font-bold text-sm flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-[#c59b27]"></i>
+          <span>Edit Activity Log Entry</span>
+        </h3>
+        <button onclick="closeModal('editActivityModal')" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="editActivityForm" onsubmit="handleUpdateActivityLog(event)" class="p-5 space-y-4 text-xs">
+        <input type="hidden" id="editActivityTargetId">
+        <div>
+          <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Action Description</label>
+          <input type="text" id="editActivityActionInput" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-bold text-[#002244]">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Category</label>
+            <select id="editActivityCategorySelect" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-medium">
+              <option value="Members">Members</option>
+              <option value="Attendance">Attendance</option>
+              <option value="Warnings">Warnings</option>
+              <option value="Monitoring">Monitoring</option>
+              <option value="Events">Events</option>
+              <option value="Ambassadors">Ambassadors</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Retention Status</label>
+            <select id="editActivityStarredSelect" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-medium">
+              <option value="starred">⭐ Starred (Permanent)</option>
+              <option value="unstarred">Auto-delete (7 days)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Additional Details / Notes</label>
+          <textarea id="editActivityDetailsText" rows="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg resize-none"></textarea>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-slate-600 text-[11px] flex items-center justify-between">
+          <span>Logged By: <strong id="editActivityUserBadge" class="text-slate-900 font-bold"></strong></span>
+          <span id="editActivityDateBadge" class="text-slate-500 font-mono"></span>
+        </div>
+        <div class="flex items-center justify-between pt-3 border-t border-slate-200">
+          <button type="button" onclick="deleteCurrentActivityLog()" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg border border-rose-200 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-trash-can"></i>
+            <span>Remove Log</span>
+          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="closeModal('editActivityModal')" class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg transition">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold rounded-lg border border-[#c59b27] transition flex items-center gap-1.5 shadow">
+              <i class="fa-solid fa-check"></i>
+              <span>Save Changes</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- WARNINGS LIST POPUP MODAL -->
   <div id="warningsListModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[85vh] overflow-hidden border border-slate-200">
@@ -1509,9 +1673,49 @@
     ];
 
     let attendanceSessions = [
-      { id: "att-1", title: "Registration Hall Shift", date: "2026-09-20", dayName: "Sunday", type: "Normal Day", presentCount: 6, totalCount: 7, rollCall: [] },
-      { id: "att-2", title: "EDU Gate Campus Fair", date: "2026-09-17", dayName: "Thursday", type: "EDU Gate", presentCount: 7, totalCount: 7, rollCall: [] },
-      { id: "att-3", title: "AASTMT Open Orientation Day", date: "2026-09-12", dayName: "Saturday", type: "Orientation Day", presentCount: 7, totalCount: 7, rollCall: [] }
+      {
+        id: "att-1",
+        title: "Registration Hall Shift",
+        date: "2026-09-20",
+        dayName: "Sunday",
+        type: "Normal Day",
+        presentCount: 3,
+        totalCount: 4,
+        rollCall: [
+          { memberId: "mem-1", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+          { memberId: "mem-3", name: "Karim Hassan", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
+          { memberId: "mem-4", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+          { memberId: "mem-7", name: "Nour El-Din", role: "HR", isPresent: false, isExcused: true, excuseReason: "Midterm exam preparation" }
+        ]
+      },
+      {
+        id: "att-2",
+        title: "EDU Gate Campus Fair",
+        date: "2026-09-17",
+        dayName: "Thursday",
+        type: "EDU Gate",
+        presentCount: 3,
+        totalCount: 3,
+        rollCall: [
+          { memberId: "mem-1", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+          { memberId: "mem-4", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+          { memberId: "mem-5", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" }
+        ]
+      },
+      {
+        id: "att-3",
+        title: "AASTMT Open Orientation Day",
+        date: "2026-09-12",
+        dayName: "Saturday",
+        type: "Orientation Day",
+        presentCount: 3,
+        totalCount: 3,
+        rollCall: [
+          { memberId: "mem-2", name: "Malak Nour", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
+          { memberId: "mem-5", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" },
+          { memberId: "mem-7", name: "Nour El-Din", role: "HR", isPresent: true, isExcused: false, excuseReason: "" }
+        ]
+      }
     ];
 
     let warnings = [
@@ -1554,6 +1758,311 @@
       }
     ];
 
+    let activityLogs = [
+      {
+        id: "act-1",
+        action: "Recorded field monitoring observation for Youssef El-Sayed",
+        category: "Monitoring",
+        user: "Omar Farouk",
+        role: "HR Vice Head",
+        timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
+        date: "2026-10-06",
+        time: "14:04",
+        isStarred: true,
+        details: "Field Log: Performance & Quality"
+      },
+      {
+        id: "act-2",
+        action: "Issued official strike to Laila Wael",
+        category: "Warnings",
+        user: "Omar Farouk",
+        role: "HR Vice Head",
+        timestamp: new Date(Date.now() - 86400000 * 1).toISOString(),
+        date: "2026-10-05",
+        time: "12:00",
+        isStarred: false,
+        details: "Unexcused absence from assigned desk"
+      },
+      {
+        id: "act-3",
+        action: "Verified attendance session roll call for Registration Hall Shift",
+        category: "Attendance",
+        user: "Tarek Hegazy",
+        role: "HR Head",
+        timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
+        date: "2026-10-04",
+        time: "10:15",
+        isStarred: false,
+        details: "Sunday shift attendance updated"
+      },
+      {
+        id: "act-4",
+        action: "Assigned Star Admissions Ambassador commendation to Farida Ahmed",
+        category: "Ambassadors",
+        user: "Omar Farouk",
+        role: "HR Vice Head",
+        timestamp: new Date(Date.now() - 86400000 * 3).toISOString(),
+        date: "2026-10-03",
+        time: "09:00",
+        isStarred: true,
+        details: "Award: Operations Champion"
+      }
+    ];
+
+    function logActivity(action, category, details = "") {
+      const now = new Date();
+      activityLogs.unshift({
+        id: `act-${Date.now()}`,
+        action,
+        category,
+        user: currentUser ? currentUser.name : "System",
+        role: currentUser ? currentUser.role : "HR",
+        timestamp: now.toISOString(),
+        date: now.toISOString().split("T")[0],
+        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isStarred: false,
+        details: details || ""
+      });
+      renderActivityLogs();
+    }
+
+    function cleanExpiredActivityLogs() {
+      const now = Date.now();
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      activityLogs = activityLogs.filter(log => {
+        if (log.isStarred) return true;
+        const logTime = new Date(log.timestamp).getTime();
+        return (now - logTime) < sevenDaysMs;
+      });
+    }
+
+    function toggleStarActivityLog(id) {
+      const log = activityLogs.find(a => a.id === id);
+      if (!log) return;
+      log.isStarred = !log.isStarred;
+      showToast(log.isStarred ? "Activity starred (permanently retained)." : "Activity unstarred (will auto-delete after 7 days).");
+      renderActivityLogs();
+    }
+
+    function openEditActivityModal(id) {
+      const log = activityLogs.find(a => a.id === id);
+      if (!log) return;
+      document.getElementById("editActivityTargetId").value = log.id;
+      document.getElementById("editActivityActionInput").value = log.action;
+      document.getElementById("editActivityCategorySelect").value = log.category || "Members";
+      document.getElementById("editActivityStarredSelect").value = log.isStarred ? "starred" : "unstarred";
+      document.getElementById("editActivityDetailsText").value = log.details || "";
+      document.getElementById("editActivityUserBadge").textContent = `${log.user} (${log.role})`;
+      document.getElementById("editActivityDateBadge").textContent = `${log.date} ${log.time}`;
+      openModal("editActivityModal");
+    }
+
+    function handleUpdateActivityLog(e) {
+      e.preventDefault();
+      const id = document.getElementById("editActivityTargetId").value;
+      const log = activityLogs.find(a => a.id === id);
+      if (!log) return;
+      log.action = document.getElementById("editActivityActionInput").value.trim();
+      log.category = document.getElementById("editActivityCategorySelect").value;
+      log.isStarred = document.getElementById("editActivityStarredSelect").value === "starred";
+      log.details = document.getElementById("editActivityDetailsText").value.trim();
+      closeModal("editActivityModal");
+      showToast("Activity log entry updated.");
+      renderActivityLogs();
+    }
+
+    function deleteCurrentActivityLog() {
+      const id = document.getElementById("editActivityTargetId").value;
+      if (confirm("Delete this activity log entry?")) {
+        activityLogs = activityLogs.filter(a => a.id !== id);
+        closeModal("editActivityModal");
+        showToast("Activity log entry deleted.");
+        renderActivityLogs();
+      }
+    }
+
+    function deleteActivityLog(id) {
+      if (confirm("Delete this activity log entry?")) {
+        activityLogs = activityLogs.filter(a => a.id !== id);
+        showToast("Activity log entry deleted.");
+        renderActivityLogs();
+      }
+    }
+
+    function renderActivityLogs() {
+      cleanExpiredActivityLogs();
+      const search = (document.getElementById("activitySearchInput")?.value || "").toLowerCase().trim();
+      const catFilter = document.getElementById("activityCategoryFilter")?.value || "";
+      const starredOnly = document.getElementById("activityStarredOnlyFilter")?.checked || false;
+      const container = document.getElementById("activityLogsContainer");
+      const totalEl = document.getElementById("activityTotalCount");
+      const starredEl = document.getElementById("activityStarredCount");
+
+      if (totalEl) totalEl.textContent = activityLogs.length;
+      if (starredEl) starredEl.textContent = activityLogs.filter(a => a.isStarred).length;
+      if (!container) return;
+
+      const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
+      if (!isLeadership) {
+        container.innerHTML = `<div class="p-8 text-center text-slate-400">Activity logs are restricted to HR Leadership.</div>`;
+        return;
+      }
+
+      const filtered = activityLogs.filter(log => {
+        if (starredOnly && !log.isStarred) return false;
+        if (catFilter && log.category !== catFilter) return false;
+        if (search) {
+          const matchAct = (log.action || "").toLowerCase().includes(search);
+          const matchUser = (log.user || "").toLowerCase().includes(search);
+          const matchDetails = (log.details || "").toLowerCase().includes(search);
+          const matchCat = (log.category || "").toLowerCase().includes(search);
+          if (!matchAct && !matchUser && !matchDetails && !matchCat) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-xl p-8 border border-slate-200 text-center text-slate-400 text-xs">
+            <i class="fa-solid fa-clock-rotate-left text-3xl mb-2 text-slate-300"></i>
+            <p class="font-bold text-slate-600">No activity logs found.</p>
+            <p class="text-[11px] text-slate-400 mt-1">Actions performed in the system will automatically appear here.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const now = Date.now();
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+
+      container.innerHTML = filtered.map(log => {
+        const logTime = new Date(log.timestamp).getTime();
+        const diffMs = now - logTime;
+        const daysLeft = Math.max(1, Math.ceil((sevenDaysMs - diffMs) / (24 * 60 * 60 * 1000)));
+
+        const catColors = {
+          Members: "bg-blue-100 text-blue-800 border-blue-200",
+          Attendance: "bg-emerald-100 text-emerald-800 border-emerald-200",
+          Warnings: "bg-rose-100 text-rose-800 border-rose-200",
+          Monitoring: "bg-purple-100 text-purple-800 border-purple-200",
+          Events: "bg-amber-100 text-amber-800 border-amber-200",
+          Ambassadors: "bg-yellow-100 text-yellow-900 border-yellow-300"
+        };
+        const catBadge = catColors[log.category] || "bg-slate-100 text-slate-800 border-slate-200";
+
+        return `
+          <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:border-[#002244] transition flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <button onclick="toggleStarActivityLog('${log.id}')" class="mt-0.5 p-1 text-slate-300 hover:text-amber-500 transition" title="${log.isStarred ? 'Starred (Permanent)' : 'Star to prevent 7-day auto-delete'}">
+                <i class="${log.isStarred ? 'fa-solid fa-star text-amber-500 text-base' : 'fa-regular fa-star text-slate-400 text-base hover:text-amber-400'}"></i>
+              </button>
+
+              <div class="space-y-1">
+                <div class="flex items-center flex-wrap gap-2">
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${catBadge}">${log.category || 'General'}</span>
+                  <h4 class="font-bold text-xs text-[#002244]">${log.action}</h4>
+                  ${log.isStarred ? `
+                    <span class="bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-extrabold px-1.5 py-0.2 rounded flex items-center gap-1">
+                      <i class="fa-solid fa-shield text-[9px] text-amber-600"></i> Starred (Permanent)
+                    </span>
+                  ` : `
+                    <span class="bg-slate-50 text-slate-500 border border-slate-200 text-[10px] font-medium px-1.5 py-0.2 rounded">
+                      <i class="fa-regular fa-clock text-[9px] mr-1"></i>Deletes in ${daysLeft}d
+                    </span>
+                  `}
+                </div>
+                ${log.details ? `<p class="text-[11px] text-slate-500 italic">${log.details}</p>` : ''}
+                <div class="flex items-center gap-3 text-[10px] text-slate-400">
+                  <span class="font-semibold text-slate-700"><i class="fa-solid fa-user-circle text-slate-400 mr-1"></i>By: ${log.user} (${log.role})</span>
+                  <span><i class="fa-regular fa-calendar mr-1"></i>${log.date} ${log.time}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 self-end md:self-center flex-shrink-0">
+              <button onclick="openEditActivityModal('${log.id}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[11px] inline-flex items-center gap-1 transition" title="Edit Activity Entry">
+                <i class="fa-solid fa-pen-to-square text-[10px]"></i>
+                <span>Edit</span>
+              </button>
+              <button onclick="deleteActivityLog('${log.id}')" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded font-bold text-[11px] inline-flex items-center gap-1 transition" title="Remove Activity Entry">
+                <i class="fa-solid fa-trash-can text-[10px]"></i>
+                <span>Remove</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function openWarningRequestsModal() {
+      renderWarningRequests();
+      openModal("warningRequestsModal");
+    }
+
+    function renderWarningRequests() {
+      const pending = warnings.filter(w => w.status === "Pending HR Approval");
+      const countEl = document.getElementById("warningRequestsModalCount");
+      if (countEl) countEl.textContent = pending.length;
+      const container = document.getElementById("warningRequestsModalContainer");
+      if (!container) return;
+
+      if (pending.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-slate-400">
+            <i class="fa-solid fa-circle-check text-3xl text-emerald-500 mb-2 block"></i>
+            No pending warning requests from HR members.
+          </div>
+        `;
+        return;
+      }
+
+      const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
+
+      container.innerHTML = pending.map(w => `
+        <div class="p-3.5 rounded-xl border bg-amber-50/70 border-amber-300 transition space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="font-bold text-[#002244] text-sm flex items-center gap-2">
+                <span>${w.memberName}</span>
+                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded uppercase bg-amber-200 text-amber-900 border border-amber-300">Pending Approval</span>
+              </div>
+              <div class="text-[11px] font-semibold text-rose-700 mt-0.5">${w.level}</div>
+            </div>
+            <span class="text-[10px] text-slate-500 font-mono">${w.date}</span>
+          </div>
+
+          <p class="text-slate-700 text-xs italic bg-white/80 p-2.5 rounded-lg border border-amber-200">"${w.reason}"</p>
+
+          <div class="pt-2 border-t border-amber-200/60 flex items-center justify-between text-xs flex-wrap gap-2">
+            <span class="text-[10px] text-slate-600">Submitted by: <strong class="text-slate-800">${w.reportedBy}</strong></span>
+
+            ${isLeadership ? `
+              <div class="flex items-center gap-1.5">
+                <button onclick="approveWarningRequest('${w.id}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded shadow transition flex items-center gap-1">
+                  <i class="fa-solid fa-check text-[10px]"></i>
+                  <span>Approve Warning</span>
+                </button>
+                <button onclick="openEditWarningModal('${w.id}')" class="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-[#002244] border border-amber-300 font-bold text-xs rounded transition flex items-center gap-1">
+                  <i class="fa-solid fa-pen-to-square text-[10px]"></i>
+                  <span>Edit</span>
+                </button>
+                <button onclick="dismissWarning('${w.id}')" class="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs rounded transition flex items-center gap-1">
+                  <i class="fa-solid fa-xmark text-[10px]"></i>
+                  <span>Dismiss</span>
+                </button>
+              </div>
+            ` : '<span class="text-slate-400 italic text-[11px]">Leadership action only</span>'}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function quickRequestWarningForMember(memberId) {
+      openWarningModal('request');
+      const sel = document.getElementById("warningMemberSelect");
+      if (sel) sel.value = memberId;
+    }
+
     function populateMonitoringMemberSelect() {
       const activeM = members.filter(m => m.status !== "Discharged");
       const targetSelect = document.getElementById("monitoringTargetMember");
@@ -1588,6 +2097,8 @@
 
       if (countEl) countEl.textContent = monitoringNotes.length;
       if (!container) return;
+
+      const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
 
       let filtered = monitoringNotes.filter(n => {
         if (memberFilter && n.memberId !== memberFilter) return false;
@@ -1644,13 +2155,19 @@
                 </div>
               </div>
 
-              <!-- Category Badge & Edit Action -->
+              <!-- Category Badge & Edit / Remove Actions -->
               <div class="flex items-center gap-2 flex-shrink-0">
                 <span class="text-[10px] font-bold px-2.5 py-1 rounded-full border ${badgeColor}">${n.category}</span>
-                <button onclick="openEditMonitoringNoteModal('${n.id}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[11px] inline-flex items-center gap-1 transition" title="Edit Note">
-                  <i class="fa-solid fa-pen-to-square text-[10px]"></i>
-                  <span class="hidden sm:inline">Edit</span>
-                </button>
+                ${isLeadership ? `
+                  <button onclick="openEditMonitoringNoteModal('${n.id}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[11px] inline-flex items-center gap-1 transition" title="Edit Note">
+                    <i class="fa-solid fa-pen-to-square text-[10px]"></i>
+                    <span class="hidden sm:inline">Edit</span>
+                  </button>
+                  <button onclick="deleteMonitoringNote('${n.id}')" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded font-bold text-[11px] inline-flex items-center gap-1 transition" title="Remove Note">
+                    <i class="fa-solid fa-trash-can text-[10px]"></i>
+                    <span class="hidden sm:inline">Remove</span>
+                  </button>
+                ` : ''}
               </div>
             </div>
 
@@ -1826,37 +2343,73 @@
       const isViceHead = currentUser.role === "HR Vice Head";
       const isHeadOrVice = currentUser.role === "HR Head" || isViceHead;
       const isDean = currentUser.role === "Admission's Dean";
+      const isHRMember = currentUser.role === "HR";
 
-      document.getElementById("systemUsersBtn").style.display = isViceHead ? "inline-flex" : "none";
-      document.getElementById("deanNoticeBanner").style.display = isDean ? "flex" : "none";
-      document.getElementById("addStarAmbassadorBtn").style.display = isHeadOrVice ? "inline-flex" : "none";
+      const sysUsersBtn = document.getElementById("systemUsersBtn");
+      if (sysUsersBtn) sysUsersBtn.style.display = isViceHead ? "inline-flex" : "none";
 
-      ["tabBtn-directory", "tabBtn-attendance", "tabBtn-monitoring", "tabBtn-copilot"].forEach(id => {
-        const btn = document.getElementById(id);
-        if (btn) btn.style.display = isDean ? "none" : "flex";
-      });
+      const deanBanner = document.getElementById("deanNoticeBanner");
+      if (deanBanner) deanBanner.style.display = "none";
+
+      const starBtn = document.getElementById("addStarAmbassadorBtn");
+      if (starBtn) starBtn.style.display = isHeadOrVice ? "inline-flex" : "none";
+
+      const addEvtBtn = document.getElementById("dashboardAddEventBtn");
+      if (addEvtBtn) addEvtBtn.style.display = isHeadOrVice ? "inline-flex" : "none";
+
+      const addNewMemBtn = document.getElementById("addNewMemberBtn");
+      if (addNewMemBtn) addNewMemBtn.style.display = isHeadOrVice ? "inline-flex" : "none";
+
+      const createAttBtn = document.getElementById("btnCreateAttendanceSheet");
+      if (createAttBtn) createAttBtn.style.display = isHeadOrVice ? "inline-flex" : "none";
+
+      const monFormCard = document.getElementById("monitoringFormCard");
+      if (monFormCard) monFormCard.style.display = isDean ? "none" : "block";
+
+      // Side control panel cards visibility
+      const sideWarnCard = document.getElementById("sideWarningCard");
+      const sideWarnReqCard = document.getElementById("sideWarningRequestsCard");
+      if (sideWarnCard) sideWarnCard.style.display = isHRMember ? "none" : "block";
+      if (sideWarnReqCard) sideWarnReqCard.style.display = isHeadOrVice ? "block" : "none";
+
+      // Tabs visibility
+      const tabDirectory = document.getElementById("tabBtn-directory");
+      const tabAttendance = document.getElementById("tabBtn-attendance");
+      const tabMonitoring = document.getElementById("tabBtn-monitoring");
+      const tabCopilot = document.getElementById("tabBtn-copilot");
+      const tabActivityLog = document.getElementById("tabBtn-activityLog");
+
+      if (tabDirectory) tabDirectory.style.display = "flex";
+      if (tabMonitoring) tabMonitoring.style.display = "flex";
+      if (tabAttendance) tabAttendance.style.display = isHRMember ? "none" : "flex";
+      if (tabCopilot) tabCopilot.style.display = isHRMember ? "none" : "flex";
+      if (tabActivityLog) tabActivityLog.style.display = isHeadOrVice ? "flex" : "none";
 
       const noteAuthorEl = document.getElementById("monitoringAuthorNamePreview");
       if (noteAuthorEl) noteAuthorEl.textContent = currentUser.name;
       const noteAuthorRoleEl = document.getElementById("monitoringAuthorRolePreview");
       if (noteAuthorRoleEl) noteAuthorRoleEl.textContent = currentUser.role;
 
-      if (isDean) switchTab("dashboard");
-
       const sideWarningActionBtn = document.getElementById("sideWarningActionBtn");
       if (sideWarningActionBtn) {
         if (isHeadOrVice) {
           sideWarningActionBtn.innerHTML = `<button onclick="openWarningModal('issue')" class="px-2.5 py-1 bg-rose-600 text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-1"><i class="fa-solid fa-plus text-[10px]"></i><span>Issue</span></button>`;
-        } else if (currentUser.role === "HR") {
-          sideWarningActionBtn.innerHTML = `<button onclick="openWarningModal('request')" class="px-2.5 py-1 bg-amber-600 text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-1"><i class="fa-solid fa-paper-plane text-[10px]"></i><span>Request</span></button>`;
-        } else sideWarningActionBtn.innerHTML = ``;
+        } else {
+          sideWarningActionBtn.innerHTML = ``;
+        }
       }
+
       renderAllViews();
     }
 
     function switchTab(tabId) {
-      if (currentUser.role === "Admission's Dean" && tabId !== "dashboard") {
-        showToast("Dean account has view-only access to the Dashboard Overview.", "warning"); return;
+      if (currentUser.role === "HR" && !["dashboard", "directory", "monitoring"].includes(tabId)) {
+        showToast("HR Members have access to Dashboard, Team Members, and Monitoring only.", "warning");
+        return;
+      }
+      if (currentUser.role === "Admission's Dean" && tabId === "activityLog") {
+        showToast("Activity log is restricted to HR Leadership.", "warning");
+        return;
       }
       document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
       document.querySelectorAll(".nav-tab").forEach(el => el.classList.remove("active"));
@@ -1913,13 +2466,51 @@
 
     function renderMembersTable(filter = "") {
       const tbody = document.getElementById("membersTableBody");
+      const thead = document.getElementById("membersTableHead");
+      if (!tbody) return;
+
       const activeM = members.filter(m => m.status !== "Discharged");
       const filtered = activeM.filter(m => m.name.toLowerCase().includes(filter.toLowerCase()) || m.role.toLowerCase().includes(filter.toLowerCase()) || m.college.toLowerCase().includes(filter.toLowerCase()) || (m.studentId && m.studentId.includes(filter)) || (m.phone && m.phone.includes(filter)));
       const isDean = currentUser.role === "Admission's Dean";
       const isViceHead = currentUser.role === "HR Vice Head";
       const isHeadOrVice = currentUser.role === "HR Head" || isViceHead;
+      const isHRMember = currentUser.role === "HR";
 
-      if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-slate-400">No team members found.</td></tr>`; return; }
+      if (thead) {
+        if (isHRMember) {
+          thead.innerHTML = `
+            <tr>
+              <th class="py-3 px-4">Name</th>
+              <th class="py-3 px-4">Role & Position</th>
+              <th class="py-3 px-4">Faculty</th>
+              <th class="py-3 px-4">Official Working Days</th>
+              <th class="py-3 px-4 text-right">Actions</th>
+            </tr>
+          `;
+        } else {
+          thead.innerHTML = `
+            <tr>
+              <th class="py-3 px-4">Name</th>
+              <th class="py-3 px-4">Role & Position</th>
+              <th class="py-3 px-4">Faculty</th>
+              <th class="py-3 px-4">ID</th>
+              <th class="py-3 px-4">Phone Number</th>
+              <th class="py-3 px-4 text-center">Attendance Count</th>
+              <th class="py-3 px-4 text-center">Attendance Rate</th>
+              <th class="py-3 px-4">Official Working Days</th>
+              <th class="py-3 px-4 text-center">WARNINGS</th>
+              <th class="py-3 px-4 text-center">Performance</th>
+              <th class="py-3 px-4 text-right">Actions</th>
+            </tr>
+          `;
+        }
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${isHRMember ? 5 : 11}" class="text-center py-6 text-slate-400">No team members found.</td></tr>`;
+        return;
+      }
+
       tbody.innerHTML = filtered.map(m => {
         const rate = m.attendanceCount > 0 ? Math.min(100, Math.round((m.attendanceCount / 12) * 100)) : 100;
         const daysBadges = (m.officialDays || []).map(d => `<span class="bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold px-1.5 py-0.5 rounded">${d.substring(0,3)}</span>`).join(" ");
@@ -1933,6 +2524,23 @@
             <button onclick="updateExtraDaysCount('${m.id}', 1)" class="w-4 h-4 rounded bg-amber-200 hover:bg-amber-300 text-[#002244] font-black flex items-center justify-center text-xs leading-none">+</button>
           </div>
         ` : (extraCount > 0 ? `<span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded">+${extraCount} Extra</span>` : '');
+
+        if (isHRMember) {
+          return `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="py-3 px-4 font-bold text-slate-800 text-sm whitespace-nowrap">${m.name}</td>
+              <td class="py-3 px-4 whitespace-nowrap"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800">${m.role}</span><span class="text-[10px] text-slate-500 ml-1">(${m.position})</span></td>
+              <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${m.college}</td>
+              <td class="py-3 px-4 whitespace-nowrap"><div class="flex items-center flex-wrap gap-1">${daysBadges}</div></td>
+              <td class="py-3 px-4 text-right whitespace-nowrap">
+                <button onclick="quickRequestWarningForMember('${m.id}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded text-[11px] font-bold transition inline-flex items-center gap-1 shadow-xs" title="Submit Warning Request">
+                  <i class="fa-solid fa-paper-plane text-[10px] text-amber-600"></i>
+                  <span>Request Warning</span>
+                </button>
+              </td>
+            </tr>
+          `;
+        }
 
         return `
           <tr class="hover:bg-slate-50 transition">
@@ -2140,32 +2748,136 @@
       renderAllViews();
     }
 
+    function getScheduledMembersForDay(dayName) {
+      const activeM = members.filter(m => m.status !== "Discharged");
+      return activeM.filter(m => (m.officialDays || []).includes(dayName) || (m.extraDays || []).includes(dayName));
+    }
+
+    function getSessionScheduledRollCall(s) {
+      const day = s.dayName || 'Sunday';
+      const scheduledM = getScheduledMembersForDay(day);
+      if (!s.rollCall || s.rollCall.length === 0) {
+        s.rollCall = scheduledM.map(m => ({
+          memberId: m.id,
+          name: m.name,
+          role: m.role,
+          isPresent: true,
+          isExcused: false,
+          excuseReason: ''
+        }));
+      } else {
+        // Retain roll call records for scheduled members only
+        s.rollCall = s.rollCall.filter(rc => scheduledM.some(m => m.name === rc.name || m.id === rc.memberId));
+        // Add any missing scheduled member
+        scheduledM.forEach(m => {
+          if (!s.rollCall.some(rc => rc.name === m.name || rc.memberId === m.id)) {
+            s.rollCall.push({
+              memberId: m.id,
+              name: m.name,
+              role: m.role,
+              isPresent: true,
+              isExcused: false,
+              excuseReason: ''
+            });
+          }
+        });
+      }
+      return s.rollCall;
+    }
+
     function renderAttendanceSessions() {
-      document.getElementById("attendanceSessionsGrid").innerHTML = attendanceSessions.map(s => `
-        <div onclick="inspectSession('${s.id}')" class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm space-y-3 cursor-pointer hover:border-[#002244] transition relative group">
+      const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
+      const grid = document.getElementById("attendanceSessionsGrid");
+      if (!grid) return;
+
+      if (attendanceSessions.length === 0) {
+        grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 bg-white rounded-xl border border-slate-200"><i class="fa-solid fa-calendar-xmark text-3xl mb-2 text-slate-300 block"></i>No attendance sessions logged.</div>`;
+        return;
+      }
+
+      grid.innerHTML = attendanceSessions.map(s => {
+        const rcList = getSessionScheduledRollCall(s);
+        const total = rcList.length;
+        const present = rcList.filter(r => r.isPresent).length;
+        const absent = total - present;
+        const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+        s.presentCount = present;
+        s.totalCount = total;
+
+        const memberPills = rcList.length > 0 ? rcList.map(r => `
+          <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md font-semibold border ${
+            r.isPresent
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              : (r.isExcused ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-rose-50 text-rose-800 border-rose-200')
+          }" title="${r.isPresent ? 'Present' : (r.isExcused ? `Excused: ${r.excuseReason || 'Yes'}` : 'Absent')}">
+            <span class="w-1.5 h-1.5 rounded-full ${r.isPresent ? 'bg-emerald-500' : (r.isExcused ? 'bg-amber-500' : 'bg-rose-500')}"></span>
+            <span>${r.name}</span>
+            ${!r.isPresent ? (r.isExcused ? '<span class="text-[9px] font-bold text-amber-600">(Exc)</span>' : '<span class="text-[9px] font-bold text-rose-600">(Abs)</span>') : ''}
+          </span>
+        `).join("") : `<span class="text-xs text-slate-400 italic">No members assigned for ${s.dayName}</span>`;
+
+        return `
+        <div onclick="inspectSession('${s.id}')" class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm space-y-3 cursor-pointer hover:border-[#002244] hover:shadow-md transition relative group">
           <div class="flex items-start justify-between">
             <div>
-              <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase ${s.type.includes('Double') || s.type.includes('Triple') ? 'bg-amber-100 text-amber-900' : s.type.includes('Orientation') ? 'bg-purple-100 text-purple-900' : 'bg-blue-100 text-blue-900'}">${s.type}</span>
+              <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
+                s.type.includes('Double') || s.type.includes('Triple') ? 'bg-amber-100 text-amber-900 border border-amber-300' :
+                s.type.includes('Orientation') ? 'bg-purple-100 text-purple-900 border border-purple-300' :
+                s.type.includes('EDU Gate') ? 'bg-blue-100 text-blue-900 border border-blue-300' :
+                'bg-slate-100 text-slate-800 border border-slate-200'
+              }">${s.type}</span>
               <h4 class="font-bold text-sm text-[#002244] mt-1">${s.title}</h4>
             </div>
             <div class="flex items-center gap-1.5">
-              <button onclick="event.stopPropagation(); inspectSession('${s.id}', true)" class="text-slate-400 hover:text-[#002244] hover:bg-amber-100 transition p-1 rounded" title="Edit Session Details & Roll Call"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-              <button onclick="event.stopPropagation(); deleteAttendanceSession('${s.id}')" class="text-slate-300 hover:text-rose-600 transition p-1" title="Delete Session"><i class="fa-solid fa-trash-can text-xs"></i></button>
-              <i class="fa-solid fa-calendar-day text-slate-400"></i>
+              ${isHeadOrVice ? `
+                <button onclick="event.stopPropagation(); inspectSession('${s.id}', true)" class="text-slate-400 hover:text-[#002244] hover:bg-amber-100 transition p-1.5 rounded" title="Edit Session Details & Roll Call"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                <button onclick="event.stopPropagation(); deleteAttendanceSession('${s.id}')" class="text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded" title="Delete Session"><i class="fa-solid fa-trash-can text-xs"></i></button>
+              ` : ''}
+              <i class="fa-solid fa-calendar-day text-slate-400 p-1"></i>
             </div>
           </div>
-          <div class="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-            <span><i class="fa-regular fa-clock mr-1"></i> ${s.dayName || 'Sunday'}, ${s.date}</span>
-            <span class="font-bold text-emerald-700">${s.presentCount} / ${s.totalCount} Present</span>
+
+          <!-- Highlighted Attended Count Stats (visible on day card face without pressing) -->
+          <div class="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-center">
+            <div class="border-r border-slate-200">
+              <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Attended</div>
+              <div class="text-base font-black text-emerald-700">${present} <span class="text-xs font-semibold text-slate-400">/ ${total}</span></div>
+            </div>
+            <div class="border-r border-slate-200">
+              <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Absent</div>
+              <div class="text-base font-black ${absent > 0 ? 'text-rose-600' : 'text-slate-600'}">${absent}</div>
+            </div>
+            <div>
+              <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Rate</div>
+              <div class="text-base font-black ${rate >= 75 ? 'text-emerald-700' : 'text-amber-700'}">${rate}%</div>
+            </div>
+          </div>
+
+          <!-- Scheduled Members for this day view -->
+          <div class="pt-2 border-t border-slate-100">
+            <div class="flex items-center justify-between text-xs text-slate-500 mb-1.5">
+              <span class="font-bold text-slate-700"><i class="fa-regular fa-clock mr-1 text-[#c59b27]"></i> ${s.dayName || 'Sunday'}, ${s.date}</span>
+              <span class="text-[10px] text-slate-500 font-semibold">${total} Scheduled</span>
+            </div>
+            <div class="flex flex-wrap gap-1 mt-1">
+              ${memberPills}
+            </div>
           </div>
         </div>
-      `).join("");
+        `;
+      }).join("");
     }
 
     function deleteAttendanceSession(sId) {
-      attendanceSessions = attendanceSessions.filter(s => s.id !== sId);
-      showToast("Attendance session deleted.");
-      renderAllViews();
+      const s = attendanceSessions.find(x => x.id === sId);
+      if (!s) return;
+      if (confirm(`Delete attendance session "${s.title}"?`)) {
+        attendanceSessions = attendanceSessions.filter(x => x.id !== sId);
+        logActivity(`Deleted attendance session: ${s.title}`, "Attendance", `${s.dayName}, ${s.date}`);
+        showToast("Attendance session deleted.");
+        document.getElementById("attendanceInspectorBox")?.classList.add("hidden");
+        renderAllViews();
+      }
     }
 
     let currentEditingSessionId = null;
@@ -2181,12 +2893,15 @@
       
       const editForm = document.getElementById("inspectorEditForm");
       const saveBtnContainer = document.getElementById("inspectorSaveBtnContainer");
-      const editBtnLabel = document.getElementById("editBtnLabel");
+      const editBtn = document.getElementById("inspectorEditBtn");
+      const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
 
-      if (isInspectorEditing) {
+      if (editBtn) editBtn.style.display = isHeadOrVice ? "inline-flex" : "none";
+
+      if (isInspectorEditing && isHeadOrVice) {
         editForm.classList.remove("hidden");
         saveBtnContainer.classList.remove("hidden");
-        editBtnLabel.textContent = "Cancel Edit";
+        if (document.getElementById("editBtnLabel")) document.getElementById("editBtnLabel").textContent = "Cancel Edit";
 
         document.getElementById("editSessionTitleInput").value = s.title;
         document.getElementById("editSessionDateInput").value = s.date;
@@ -2194,14 +2909,13 @@
       } else {
         editForm.classList.add("hidden");
         saveBtnContainer.classList.add("hidden");
-        editBtnLabel.textContent = "Edit Details";
+        if (document.getElementById("editBtnLabel")) document.getElementById("editBtnLabel").textContent = "Edit Details";
       }
 
       const tbody = document.getElementById("inspectorTableBody");
-      const activeM = members.filter(m => m.status !== "Discharged");
-      const rollCallData = s.rollCall && s.rollCall.length > 0 ? s.rollCall : activeM.map(m => ({ name: m.name, role: m.role, isPresent: true, isExcused: false, excuseReason: '' }));
+      const rollCallData = getSessionScheduledRollCall(s);
 
-      if (isInspectorEditing) {
+      if (isInspectorEditing && isHeadOrVice) {
         tbody.innerHTML = rollCallData.map((rc, idx) => `
           <tr class="hover:bg-slate-50">
             <td class="py-2.5 px-3 font-bold text-slate-800">${rc.name}</td>
@@ -2252,8 +2966,7 @@
       const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
       const newDayName = days[new Date(newDate).getDay()] || s.dayName;
 
-      const activeM = members.filter(m => m.status !== "Discharged");
-      const currentRollCall = s.rollCall && s.rollCall.length > 0 ? s.rollCall : activeM.map(m => ({ name: m.name, role: m.role, isPresent: true, isExcused: false }));
+      const currentRollCall = getSessionScheduledRollCall(s);
 
       const updatedRollCall = currentRollCall.map((rc, idx) => {
         const statusVal = document.getElementById(`edit-status-${idx}`)?.value;
@@ -2282,6 +2995,7 @@
       s.absentCount = absCount;
       s.excusedCount = excCount;
 
+      logActivity(`Updated attendance session: ${s.title}`, "Attendance", `${s.dayName}, ${s.date} (${s.presentCount}/${s.totalCount} present)`);
       showToast("Attendance session updated successfully!");
       inspectSession(s.id, false);
       renderAllViews();
@@ -2298,17 +3012,12 @@
     }
 
     function renderRollCallListForDay(dayName) {
-      const activeM = members.filter(m => m.status !== "Discharged");
-      const filterCb = document.getElementById("attSheetFilterDayCb");
-      const onlyDay = filterCb ? filterCb.checked : true;
-
-      const scheduledM = onlyDay ? activeM.filter(m => (m.officialDays || []).includes(dayName) || (m.extraDays || []).includes(dayName)) : activeM;
-
+      const scheduledM = getScheduledMembersForDay(dayName);
       const container = document.getElementById("attendanceRollCallList");
       if (!container) return;
 
       if (scheduledM.length === 0) {
-        container.innerHTML = `<div class="p-6 text-center text-slate-400">No members scheduled for ${dayName}. (Uncheck filter to show all members)</div>`;
+        container.innerHTML = `<div class="p-6 text-center text-slate-400 font-medium">No team members are scheduled for ${dayName}.</div>`;
         return;
       }
 
@@ -2339,38 +3048,42 @@
 
     function handleCreateAttendanceSheet(e) {
       e.preventDefault();
-      const activeM = members.filter(m => m.status !== "Discharged");
       const dVal = document.getElementById("attSheetDate").value;
       const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
       const dayName = days[new Date(dVal).getDay()] || "Sunday";
       
-      const filterCb = document.getElementById("attSheetFilterDayCb");
-      const onlyDay = filterCb ? filterCb.checked : true;
-      const targetM = onlyDay ? activeM.filter(m => (m.officialDays || []).includes(dayName) || (m.extraDays || []).includes(dayName)) : activeM;
+      const targetM = getScheduledMembersForDay(dayName);
+      if (targetM.length === 0) {
+        showToast(`No members are scheduled for ${dayName}.`, "warning");
+        return;
+      }
 
-      const rollCall = activeM.map(m => {
-        const isIncluded = targetM.some(tm => tm.id === m.id);
+      const rollCall = targetM.map(m => {
         const presEl = document.getElementById(`rc-pres-${m.id}`);
-        const isPresent = isIncluded && presEl ? presEl.checked : false;
+        const isPresent = presEl ? presEl.checked : false;
         const excEl = document.getElementById(`rc-exc-${m.id}`);
-        const isExcused = isIncluded && excEl ? excEl.checked : false;
+        const isExcused = excEl ? excEl.checked : false;
         const reasonEl = document.getElementById(`rc-reason-${m.id}`);
-        const excuseReason = isIncluded && reasonEl ? reasonEl.value.trim() : "";
+        const excuseReason = reasonEl ? reasonEl.value.trim() : "";
         if (isPresent) m.attendanceCount += 1;
         return { memberId: m.id, name: m.name, role: m.role, isPresent, isExcused, excuseReason };
       });
 
-      attendanceSessions.unshift({
+      const newTitle = document.getElementById("attSheetTitle").value.trim() || `${dayName} Session`;
+      const newType = document.getElementById("attSheetType").value;
+      const newSession = {
         id: `att-${Date.now()}`,
-        title: document.getElementById("attSheetTitle").value.trim(),
+        title: newTitle,
         date: dVal,
         dayName,
-        type: document.getElementById("attSheetType").value,
+        type: newType,
         presentCount: rollCall.filter(r => r.isPresent).length,
         totalCount: targetM.length,
         rollCall
-      });
+      };
 
+      attendanceSessions.unshift(newSession);
+      logActivity(`Created attendance roll call: ${newTitle}`, "Attendance", `${dayName}, ${dVal} (${newSession.presentCount}/${newSession.totalCount} present)`);
       closeModal("addAttendanceModal");
       document.getElementById("attendanceSheetForm").reset();
       showToast(`Attendance for ${dayName} saved.`);
@@ -2677,8 +3390,10 @@
       renderMembersTable();
       renderAttendanceSessions();
       renderSideWarnings();
+      renderWarningRequests();
       populateMonitoringMemberSelect();
       renderMonitoringNotes();
+      renderActivityLogs();
     }
 
     window.onload = function() { applyUserRoleUI(); };

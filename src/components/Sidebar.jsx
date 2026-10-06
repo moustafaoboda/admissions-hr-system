@@ -6,8 +6,6 @@ export default function Sidebar() {
     currentUser,
     logout,
     warnings,
-    approveWarningRequest,
-    dismissWarning,
     setActiveModal,
     setModalExtraData
   } = useAuth();
@@ -20,6 +18,7 @@ export default function Sidebar() {
   const isDean = currentUser.role === "Admission's Dean";
 
   const initials = currentUser.name.split(" ").map(n => n[0]).slice(0, 2).join("");
+  const pendingRequestsCount = warnings.filter(w => w.status === 'Pending HR Approval').length;
 
   const handleOpenWarning = (mode) => {
     setModalExtraData({ mode });
@@ -70,55 +69,80 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {!isDean && (
-        <>
-          {/* Warnings Control Panel Button Card */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 hover:border-slate-300 transition">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-base font-bold shadow-sm">
-                  <i className="fa-solid fa-triangle-exclamation"></i>
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-[#002244]">Warnings</h3>
-                  <p className="text-[10px] text-slate-500">Disciplinary Notifications</p>
-                </div>
+      {/* Warnings Card: Hidden for HR Members, Viewable by Dean and Leadership */}
+      {!isHRMember && (
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 hover:border-slate-300 transition">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-base font-bold shadow-sm">
+                <i className="fa-solid fa-triangle-exclamation"></i>
               </div>
-
-              <span className="px-2 py-0.5 bg-rose-100 text-rose-800 text-xs font-black rounded-full border border-rose-300">
-                {warnings.length}
-              </span>
+              <div>
+                <h3 className="font-bold text-sm text-[#002244]">Warnings</h3>
+                <p className="text-[10px] text-slate-500">Disciplinary Notifications</p>
+              </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
-              <button
-                onClick={() => setActiveModal('warningsListModal')}
-                className="w-full py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold text-xs rounded-xl border border-rose-200 flex items-center justify-center gap-2 transition"
-              >
-                <i className="fa-solid fa-[#002244] fa-window-restore text-rose-600"></i>
-                <span>Open Warnings ({warnings.length})</span>
-              </button>
-
-              {isHeadOrVice ? (
-                <button
-                  onClick={() => handleOpenWarning('issue')}
-                  className="w-full py-1.5 px-3 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center justify-center gap-1.5 transition"
-                >
-                  <i className="fa-solid fa-plus text-[10px]"></i>
-                  <span>Issue New Warning</span>
-                </button>
-              ) : isHRMember ? (
-                <button
-                  onClick={() => handleOpenWarning('request')}
-                  className="w-full py-1.5 px-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg shadow flex items-center justify-center gap-1.5 transition"
-                >
-                  <i className="fa-solid fa-paper-plane text-[10px]"></i>
-                  <span>Request Warning</span>
-                </button>
-              ) : null}
-            </div>
+            <span className="px-2 py-0.5 bg-rose-100 text-rose-800 text-xs font-black rounded-full border border-rose-300">
+              {warnings.length}
+            </span>
           </div>
-        </>
+
+          <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+            <button
+              onClick={() => setActiveModal('warningsListModal')}
+              className="w-full py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold text-xs rounded-xl border border-rose-200 flex items-center justify-center gap-2 transition"
+            >
+              <i className="fa-solid fa-window-restore text-rose-600"></i>
+              <span>Open Warnings ({warnings.length})</span>
+            </button>
+
+            {isHeadOrVice && (
+              <button
+                onClick={() => handleOpenWarning('issue')}
+                className="w-full py-1.5 px-3 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center justify-center gap-1.5 transition"
+              >
+                <i className="fa-solid fa-plus text-[10px]"></i>
+                <span>Issue New Warning</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Warning Requests Card: Under Warnings, Visible ONLY to HR Leadership (Hidden for HR Members and Dean) */}
+      {isHeadOrVice && (
+        <div className="bg-white rounded-2xl p-4 border border-amber-200 shadow-sm space-y-3 hover:border-amber-300 transition bg-gradient-to-br from-amber-50/40 to-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-base font-bold shadow-sm border border-amber-200">
+                <i className="fa-solid fa-clock-rotate-left"></i>
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-[#002244]">Warning Requests</h3>
+                <p className="text-[10px] text-slate-500">Staff Submissions</p>
+              </div>
+            </div>
+
+            <span className={`px-2 py-0.5 text-xs font-black rounded-full border ${
+              pendingRequestsCount > 0
+                ? 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse'
+                : 'bg-slate-100 text-slate-600 border-slate-200'
+            }`}>
+              {pendingRequestsCount}
+            </span>
+          </div>
+
+          <div className="pt-2 border-t border-slate-100">
+            <button
+              onClick={() => setActiveModal('warningRequestsModal')}
+              className="w-full py-2 px-3 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-xl border border-[#c59b27] flex items-center justify-center gap-2 transition shadow-sm"
+            >
+              <i className="fa-solid fa-list-check text-xs"></i>
+              <span>Review Requests ({pendingRequestsCount})</span>
+            </button>
+          </div>
+        </div>
       )}
     </aside>
   );

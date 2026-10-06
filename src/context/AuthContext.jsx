@@ -154,9 +154,14 @@ const INITIAL_ATTENDANCE_SESSIONS = [
     date: "2026-09-20",
     dayName: "Sunday",
     type: "Normal Day",
-    presentCount: 6,
-    totalCount: 7,
-    rollCall: []
+    presentCount: 3,
+    totalCount: 4,
+    rollCall: [
+      { memberId: "mem-1", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+      { memberId: "mem-3", name: "Karim Hassan", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
+      { memberId: "mem-4", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+      { memberId: "mem-7", name: "Nour El-Din", role: "HR", isPresent: false, isExcused: true, excuseReason: "Midterm exam preparation" }
+    ]
   },
   {
     id: "att-2",
@@ -164,9 +169,13 @@ const INITIAL_ATTENDANCE_SESSIONS = [
     date: "2026-09-17",
     dayName: "Thursday",
     type: "EDU Gate",
-    presentCount: 7,
-    totalCount: 7,
-    rollCall: []
+    presentCount: 3,
+    totalCount: 3,
+    rollCall: [
+      { memberId: "mem-1", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+      { memberId: "mem-4", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+      { memberId: "mem-5", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" }
+    ]
   },
   {
     id: "att-3",
@@ -174,9 +183,52 @@ const INITIAL_ATTENDANCE_SESSIONS = [
     date: "2026-09-12",
     dayName: "Saturday",
     type: "Orientation Day",
-    presentCount: 7,
-    totalCount: 7,
-    rollCall: []
+    presentCount: 3,
+    totalCount: 3,
+    rollCall: [
+      { memberId: "mem-2", name: "Malak Nour", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
+      { memberId: "mem-5", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" },
+      { memberId: "mem-7", name: "Nour El-Din", role: "HR", isPresent: true, isExcused: false, excuseReason: "" }
+    ]
+  }
+];
+
+const INITIAL_ACTIVITY_LOGS = [
+  {
+    id: "act-1",
+    action: "Recorded field monitoring observation for Youssef El-Sayed",
+    category: "Monitoring",
+    user: "Omar Farouk",
+    role: "HR Vice Head",
+    timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
+    date: "2026-10-06",
+    time: "14:04",
+    isStarred: true,
+    details: "Category: Performance & Quality - Crowd control during rush hours."
+  },
+  {
+    id: "act-2",
+    action: "Submitted disciplinary warning request for Karim Hassan",
+    category: "Warnings",
+    user: "Sarah Mostafa",
+    role: "HR",
+    timestamp: new Date(Date.now() - 3600000 * 20).toISOString(),
+    date: "2026-10-05",
+    time: "16:20",
+    isStarred: false,
+    details: "Level: First Verbal Warning. Reason: Failure to wear admissions pin during VIP tour."
+  },
+  {
+    id: "act-3",
+    action: "Created attendance session: Registration Hall Shift",
+    category: "Attendance",
+    user: "Tarek Hegazy",
+    role: "HR Head",
+    timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
+    date: "2026-10-04",
+    time: "09:30",
+    isStarred: false,
+    details: "Type: Normal Day. Attendance: 3 / 4 Present on Sunday."
   }
 ];
 
@@ -281,6 +333,52 @@ export function AuthProvider({ children }) {
   const [monitoringNotes, setMonitoringNotes] = useState(INITIAL_MONITORING_NOTES);
   const [monitoringSelectedMemberId, setMonitoringSelectedMemberId] = useState("");
   const [recruits, setRecruits] = useState([]);
+  const [activityLogs, setActivityLogs] = useState(INITIAL_ACTIVITY_LOGS);
+
+  // Auto purge unstarred activity logs older than 7 days
+  useEffect(() => {
+    const now = Date.now();
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    setActivityLogs(prev => prev.filter(log => log.isStarred || (now - new Date(log.timestamp).getTime()) < sevenDaysMs));
+  }, []);
+
+  const logActivity = (action, category = "General", details = "") => {
+    const now = new Date();
+    const newEntry = {
+      id: `act-${Date.now()}`,
+      action,
+      category,
+      user: currentUser ? currentUser.name : "System",
+      role: currentUser ? currentUser.role : "HR",
+      timestamp: now.toISOString(),
+      date: now.toISOString().split("T")[0],
+      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isStarred: false,
+      details: details || ""
+    };
+    setActivityLogs(prev => [newEntry, ...prev]);
+  };
+
+  const toggleStarActivityLog = (id) => {
+    setActivityLogs(prev => prev.map(log => {
+      if (log.id === id) {
+        const nextStarred = !log.isStarred;
+        showToast(nextStarred ? "Activity starred (retained permanently)." : "Activity unstarred (will auto-delete after 7 days).");
+        return { ...log, isStarred: nextStarred };
+      }
+      return log;
+    }));
+  };
+
+  const updateActivityLog = (id, updatedFields) => {
+    setActivityLogs(prev => prev.map(log => log.id === id ? { ...log, ...updatedFields } : log));
+    showToast("Activity log entry updated.");
+  };
+
+  const deleteActivityLog = (id) => {
+    setActivityLogs(prev => prev.filter(log => log.id !== id));
+    showToast("Activity log entry removed.");
+  };
 
   // Modals state
   const [activeModal, setActiveModal] = useState(null);
@@ -319,8 +417,12 @@ export function AuthProvider({ children }) {
   };
 
   const switchTab = (tabId) => {
-    if (currentUser?.role === "Admission's Dean" && tabId !== "dashboard") {
-      showToast("Dean account has view-only access to the Dashboard Overview.", "warning");
+    if (currentUser?.role === "HR" && !["dashboard", "directory", "monitoring"].includes(tabId)) {
+      showToast("HR Members have access to Dashboard, Team Members, and Monitoring only.", "warning");
+      return;
+    }
+    if (currentUser?.role === "Admission's Dean" && tabId === "activityLog") {
+      showToast("Activity log is restricted to HR Leadership.", "warning");
       return;
     }
     setActiveTab(tabId);
@@ -344,11 +446,14 @@ export function AuthProvider({ children }) {
       status: "Active"
     };
     setMembers(prev => [...prev, mem]);
+    logActivity(`Added new team member: ${mem.name}`, "Members", `${mem.role} - ${mem.college}`);
     showToast(`Ambassador ${mem.name} registered in Smart Village team.`);
   };
 
   const editMemberInfo = (id, updatedFields) => {
+    const target = members.find(m => m.id === id);
     setMembers(prev => prev.map(m => m.id === id ? { ...m, ...updatedFields } : m));
+    logActivity(`Updated info for: ${target ? target.name : 'member'}`, "Members");
     showToast("Member information updated successfully.");
   };
 
@@ -372,6 +477,7 @@ export function AuthProvider({ children }) {
   const deleteMember = (id) => {
     const mem = members.find(m => m.id === id);
     setMembers(prev => prev.filter(m => m.id !== id));
+    logActivity(`Deleted team member: ${mem?.name || 'Member'}`, "Members");
     showToast(`Member ${mem?.name || ''} deleted.`);
   };
 
@@ -394,11 +500,14 @@ export function AuthProvider({ children }) {
 
     setMembers(prev => prev.filter(m => m.id !== id));
     setDischargedMembers(prev => [dischargedRecord, ...prev]);
+    logActivity(`Discharged member: ${mem.name}`, "Members", `${dischargeType} - Reason: ${reason}`);
     showToast(`${mem.name} moved to Discharged Members list.`);
   };
 
   const updateMemberPerformance = (id, newScore) => {
+    const mem = members.find(m => m.id === id);
     setMembers(prev => prev.map(m => m.id === id ? { ...m, score: Math.max(0, Math.min(100, Number(newScore))) } : m));
+    logActivity(`Updated performance score for: ${mem ? mem.name : 'member'} to ${newScore}%`, "Members");
     showToast("Performance score updated.");
   };
 
@@ -417,16 +526,20 @@ export function AuthProvider({ children }) {
     };
 
     setStarAmbassadors(prev => [star, ...prev]);
+    logActivity(`Granted star ambassador recognition to ${mem.name}`, "Members", awardTitle);
     showToast(`Star Ambassador recognition granted to ${mem.name}!`);
   };
 
   const removeStarAmbassador = async (starId) => {
     setStarAmbassadors(prev => prev.filter(s => s.id !== starId));
+    logActivity("Removed star recognition", "Members");
     showToast("Star recognition removed.");
   };
 
   const deleteAttendanceSession = async (sessionId) => {
-    setAttendanceSessions(prev => prev.filter(s => s.id !== sessionId));
+    const s = attendanceSessions.find(x => x.id === sessionId);
+    setAttendanceSessions(prev => prev.filter(x => x.id !== sessionId));
+    logActivity(`Deleted attendance session: ${s ? s.title : sessionId}`, "Attendance");
     showToast("Attendance session deleted.");
   };
 
@@ -439,6 +552,7 @@ export function AuthProvider({ children }) {
       }
       return s;
     }));
+    logActivity(`Updated attendance session: ${updatedData.title || sessionId}`, "Attendance");
     showToast("Attendance session details updated.");
   };
 
@@ -470,6 +584,7 @@ export function AuthProvider({ children }) {
     };
 
     setAttendanceSessions(prev => [session, ...prev]);
+    logActivity(`Created attendance roll call: ${title}`, "Attendance", `${dayName}, ${date} (${presentCount}/${rollCallRecords.length} present)`);
     showToast(`Attendance for ${dayName} (${sessionType}) recorded successfully.`);
   };
 
@@ -498,6 +613,7 @@ export function AuthProvider({ children }) {
       };
 
       setWarnings(prev => [wrn, ...prev]);
+      logActivity(`Issued warning to: ${mem.name}`, "Warnings", `${level} - ${reason}`);
       showToast(`Warning recorded for ${mem.name}.`);
     } else {
       const wrn = {
@@ -512,6 +628,7 @@ export function AuthProvider({ children }) {
       };
 
       setWarnings(prev => [wrn, ...prev]);
+      logActivity(`Submitted warning request for: ${mem.name}`, "Warnings", `${level} - ${reason}`);
       showToast(`Warning request submitted for ${mem.name}.`);
     }
   };
@@ -527,21 +644,26 @@ export function AuthProvider({ children }) {
     } : m));
 
     setWarnings(prev => prev.map(w => w.id === warningId ? { ...w, status: "Confirmed Strike" } : w));
+    logActivity(`Approved warning request for: ${wrn.memberName}`, "Warnings");
     showToast(`Warning approved for ${wrn.memberName}.`);
   };
 
   const dismissWarning = async (warningId) => {
+    const wrn = warnings.find(w => w.id === warningId);
     setWarnings(prev => prev.filter(w => w.id !== warningId));
+    logActivity(`Dismissed warning for: ${wrn ? wrn.memberName : warningId}`, "Warnings");
     showToast("Warning record dismissed.");
   };
 
   const updateWarning = async (id, updatedFields) => {
     setWarnings(prev => prev.map(w => w.id === id ? { ...w, ...updatedFields } : w));
+    logActivity(`Updated warning details #${id}`, "Warnings");
     showToast("Warning details updated successfully.");
   };
 
   const updateDischargedMember = async (id, updatedFields) => {
     setDischargedMembers(prev => prev.map(d => d.id === id ? { ...d, ...updatedFields } : d));
+    logActivity(`Updated discharged record #${id}`, "Members");
     showToast("Discharged member record updated.");
   };
 
@@ -567,6 +689,7 @@ export function AuthProvider({ children }) {
         status: "Active"
       }
     ]);
+    logActivity(`Reinstated member back to active team: ${mem.name}`, "Members");
     showToast(`${mem.name} reinstated back to active team.`);
   };
 
@@ -582,16 +705,20 @@ export function AuthProvider({ children }) {
       color: newEvent.color || 'blue'
     };
     setEvents(prev => [...prev, evt]);
+    logActivity(`Created event: ${evt.title}`, "Events", `${evt.type} on ${evt.date}`);
     showToast(`Event "${evt.title}" created successfully.`);
   };
 
   const updateEvent = async (id, updatedFields) => {
     setEvents(prev => prev.map(e => e.id === id ? { ...e, ...updatedFields } : e));
+    logActivity(`Updated event: ${updatedFields.title || id}`, "Events");
     showToast("Event updated successfully.");
   };
 
   const deleteEvent = async (id) => {
+    const evt = events.find(e => e.id === id);
     setEvents(prev => prev.filter(e => e.id !== id));
+    logActivity(`Deleted event: ${evt ? evt.title : id}`, "Events");
     showToast("Event removed from logs.");
   };
 
@@ -611,6 +738,7 @@ export function AuthProvider({ children }) {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     setMonitoringNotes(prev => [newNote, ...prev]);
+    logActivity(`Logged monitoring note for: ${mem ? mem.name : 'member'}`, "Monitoring", `Category: ${category}`);
     showToast(`Monitoring note logged for ${mem ? mem.name : 'member'}`);
   };
 
@@ -632,11 +760,13 @@ export function AuthProvider({ children }) {
       }
       return n;
     }));
+    logActivity(`Updated monitoring note #${id}`, "Monitoring");
     showToast("Monitoring note updated.");
   };
 
   const deleteMonitoringNote = async (id) => {
     setMonitoringNotes(prev => prev.filter(n => n.id !== id));
+    logActivity(`Deleted monitoring note #${id}`, "Monitoring");
     showToast("Monitoring note deleted.");
   };
 
@@ -776,6 +906,11 @@ export function AuthProvider({ children }) {
         addMonitoringNote,
         updateMonitoringNote,
         deleteMonitoringNote,
+        activityLogs,
+        logActivity,
+        toggleStarActivityLog,
+        updateActivityLog,
+        deleteActivityLog,
         recruits,
         activeModal,
         setActiveModal,

@@ -15,6 +15,8 @@ export default function MonitoringTab() {
   } = useAuth();
 
   const activeMembers = members.filter(m => m.status !== "Discharged");
+  const isDean = currentUser?.role === "Admission's Dean";
+  const isHeadOrVice = currentUser?.role === "HR Head" || currentUser?.role === "HR Vice Head";
 
   // Form State
   const [targetMemberId, setTargetMemberId] = useState(monitoringSelectedMemberId || (activeMembers[0]?.id || ''));
@@ -107,11 +109,12 @@ export default function MonitoringTab() {
         </div>
       </div>
 
-      {/* Main 2-Column Layout: Form on Left, Feed on Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      {/* Main Layout: Form on Left (if not Dean), Feed on Right */}
+      <div className={`grid grid-cols-1 ${!isDean ? 'lg:grid-cols-3' : ''} gap-6 items-start`}>
 
         {/* Left Column: Note Creation Form */}
-        <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm space-y-4 lg:sticky lg:top-24">
+        {!isDean && (
+          <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm space-y-4 lg:sticky lg:top-24">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <h3 className="font-bold text-sm text-[#002244] flex items-center gap-2">
               <i className="fa-solid fa-comment-medical text-[#c59b27]"></i>
@@ -203,9 +206,10 @@ export default function MonitoringTab() {
             </button>
           </form>
         </div>
+        )}
 
         {/* Right Column: Feed of Saved Monitoring Notes */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className={`${!isDean ? 'lg:col-span-2' : ''} space-y-4`}>
           {/* Search & Filter Toolbar */}
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center gap-3">
             <div className="relative flex-grow w-full sm:w-auto">
@@ -287,19 +291,35 @@ export default function MonitoringTab() {
                         </div>
                       </div>
 
-                      {/* Category Badge & Edit Action */}
+                      {/* Category Badge & Actions */}
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${getCategoryBadgeClass(n.category)}`}>
                           {n.category}
                         </span>
-                        <button
-                          onClick={() => handleEditNote(n)}
-                          className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[11px] inline-flex items-center gap-1 transition"
-                          title="Edit Note"
-                        >
-                          <i className="fa-solid fa-pen-to-square text-[10px]"></i>
-                          <span className="hidden sm:inline">Edit</span>
-                        </button>
+                        {isHeadOrVice && (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleEditNote(n)}
+                              className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[11px] inline-flex items-center gap-1 transition"
+                              title="Edit Note"
+                            >
+                              <i className="fa-solid fa-pen-to-square text-[10px]"></i>
+                              <span className="hidden sm:inline">Edit</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (window.confirm("Delete this monitoring note permanently?")) {
+                                  deleteMonitoringNote(n.id);
+                                }
+                              }}
+                              className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded font-bold text-[11px] inline-flex items-center gap-1 transition"
+                              title="Remove Note"
+                            >
+                              <i className="fa-solid fa-trash-can text-[10px]"></i>
+                              <span className="hidden sm:inline">Remove</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 

@@ -6,7 +6,8 @@ export default function Navigation() {
 
   if (!currentUser) return null;
 
-  const isDean = currentUser.role === "Admission's Dean";
+  const isHRMember = currentUser.role === "HR";
+  const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
 
   return (
     <div className="bg-[#001830] border-t border-slate-700/60">
@@ -21,48 +22,60 @@ export default function Navigation() {
           <span>Dashboard Overview</span>
         </button>
 
-        {!isDean && (
-          <>
-            <button
-              onClick={() => switchTab('directory')}
-              className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
-                activeTab === 'directory' ? 'active' : ''
-              }`}
-            >
-              <i className="fa-solid fa-users"></i>
-              <span>Team Members</span>
-            </button>
+        <button
+          onClick={() => switchTab('directory')}
+          className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'directory' ? 'active' : ''
+          }`}
+        >
+          <i className="fa-solid fa-users"></i>
+          <span>Team Members</span>
+        </button>
 
-            <button
-              onClick={() => switchTab('attendance')}
-              className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
-                activeTab === 'attendance' ? 'active' : ''
-              }`}
-            >
-              <i className="fa-solid fa-clipboard-user"></i>
-              <span>Attendance</span>
-            </button>
+        {!isHRMember && (
+          <button
+            onClick={() => switchTab('attendance')}
+            className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'attendance' ? 'active' : ''
+            }`}
+          >
+            <i className="fa-solid fa-clipboard-user"></i>
+            <span>Attendance</span>
+          </button>
+        )}
 
-            <button
-              onClick={() => switchTab('monitoring')}
-              className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
-                activeTab === 'monitoring' ? 'active' : ''
-              }`}
-            >
-              <i className="fa-solid fa-clipboard-check text-[#c59b27]"></i>
-              <span>Monitoring</span>
-            </button>
+        <button
+          onClick={() => switchTab('monitoring')}
+          className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'monitoring' ? 'active' : ''
+          }`}
+        >
+          <i className="fa-solid fa-clipboard-check text-[#c59b27]"></i>
+          <span>Monitoring</span>
+        </button>
 
-            <button
-              onClick={() => switchTab('copilot')}
-              className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
-                activeTab === 'copilot' ? 'active' : ''
-              }`}
-            >
-              <i className="fa-solid fa-wand-magic-sparkles text-[#c59b27]"></i>
-              <span>AI HR Copilot</span>
-            </button>
-          </>
+        {!isHRMember && (
+          <button
+            onClick={() => switchTab('copilot')}
+            className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'copilot' ? 'active' : ''
+            }`}
+          >
+            <i className="fa-solid fa-wand-magic-sparkles text-[#c59b27]"></i>
+            <span>AI HR Copilot</span>
+          </button>
+        )}
+
+        {isHeadOrVice && (
+          <button
+            onClick={() => switchTab('activityLog')}
+            className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'activityLog' ? 'active' : ''
+            }`}
+          >
+            <i className="fa-solid fa-clock-rotate-left text-amber-400"></i>
+            <span>Activity Log</span>
+          </button>
         )}
       </div>
     </div>

@@ -15,12 +15,14 @@ import AddAttendanceModal from './components/modals/AddAttendanceModal';
 import WarningModal from './components/modals/WarningModal';
 import SystemUsersModal from './components/modals/SystemUsersModal';
 import WarningsListModal from './components/modals/WarningsListModal';
+import WarningRequestsModal from './components/modals/WarningRequestsModal';
 import ExtraDaysModal from './components/modals/ExtraDaysModal';
 import AddEventModal from './components/modals/AddEventModal';
 import EditEventModal from './components/modals/EditEventModal';
 import EditWarningModal from './components/modals/EditWarningModal';
 import EditDischargedModal from './components/modals/EditDischargedModal';
 import EditMonitoringNoteModal from './components/modals/EditMonitoringNoteModal';
+import EditActivityModal from './components/modals/EditActivityModal';
 
 // Tabs
 import DashboardTab from './components/tabs/DashboardTab';
@@ -28,11 +30,13 @@ import DirectoryTab from './components/tabs/DirectoryTab';
 import AttendanceTab from './components/tabs/AttendanceTab';
 import MonitoringTab from './components/tabs/MonitoringTab';
 import CopilotTab from './components/tabs/CopilotTab';
+import ActivityLogTab from './components/tabs/ActivityLogTab';
 
 export default function App() {
   const { currentUser, activeTab } = useAuth();
 
-  const isDean = currentUser?.role === "Admission's Dean";
+  const isHeadOrVice = currentUser?.role === "HR Head" || currentUser?.role === "HR Vice Head";
+  const isHRMember = currentUser?.role === "HR";
 
   if (!currentUser) {
     return (
@@ -60,10 +64,11 @@ export default function App() {
           {/* Main Active Tab Content */}
           <div className="flex-grow w-full min-w-0">
             {activeTab === 'dashboard' && <DashboardTab />}
-            {!isDean && activeTab === 'directory' && <DirectoryTab />}
-            {!isDean && activeTab === 'attendance' && <AttendanceTab />}
-            {!isDean && activeTab === 'monitoring' && <MonitoringTab />}
-            {!isDean && activeTab === 'copilot' && <CopilotTab />}
+            {activeTab === 'directory' && <DirectoryTab />}
+            {!isHRMember && activeTab === 'attendance' && <AttendanceTab />}
+            {activeTab === 'monitoring' && <MonitoringTab />}
+            {!isHRMember && activeTab === 'copilot' && <CopilotTab />}
+            {isHeadOrVice && activeTab === 'activityLog' && <ActivityLogTab />}
           </div>
         </div>
       </main>
@@ -78,12 +83,14 @@ export default function App() {
       <WarningModal />
       <SystemUsersModal />
       <WarningsListModal />
+      <WarningRequestsModal />
       <ExtraDaysModal />
       <AddEventModal />
       <EditEventModal />
       <EditWarningModal />
       <EditDischargedModal />
       <EditMonitoringNoteModal />
+      <EditActivityModal />
     </div>
   );
 }

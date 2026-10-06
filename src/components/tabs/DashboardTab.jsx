@@ -219,18 +219,20 @@ export default function DashboardTab() {
                 <i className="fa-solid fa-calendar-check text-[#c59b27]"></i>
                 <span>Events & Operational Logs</span>
               </h4>
-              <button
-                onClick={() => setActiveModal('addEvent')}
-                className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded text-[11px] font-bold flex items-center gap-1 transition"
-              >
-                <i className="fa-solid fa-plus text-[10px]"></i>
-                <span>Add Event</span>
-              </button>
+              {isHeadOrVice && (
+                <button
+                  onClick={() => setActiveModal('addEvent')}
+                  className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded text-[11px] font-bold flex items-center gap-1 transition"
+                >
+                  <i className="fa-solid fa-plus text-[10px]"></i>
+                  <span>Add Event</span>
+                </button>
+              )}
             </div>
 
             <div className="space-y-2.5 text-xs max-h-72 overflow-y-auto custom-scrollbar pr-1">
               {events.length === 0 ? (
-                <div className="p-6 text-center text-slate-400">No events logged. Click "Add Event" to create one.</div>
+                <div className="p-6 text-center text-slate-400">No events logged.</div>
               ) : (
                 events.map(evt => {
                   const colorClasses = evt.color === 'amber'
@@ -266,16 +268,18 @@ export default function DashboardTab() {
                         </span>
                         <div className="flex items-center gap-1.5">
                           <span className={`${badgeClasses} px-2 py-0.5 rounded text-[10px]`}>{evt.status}</span>
-                          <button
-                            onClick={() => {
-                              setModalExtraData({ eventId: evt.id });
-                              setActiveModal('editEvent');
-                            }}
-                            className="p-1 bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 text-[10px] shadow-sm transition"
-                            title="Edit Event"
-                          >
-                            <i className="fa-solid fa-pen-to-square"></i>
-                          </button>
+                          {isHeadOrVice && (
+                            <button
+                              onClick={() => {
+                                setModalExtraData({ eventId: evt.id });
+                                setActiveModal('editEvent');
+                              }}
+                              className="p-1 bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 text-[10px] shadow-sm transition"
+                              title="Edit Event"
+                            >
+                              <i className="fa-solid fa-pen-to-square"></i>
+                            </button>
+                          )}
                         </div>
                       </div>
                       <p className="text-[11px] text-slate-600 mt-1">{evt.description || 'No description added.'}</p>
@@ -288,23 +292,6 @@ export default function DashboardTab() {
                 })
               )}
             </div>
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-slate-100 flex gap-2">
-            <button
-              onClick={() => setActiveModal('addEvent')}
-              className="flex-1 py-2 bg-[#002244] hover:bg-[#00162e] text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5"
-            >
-              <i className="fa-solid fa-calendar-plus text-[#c59b27]"></i>
-              <span>Add Event</span>
-            </button>
-            <button
-              onClick={() => setActiveModal('addAttendance')}
-              className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-300"
-            >
-              <i className="fa-solid fa-calendar-plus text-slate-600"></i>
-              <span>Add Attendance</span>
-            </button>
           </div>
         </div>
       </div>
