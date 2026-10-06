@@ -203,39 +203,36 @@ const INITIAL_WARNINGS = [
   }
 ];
 
-const INITIAL_RECRUITS = [
+const INITIAL_EVENTS = [
   {
-    id: "rec-1",
-    name: "Nouran Adel",
-    college: "Computing & IT",
-    term: 3,
-    targetRole: "PR",
-    interviewSchedule: "2026-09-25 at 11:30 AM",
-    interviewVenue: "Smart Village - Meeting Room 007",
-    status: "Interview Scheduled",
-    hrRecommendation: null
+    id: "evt-1",
+    title: "Orientations",
+    type: "Orientations",
+    status: "Active",
+    description: "Campus tours & parent welcome briefings in Hall A.",
+    location: "Hall A, Smart Village",
+    date: "2026-10-10",
+    color: "amber"
   },
   {
-    id: "rec-2",
-    name: "Mostafa Tamer",
-    college: "Engineering & Tech",
-    term: 4,
-    targetRole: "Operations",
-    interviewSchedule: null,
-    interviewVenue: null,
-    status: "Pending Schedule",
-    hrRecommendation: "Recommended Accept (by Sarah Mostafa)"
+    id: "evt-2",
+    title: "EDU Gate",
+    type: "EDU Gate",
+    status: "Scheduled",
+    description: "Annual admissions exhibition & university portal drive.",
+    location: "Exhibition Hall & Booth 4",
+    date: "2026-10-15",
+    color: "blue"
   },
   {
-    id: "rec-3",
-    name: "Hania Reda",
-    college: "Management & Tech",
-    term: 2,
-    targetRole: "Digital Transformation",
-    interviewSchedule: "2026-09-26 at 01:00 PM",
-    interviewVenue: "Smart Village - Meeting Room 007",
-    status: "Interview Scheduled",
-    hrRecommendation: null
+    id: "evt-3",
+    title: "Meetings",
+    type: "Meetings",
+    status: "Weekly",
+    description: "General assembly & committee sync in Meeting Room 007.",
+    location: "Meeting Room 007",
+    date: "Every Wednesday",
+    color: "emerald"
   }
 ];
 
@@ -251,7 +248,8 @@ export function AuthProvider({ children }) {
   const [starAmbassadors, setStarAmbassadors] = useState(INITIAL_STAR_AMBASSADORS);
   const [attendanceSessions, setAttendanceSessions] = useState(INITIAL_ATTENDANCE_SESSIONS);
   const [warnings, setWarnings] = useState(INITIAL_WARNINGS);
-  const [recruits, setRecruits] = useState(INITIAL_RECRUITS);
+  const [events, setEvents] = useState(INITIAL_EVENTS);
+  const [recruits, setRecruits] = useState([]);
 
   // Modals state
   const [activeModal, setActiveModal] = useState(null);
@@ -506,6 +504,66 @@ export function AuthProvider({ children }) {
     showToast("Warning record dismissed.");
   };
 
+  const updateWarning = async (id, updatedFields) => {
+    setWarnings(prev => prev.map(w => w.id === id ? { ...w, ...updatedFields } : w));
+    showToast("Warning details updated successfully.");
+  };
+
+  const updateDischargedMember = async (id, updatedFields) => {
+    setDischargedMembers(prev => prev.map(d => d.id === id ? { ...d, ...updatedFields } : d));
+    showToast("Discharged member record updated.");
+  };
+
+  const reinstateMember = async (id) => {
+    const mem = dischargedMembers.find(d => d.id === id);
+    if (!mem) return;
+    setDischargedMembers(prev => prev.filter(d => d.id !== id));
+    setMembers(prev => [
+      ...prev,
+      {
+        id: mem.id,
+        name: mem.name,
+        role: mem.role || 'Operations',
+        position: 'Member',
+        college: mem.college || 'Computing & IT',
+        studentId: mem.studentId || '2024101',
+        phone: mem.phone || '+20 100 000 0000',
+        attendanceCount: 0,
+        officialDays: ["Sunday", "Tuesday", "Thursday"],
+        extraDays: [],
+        strikes: 0,
+        score: 90,
+        status: "Active"
+      }
+    ]);
+    showToast(`${mem.name} reinstated back to active team.`);
+  };
+
+  const addEvent = async (newEvent) => {
+    const evt = {
+      id: `evt-${Date.now()}`,
+      title: newEvent.title,
+      type: newEvent.type || 'Orientations',
+      status: newEvent.status || 'Active',
+      description: newEvent.description || '',
+      location: newEvent.location || 'Smart Village Campus',
+      date: newEvent.date || new Date().toISOString().split('T')[0],
+      color: newEvent.color || 'blue'
+    };
+    setEvents(prev => [...prev, evt]);
+    showToast(`Event "${evt.title}" created successfully.`);
+  };
+
+  const updateEvent = async (id, updatedFields) => {
+    setEvents(prev => prev.map(e => e.id === id ? { ...e, ...updatedFields } : e));
+    showToast("Event updated successfully.");
+  };
+
+  const deleteEvent = async (id) => {
+    setEvents(prev => prev.filter(e => e.id !== id));
+    showToast("Event removed from logs.");
+  };
+
   const scheduleInterview = async (applicantId, date, time) => {
     const scheduleStr = `${date} at ${time}`;
     const venue = "Smart Village - Meeting Room 007";
@@ -635,6 +693,7 @@ export function AuthProvider({ children }) {
         starAmbassadors,
         attendanceSessions,
         warnings,
+        events,
         recruits,
         activeModal,
         setActiveModal,
@@ -647,6 +706,8 @@ export function AuthProvider({ children }) {
         deleteMember,
         dischargeMember,
         updateMemberPerformance,
+        updateDischargedMember,
+        reinstateMember,
         addStarAmbassador,
         removeStarAmbassador,
         createAttendanceSession,
@@ -655,6 +716,10 @@ export function AuthProvider({ children }) {
         submitWarning,
         approveWarningRequest,
         dismissWarning,
+        updateWarning,
+        addEvent,
+        updateEvent,
+        deleteEvent,
         scheduleInterview,
         enlistRecruit,
         declineRecruit,

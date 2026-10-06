@@ -224,36 +224,6 @@
             <div id="sideWarningActionBtn"></div>
           </div>
         </div>
-
-        <!-- Join Requests Button Card -->
-        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 hover:border-slate-300 transition">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <div class="w-9 h-9 rounded-xl bg-amber-100 text-[#c59b27] flex items-center justify-center text-base font-bold shadow-sm">
-                <i class="fa-solid fa-user-plus"></i>
-              </div>
-              <div>
-                <h3 class="font-bold text-sm text-[#002244]">Join Requests</h3>
-                <p class="text-[10px] text-slate-500">Meeting Room 007</p>
-              </div>
-            </div>
-
-            <span id="sideRecruitsCountBadge" class="px-2 py-0.5 bg-amber-100 text-amber-900 text-xs font-black rounded-full border border-amber-300">0</span>
-          </div>
-
-          <div class="pt-2 border-t border-slate-100 flex flex-col gap-2">
-            <button onclick="openModal('joinRequestsListModal')" class="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 text-[#002244] font-bold text-xs rounded-xl border border-amber-200 flex items-center justify-center gap-2 transition">
-              <i class="fa-solid fa-folder-open text-[#c59b27]"></i>
-              <span>Open Join Requests</span>
-            </button>
-
-            <button onclick="openModal('addRecruitModal')" class="w-full py-1.5 px-3 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center justify-center gap-1.5 transition">
-              <i class="fa-solid fa-plus text-[10px]"></i>
-              <span>Submit Join Request</span>
-            </button>
-          </div>
-        </div>
-
       </aside>
 
       <!-- MAIN TAB CONTENT AREA -->
@@ -297,12 +267,12 @@
 
             <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
               <div>
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Join Applicants</p>
-                <p class="text-2xl font-black text-[#c59b27] mt-1" id="kpiPendingRecruits">3</p>
-                <span class="text-[11px] text-slate-500 font-medium">Interviews in Rm 007</span>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Operational Events</p>
+                <p class="text-2xl font-black text-[#c59b27] mt-1" id="kpiEventsCount">3</p>
+                <span class="text-[11px] text-slate-500 font-medium">Orientations & EDU Gate</span>
               </div>
               <div class="w-12 h-12 rounded-xl bg-amber-50 text-[#c59b27] flex items-center justify-center text-xl">
-                <i class="fa-solid fa-user-clock"></i>
+                <i class="fa-solid fa-calendar-check"></i>
               </div>
             </div>
           </div>
@@ -346,39 +316,23 @@
 
             <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
               <div>
-                <h4 class="font-bold text-sm text-[#002244] mb-3 flex items-center gap-2">
-                  <i class="fa-solid fa-calendar-check text-[#c59b27]"></i>
-                  <span>Events & Operational Logs</span>
-                </h4>
-                <div class="space-y-2.5 text-xs">
-                  <div class="p-3 bg-amber-50/80 border border-amber-200 rounded-lg">
-                    <div class="flex justify-between items-center font-bold text-[#002244]">
-                      <span class="flex items-center gap-1.5"><i class="fa-solid fa-compass text-amber-600"></i> Orientations</span>
-                      <span class="bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[10px]">Active</span>
-                    </div>
-                    <p class="text-[11px] text-slate-600 mt-1">Campus tours & parent welcome briefings in Hall A.</p>
-                  </div>
-                  <div class="p-3 bg-blue-50/80 border border-blue-200 rounded-lg">
-                    <div class="flex justify-between items-center font-bold text-blue-950">
-                      <span class="flex items-center gap-1.5"><i class="fa-solid fa-school-flag text-blue-600"></i> EDU Gate</span>
-                      <span class="bg-blue-100 text-blue-900 px-2 py-0.5 rounded text-[10px]">Scheduled</span>
-                    </div>
-                    <p class="text-[11px] text-slate-600 mt-1">Annual admissions exhibition & university portal drive.</p>
-                  </div>
-                  <div class="p-3 bg-emerald-50/80 border border-emerald-200 rounded-lg">
-                    <div class="flex justify-between items-center font-bold text-emerald-950">
-                      <span class="flex items-center gap-1.5"><i class="fa-solid fa-comments text-emerald-600"></i> Meetings</span>
-                      <span class="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded text-[10px]">Weekly</span>
-                    </div>
-                    <p class="text-[11px] text-slate-600 mt-1">General assembly & committee sync in Meeting Room 007.</p>
-                  </div>
+                <div class="flex items-center justify-between mb-3">
+                  <h4 class="font-bold text-sm text-[#002244] flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-check text-[#c59b27]"></i>
+                    <span>Events & Operational Logs</span>
+                  </h4>
+                  <button onclick="openAddEventModal()" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded text-[11px] font-bold flex items-center gap-1 transition">
+                    <i class="fa-solid fa-plus text-[10px]"></i>
+                    <span>Add Event</span>
+                  </button>
                 </div>
+                <div id="dashboardEventsList" class="space-y-2.5 text-xs max-h-72 overflow-y-auto custom-scrollbar pr-1"></div>
               </div>
 
               <div class="mt-4 pt-4 border-t border-slate-100 flex gap-2">
-                <button onclick="openAddMemberModal()" class="flex-1 py-2 bg-[#002244] hover:bg-[#00162e] text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
-                  <i class="fa-solid fa-user-plus text-[#c59b27]"></i>
-                  <span>Add Member</span>
+                <button onclick="openAddEventModal()" class="flex-1 py-2 bg-[#002244] hover:bg-[#00162e] text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-calendar-plus text-[#c59b27]"></i>
+                  <span>Add Event</span>
                 </button>
                 <button onclick="openAddAttendanceModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-300">
                   <i class="fa-solid fa-calendar-plus text-slate-600"></i>
@@ -449,7 +403,8 @@
                     <th class="py-2.5 px-3">ID & Phone</th>
                     <th class="py-2.5 px-3">Discharge Category</th>
                     <th class="py-2.5 px-3">Reason for Departure</th>
-                    <th class="py-2.5 px-3 text-right">Date</th>
+                    <th class="py-2.5 px-3">Date</th>
+                    <th class="py-2.5 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="dischargedTableBody" class="divide-y divide-slate-100"></tbody>
@@ -632,36 +587,149 @@
     </div>
   </div>
 
-  <!-- JOIN REQUESTS POPUP MODAL -->
-  <div id="joinRequestsListModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[85vh] overflow-hidden border border-slate-200">
-      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27] flex-shrink-0">
-        <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-[#c59b27] flex items-center justify-center text-sm border border-amber-400/30">
-            <i class="fa-solid fa-user-plus"></i>
+  <!-- ADD EVENT MODAL -->
+  <div id="addEventModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
+        <h3 class="font-bold text-sm flex items-center gap-2">
+          <i class="fa-solid fa-calendar-plus text-[#c59b27]"></i>
+          <span>Add Event & Operational Log</span>
+        </h3>
+        <button onclick="closeModal('addEventModal')" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="addEventForm" onsubmit="handleCreateEvent(event)" class="p-5 space-y-3.5 text-xs max-h-[85vh] overflow-y-auto">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Event Title</label>
+          <input type="text" id="newEventTitle" required placeholder="e.g. Annual Campus Open Orientation" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-bold text-[#002244]">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Event Type / Category</label>
+            <select id="newEventType" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+              <option value="Orientations">Orientations</option>
+              <option value="EDU Gate">EDU Gate</option>
+              <option value="Meetings">Meetings</option>
+              <option value="Special Duty">Special Duty</option>
+              <option value="Campus Tour">Campus Tour</option>
+            </select>
           </div>
           <div>
-            <h3 class="font-bold text-sm sm:text-base">Join Requests & Recruitment Applicants</h3>
-            <p class="text-[10px] text-slate-300">Smart Village Admissions • Room 007 Interviews</p>
+            <label class="block font-bold text-slate-700 mb-1">Status</label>
+            <select id="newEventStatus" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-semibold">
+              <option value="Active">Active</option>
+              <option value="Scheduled">Scheduled</option>
+              <option value="Weekly">Weekly</option>
+              <option value="Upcoming">Upcoming</option>
+              <option value="Completed">Completed</option>
+            </select>
           </div>
         </div>
-        <button onclick="closeModal('joinRequestsListModal')" class="text-slate-400 hover:text-white transition p-1">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-      <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
-        <div class="text-xs font-semibold text-slate-600">
-          Total Join Applicants: <span id="joinRequestsListModalCount" class="font-extrabold text-[#002244]">0</span>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Event Date</label>
+            <input type="text" id="newEventDate" placeholder="2026-10-15 or Weekly" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Location / Venue</label>
+            <input type="text" id="newEventLocation" placeholder="Hall A or Meeting Room 007" value="Smart Village Campus" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+          </div>
         </div>
-        <button onclick="openModal('addRecruitModal')" class="px-3 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center gap-1.5 transition shadow-sm">
-          <i class="fa-solid fa-plus text-xs"></i>
-          <span>Submit Join Request</span>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Description & Operational Notes</label>
+          <textarea id="newEventDesc" rows="3" placeholder="Provide event briefing notes..." class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"></textarea>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Badge Color Theme</label>
+          <div class="flex items-center gap-3 pt-1">
+            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="newEventColor" value="amber"> Amber</label>
+            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="newEventColor" value="blue" checked> Blue</label>
+            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="newEventColor" value="emerald"> Emerald</label>
+            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="newEventColor" value="purple"> Purple</label>
+            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="newEventColor" value="rose"> Rose</label>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('addEventModal')" class="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-[#002244] text-[#c59b27] font-bold rounded-lg shadow">Save Event</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDIT EVENT MODAL -->
+  <div id="editEventModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
+        <h3 class="font-bold text-sm flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-[#c59b27]"></i>
+          <span>Edit Event & Operational Log</span>
+        </h3>
+        <button onclick="closeModal('editEventModal')" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <div id="joinRequestsListModalContainer" class="p-4 overflow-y-auto space-y-3 custom-scrollbar flex-grow text-xs"></div>
-      <div class="p-3 bg-slate-50 border-t border-slate-200 text-right flex-shrink-0">
-        <button onclick="closeModal('joinRequestsListModal')" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-lg transition">Close</button>
-      </div>
+      <form id="editEventForm" onsubmit="handleUpdateEvent(event)" class="p-5 space-y-3.5 text-xs max-h-[85vh] overflow-y-auto">
+        <input type="hidden" id="editEventTargetId">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Event Title</label>
+          <input type="text" id="editEventTitle" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-bold text-[#002244]">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Event Type / Category</label>
+            <select id="editEventType" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+              <option value="Orientations">Orientations</option>
+              <option value="EDU Gate">EDU Gate</option>
+              <option value="Meetings">Meetings</option>
+              <option value="Special Duty">Special Duty</option>
+              <option value="Campus Tour">Campus Tour</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Status</label>
+            <select id="editEventStatus" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-semibold">
+              <option value="Active">Active</option>
+              <option value="Scheduled">Scheduled</option>
+              <option value="Weekly">Weekly</option>
+              <option value="Upcoming">Upcoming</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Event Date</label>
+            <input type="text" id="editEventDate" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Location / Venue</label>
+            <input type="text" id="editEventLocation" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Description & Operational Notes</label>
+          <textarea id="editEventDesc" rows="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"></textarea>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Badge Color Theme</label>
+          <div class="flex items-center gap-3 pt-1">
+            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="editEventColor" value="amber"> Amber</label>
+            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="editEventColor" value="blue"> Blue</label>
+            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="editEventColor" value="emerald"> Emerald</label>
+            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="editEventColor" value="purple"> Purple</label>
+            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="editEventColor" value="rose"> Rose</label>
+          </div>
+        </div>
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+          <button type="button" onclick="deleteCurrentEvent()" class="px-3 py-2 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg font-bold">Delete Event</button>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeModal('editEventModal')" class="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-[#002244] text-[#c59b27] font-bold rounded-lg shadow">Save Changes</button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1086,101 +1154,98 @@
     </div>
   </div>
 
-  <div id="scheduleModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
-      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
+  <!-- EDIT WARNING MODAL -->
+  <div id="editWarningModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-rose-500">
         <h3 class="font-bold text-sm flex items-center gap-2">
-          <i class="fa-solid fa-calendar-days text-[#c59b27]"></i>
-          <span>Schedule Candidate Interview</span>
+          <i class="fa-solid fa-pen-to-square text-rose-400"></i>
+          <span>Edit Warning Record: <span id="editWarningMemberName"></span></span>
         </h3>
-        <button onclick="closeModal('scheduleModal')" class="text-slate-400 hover:text-white">
+        <button onclick="closeModal('editWarningModal')" class="text-slate-400 hover:text-white">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <form id="scheduleInterviewForm" onsubmit="handleScheduleInterview(event)" class="p-5 space-y-3 text-xs">
-        <input type="hidden" id="scheduleApplicantId">
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">Applicant</label>
-          <input type="text" id="scheduleApplicantName" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-600 font-bold">
-        </div>
+      <form id="editWarningForm" onsubmit="handleUpdateWarning(event)" class="p-5 space-y-3.5 text-xs">
+        <input type="hidden" id="editWarningTargetId">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Interview Date</label>
-            <input type="date" id="scheduleDate" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+            <label class="block font-bold text-slate-700 mb-1">Disciplinary Level</label>
+            <select id="editWarningLevel" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-semibold">
+              <option value="First Verbal Warning">First Verbal Warning</option>
+              <option value="Second Verbal Notice">Second Verbal Notice</option>
+              <option value="Official Written Strike">Official Written Strike</option>
+              <option value="Disciplinary Review Warning">Disciplinary Review Warning</option>
+            </select>
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Interview Time</label>
-            <input type="time" id="scheduleTime" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+            <label class="block font-bold text-slate-700 mb-1">Status</label>
+            <select id="editWarningStatus" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-semibold">
+              <option value="Confirmed Strike">Confirmed Strike</option>
+              <option value="Pending HR Approval">Pending HR Approval</option>
+              <option value="Under Appeal">Under Appeal</option>
+              <option value="Resolved">Resolved</option>
+            </select>
           </div>
         </div>
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Interview Venue</label>
-          <input type="text" id="scheduleVenue" readonly value="Smart Village - Meeting Room 007" class="w-full px-3 py-2 bg-amber-50/70 border border-amber-300 rounded-lg text-[#002244] font-bold">
+          <label class="block font-bold text-slate-700 mb-1">Date Logged</label>
+          <input type="date" id="editWarningDate" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
         </div>
-
-        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-          <button type="button" onclick="closeModal('scheduleModal')" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg font-bold">Cancel</button>
-          <button type="submit" class="px-4 py-1.5 bg-[#002244] text-[#c59b27] font-bold rounded-lg">Confirm Schedule</button>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Infraction Reason & Evidence</label>
+          <textarea id="editWarningReason" rows="3" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"></textarea>
+        </div>
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+          <button type="button" onclick="deleteCurrentWarning()" class="px-3 py-2 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg font-bold">Dismiss Warning</button>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeModal('editWarningModal')" class="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-[#002244] text-[#c59b27] font-bold rounded-lg shadow">Save Warning</button>
+          </div>
         </div>
       </form>
     </div>
   </div>
 
-  <div id="addRecruitModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+  <!-- EDIT DISCHARGED MODAL -->
+  <div id="editDischargedModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
-      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-rose-600">
         <h3 class="font-bold text-sm flex items-center gap-2">
-          <i class="fa-solid fa-user-plus text-[#c59b27]"></i>
-          <span>Submit Candidate Join Application</span>
+          <i class="fa-solid fa-user-pen text-rose-400"></i>
+          <span>Edit Discharged Log: <span id="editDischargedMemberName"></span></span>
         </h3>
-        <button onclick="closeModal('addRecruitModal')" class="text-slate-400 hover:text-white">
+        <button onclick="closeModal('editDischargedModal')" class="text-slate-400 hover:text-white">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <form id="addRecruitForm" onsubmit="handleCreateRecruit(event)" class="p-5 space-y-3 text-xs">
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">Applicant Full Name</label>
-          <input type="text" id="newRecruitName" required placeholder="e.g. Omar Khaled" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
-        </div>
+      <form id="editDischargedForm" onsubmit="handleUpdateDischarged(event)" class="p-5 space-y-3.5 text-xs">
+        <input type="hidden" id="editDischargedTargetId">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Target Role / Committee</label>
-            <select id="newRecruitTargetRole" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
-              <option value="PR">PR</option>
-              <option value="HR">HR</option>
-              <option value="Operations">Operations</option>
-              <option value="Digital Transformation">Digital Transformation</option>
-              <option value="Innovation">Innovation</option>
+            <label class="block font-bold text-slate-700 mb-1">Departure Category</label>
+            <select id="editDischargedType" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-semibold">
+              <option value="Voluntary Left">Voluntary Left</option>
+              <option value="Discharged">Discharged</option>
+              <option value="Graduated">Graduated</option>
+              <option value="Academic Leave">Academic Leave</option>
             </select>
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Term / Semester</label>
-            <input type="number" id="newRecruitTerm" min="1" max="10" value="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+            <label class="block font-bold text-slate-700 mb-1">Discharge Date</label>
+            <input type="text" id="editDischargedDate" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
           </div>
         </div>
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Faculty</label>
-          <select id="newRecruitCollege" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
-            <option value="Computing & IT">Computing & Information Technology</option>
-            <option value="Engineering & Tech">Engineering & Technology</option>
-            <option value="Management & Tech">Management & Technology</option>
-            <option value="Logistics & Transport">International Transport & Logistics</option>
-            <option value="Law">Law & Legal Studies</option>
-            <option value="Language & Comm">Language & Communication</option>
-            <option value="Arts & Design">Arts & Design</option>
-          </select>
+          <label class="block font-bold text-slate-700 mb-1">Reason for Departure / Discharge</label>
+          <textarea id="editDischargedReason" rows="3" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"></textarea>
         </div>
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">Initial Recommendation / Notes (Optional)</label>
-          <input type="text" id="newRecruitRecommendation" placeholder="e.g. Recommended Accept (Strong communication skills)" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
-        </div>
-
-        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-          <button type="button" onclick="closeModal('addRecruitModal')" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg font-bold">Cancel</button>
-          <button type="submit" class="px-4 py-1.5 bg-[#002244] text-[#c59b27] font-bold rounded-lg flex items-center gap-1.5">
-            <i class="fa-solid fa-paper-plane text-xs"></i>
-            <span>Submit Join Request</span>
-          </button>
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+          <button type="button" onclick="reinstateCurrentDischargedMember()" class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg font-bold flex items-center gap-1.5"><i class="fa-solid fa-user-plus text-emerald-600"></i><span>Reinstate to Active</span></button>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeModal('editDischargedModal')" class="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-[#002244] text-[#c59b27] font-bold rounded-lg shadow">Save Log</button>
+          </div>
         </div>
       </form>
     </div>
@@ -1258,10 +1323,10 @@
       { id: "wrn-2", memberId: "mem-3", memberName: "Karim Hassan", level: "First Verbal Warning", reason: "Failure to wear formal AASTMT admissions pin during parent VIP campus tour.", reportedBy: "Sarah Mostafa (HR)", date: "2026-09-15", status: "Pending HR Approval" }
     ];
 
-    let recruits = [
-      { id: "rec-1", name: "Nouran Adel", college: "Computing & IT", term: 3, targetRole: "PR", interviewSchedule: "2026-09-25 at 11:30 AM", interviewVenue: "Smart Village - Meeting Room 007", status: "Interview Scheduled", hrRecommendation: null },
-      { id: "rec-2", name: "Mostafa Tamer", college: "Engineering & Tech", term: 4, targetRole: "Operations", interviewSchedule: null, interviewVenue: null, status: "Pending Schedule", hrRecommendation: "Recommended Accept (by Sarah Mostafa)" },
-      { id: "rec-3", name: "Hania Reda", college: "Management & Tech", term: 2, targetRole: "Digital Transformation", interviewSchedule: "2026-09-26 at 01:00 PM", interviewVenue: "Smart Village - Meeting Room 007", status: "Interview Scheduled", hrRecommendation: null }
+    let events = [
+      { id: "evt-1", title: "Orientations", type: "Orientations", status: "Active", description: "Campus tours & parent welcome briefings in Hall A.", location: "Hall A, Smart Village", date: "2026-10-10", color: "amber" },
+      { id: "evt-2", title: "EDU Gate", type: "EDU Gate", status: "Scheduled", description: "Annual admissions exhibition & university portal drive.", location: "Exhibition Hall & Booth 4", date: "2026-10-15", color: "blue" },
+      { id: "evt-3", title: "Meetings", type: "Meetings", status: "Weekly", description: "General assembly & committee sync in Meeting Room 007.", location: "Meeting Room 007", date: "Every Wednesday", color: "emerald" }
     ];
 
     function showToast(message, type = "success") {
@@ -1279,6 +1344,7 @@
     function closeModal(id) { const el = document.getElementById(id); if (el) { el.classList.add("hidden"); el.classList.remove("flex"); } }
     function openModal(id) { const el = document.getElementById(id); if (el) { el.classList.remove("hidden"); el.classList.add("flex"); } }
     function openAddMemberModal() { openModal("addMemberModal"); }
+    function openAddEventModal() { document.getElementById("addEventForm").reset(); openModal("addEventModal"); }
 
     function handleLoginSubmit(e) {
       e.preventDefault();
@@ -1354,7 +1420,7 @@
       const avgRate = activeM.length > 0 ? (activeM.reduce((acc, m) => acc + (m.attendanceCount > 0 ? Math.min(100, Math.round((m.attendanceCount / 12) * 100)) : 100), 0) / activeM.length).toFixed(1) : '100.0';
       document.getElementById("kpiAvgAttendance").textContent = avgRate + "%";
       document.getElementById("kpiTotalWarnings").textContent = activeM.reduce((acc, m) => acc + m.strikes, 0);
-      document.getElementById("kpiPendingRecruits").textContent = recruits.length;
+      const kpiEvt = document.getElementById("kpiEventsCount"); if (kpiEvt) kpiEvt.textContent = events.length;
 
       const roles = ["PR", "HR", "Operations", "Digital Transformation", "Innovation"];
       const rMap = {}; roles.forEach(r => rMap[r] = 0);
@@ -1373,6 +1439,7 @@
       `).join("");
 
       renderStarAmbassadors();
+      renderDashboardEvents();
     }
 
     function renderStarAmbassadors() {
@@ -1507,7 +1574,8 @@
     function renderDischargedTable() {
       const tbody = document.getElementById("dischargedTableBody");
       if (!tbody) return;
-      if (dischargedMembers.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-slate-400">No discharged members logged.</td></tr>`; return; }
+      if (dischargedMembers.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-400">No discharged members logged.</td></tr>`; return; }
+      const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
       tbody.innerHTML = dischargedMembers.map(d => `
         <tr class="hover:bg-slate-50">
           <td class="py-2.5 px-3 font-bold text-slate-800">${d.name}</td>
@@ -1515,7 +1583,10 @@
           <td class="py-2.5 px-3 text-slate-600 font-mono">${d.studentId || '-'} | ${d.phone || '-'}</td>
           <td class="py-2.5 px-3"><span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold ${d.dischargeType === 'Voluntary Left' ? 'bg-amber-100 text-amber-900' : 'bg-rose-100 text-rose-900'}">${d.dischargeType}</span></td>
           <td class="py-2.5 px-3 text-slate-600 italic max-w-xs truncate">${d.dischargeReason}</td>
-          <td class="py-2.5 px-3 text-right text-slate-500 font-mono">${d.date}</td>
+          <td class="py-2.5 px-3 text-slate-500 font-mono">${d.date}</td>
+          <td class="py-2.5 px-3 text-right">
+            ${isLeadership ? `<button onclick="openEditDischargedModal('${d.id}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[10px] inline-flex items-center gap-1 transition"><i class="fa-solid fa-pen-to-square text-[10px]"></i><span>Edit Record</span></button>` : '-'}
+          </td>
         </tr>
       `).join("");
     }
@@ -1626,7 +1697,8 @@
               <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase ${s.type.includes('Double') || s.type.includes('Triple') ? 'bg-amber-100 text-amber-900' : s.type.includes('Orientation') ? 'bg-purple-100 text-purple-900' : 'bg-blue-100 text-blue-900'}">${s.type}</span>
               <h4 class="font-bold text-sm text-[#002244] mt-1">${s.title}</h4>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5">
+              <button onclick="event.stopPropagation(); inspectSession('${s.id}', true)" class="text-slate-400 hover:text-[#002244] hover:bg-amber-100 transition p-1 rounded" title="Edit Session Details & Roll Call"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
               <button onclick="event.stopPropagation(); deleteAttendanceSession('${s.id}')" class="text-slate-300 hover:text-rose-600 transition p-1" title="Delete Session"><i class="fa-solid fa-trash-can text-xs"></i></button>
               <i class="fa-solid fa-calendar-day text-slate-400"></i>
             </div>
@@ -1886,6 +1958,7 @@
             <span class="text-[10px] text-slate-500">Reported by: <span class="font-semibold text-slate-700">${w.reportedBy}</span></span>
             <div class="flex items-center gap-2">
               ${isHeadOrVice && w.status === 'Pending HR Approval' ? `<button onclick="approveWarningRequest('${w.id}')" class="px-2 py-1 bg-emerald-600 text-white font-bold text-[10px] rounded">Approve</button>` : ''}
+              ${isHeadOrVice ? `<button onclick="openEditWarningModal('${w.id}')" class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 font-bold text-[10px] rounded flex items-center gap-1"><i class="fa-solid fa-pen-to-square text-[10px]"></i><span>Edit</span></button>` : ''}
               <button onclick="dismissWarning('${w.id}')" class="px-2 py-1 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-700 font-bold text-[10px] rounded flex items-center gap-1"><i class="fa-solid fa-trash-can text-[10px]"></i><span>Remove</span></button>
             </div>
           </div>
@@ -1893,48 +1966,216 @@
       `).join("");
     }
 
-    function renderSideRecruits() {
-      const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
-      const isHRMember = currentUser.role === "HR";
-
-      const badge = document.getElementById("sideRecruitsCountBadge");
-      if (badge) badge.textContent = recruits.length;
-      const modalCount = document.getElementById("joinRequestsListModalCount");
-      if (modalCount) modalCount.textContent = recruits.length;
-
-      const container = document.getElementById("joinRequestsListModalContainer");
+    function renderDashboardEvents() {
+      const container = document.getElementById("dashboardEventsList");
       if (!container) return;
+      const kpiEl = document.getElementById("kpiEventsCount");
+      if (kpiEl) kpiEl.textContent = events.length;
 
-      if (recruits.length === 0) {
-        container.innerHTML = `<div class="py-12 text-center text-slate-400"><i class="fa-solid fa-id-card-clip text-3xl text-slate-300 mb-2 block"></i>No pending recruitment requests.</div>`;
+      if (events.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-slate-400">No events logged. Click "Add Event" to create one.</div>`;
         return;
       }
 
-      container.innerHTML = recruits.map(r => `
-        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 hover:border-slate-300 transition">
-          <div class="flex items-start justify-between">
-            <div>
-              <h4 class="font-bold text-[#002244] text-sm">${r.name}</h4>
-              <p class="text-[11px] text-slate-500 font-medium">${r.college} • Term ${r.term} • Target: <span class="font-bold text-[#002244]">${r.targetRole}</span></p>
+      container.innerHTML = events.map(evt => {
+        const colorClasses = evt.color === 'amber' ? 'bg-amber-50/80 border-amber-200 text-[#002244]' :
+                             evt.color === 'emerald' ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950' :
+                             evt.color === 'rose' ? 'bg-rose-50/80 border-rose-200 text-rose-950' :
+                             evt.color === 'purple' ? 'bg-purple-50/80 border-purple-200 text-purple-950' :
+                             'bg-blue-50/80 border-blue-200 text-blue-950';
+
+        const badgeClasses = evt.color === 'amber' ? 'bg-amber-100 text-amber-900' :
+                             evt.color === 'emerald' ? 'bg-emerald-100 text-emerald-900' :
+                             evt.color === 'rose' ? 'bg-rose-100 text-rose-900' :
+                             evt.color === 'purple' ? 'bg-purple-100 text-purple-900' :
+                             'bg-blue-100 text-blue-900';
+
+        const iconClass = evt.type === 'Orientations' ? 'fa-compass text-amber-600' :
+                          evt.type === 'EDU Gate' ? 'fa-school-flag text-blue-600' :
+                          evt.type === 'Meetings' ? 'fa-comments text-emerald-600' :
+                          'fa-calendar-day text-purple-600';
+
+        return `
+          <div class="p-3 border rounded-lg transition ${colorClasses}">
+            <div class="flex justify-between items-center font-bold">
+              <span class="flex items-center gap-1.5">
+                <i class="fa-solid ${iconClass}"></i>
+                <span>${evt.title}</span>
+              </span>
+              <div class="flex items-center gap-1.5">
+                <span class="${badgeClasses} px-2 py-0.5 rounded text-[10px]">${evt.status}</span>
+                <button onclick="openEditEventModal('${evt.id}')" class="p-1 bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 text-[10px] shadow-sm transition" title="Edit Event">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+              </div>
             </div>
-            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded ${r.status === 'Interview Scheduled' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-900 border border-amber-300'}">${r.status}</span>
-          </div>
-          ${r.interviewSchedule ? `<div class="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-[11px] text-emerald-900 flex items-center gap-1.5"><i class="fa-regular fa-clock text-emerald-600"></i><span><strong>${r.interviewSchedule}</strong> (${r.interviewVenue})</span></div>` : `<div class="p-2 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-900"><i class="fa-solid fa-triangle-exclamation mr-1 text-amber-600"></i>Interview pending schedule in Room 007.</div>`}
-          ${r.hrRecommendation ? `<div class="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 p-1.5 rounded">${r.hrRecommendation}</div>` : ''}
-          <div class="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-1.5">
-              ${isHeadOrVice ? `
-                <button onclick="openScheduleModal('${r.id}')" class="px-2.5 py-1 bg-[#002244] text-white font-bold text-[10px] rounded flex items-center gap-1"><i class="fa-regular fa-calendar-plus"></i><span>Schedule</span></button>
-                <button onclick="enlistRecruit('${r.id}')" class="px-2.5 py-1 bg-emerald-600 text-white font-bold text-[10px] rounded flex items-center gap-1"><i class="fa-solid fa-user-check"></i><span>Enlist to Team</span></button>
-              ` : isHRMember ? `
-                <button onclick="requestRecruitRecommendation('${r.id}', 'Accept')" class="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded">Recommend Accept</button>
-                <button onclick="requestRecruitRecommendation('${r.id}', 'Reject')" class="px-2.5 py-1 bg-rose-100 text-rose-800 font-bold text-[10px] rounded">Recommend Reject</button>
-              ` : ''}
+            <p class="text-[11px] text-slate-600 mt-1">${evt.description || 'No description added.'}</p>
+            <div class="mt-2 pt-1 border-t border-slate-200/50 flex justify-between items-center text-[10px] text-slate-500 font-medium">
+              <span><i class="fa-solid fa-location-dot mr-1"></i>${evt.location || 'Campus'}</span>
+              <span><i class="fa-solid fa-clock mr-1"></i>${evt.date || 'Scheduled'}</span>
             </div>
-            <button onclick="declineRecruit('${r.id}')" class="px-2.5 py-1 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-700 font-bold text-[10px] rounded flex items-center gap-1" title="Remove Request"><i class="fa-solid fa-trash-can text-[10px]"></i><span>Remove Request</span></button>
           </div>
-        </div>
-      `).join("");
+        `;
+      }).join("");
+    }
+
+    function handleCreateEvent(e) {
+      e.preventDefault();
+      const title = document.getElementById("newEventTitle").value.trim();
+      const type = document.getElementById("newEventType").value;
+      const status = document.getElementById("newEventStatus").value;
+      const date = document.getElementById("newEventDate").value.trim() || new Date().toISOString().split("T")[0];
+      const location = document.getElementById("newEventLocation").value.trim() || "Smart Village Campus";
+      const desc = document.getElementById("newEventDesc").value.trim();
+      const colorInput = document.querySelector('input[name="newEventColor"]:checked');
+      const color = colorInput ? colorInput.value : "blue";
+
+      events.push({
+        id: `evt-${Date.now()}`,
+        title,
+        type,
+        status,
+        date,
+        location,
+        description: desc,
+        color
+      });
+
+      closeModal("addEventModal");
+      showToast(`Event "${title}" created successfully.`);
+      renderAllViews();
+    }
+
+    function openEditEventModal(id) {
+      const evt = events.find(e => e.id === id);
+      if (!evt) return;
+      document.getElementById("editEventTargetId").value = evt.id;
+      document.getElementById("editEventTitle").value = evt.title;
+      document.getElementById("editEventType").value = evt.type;
+      document.getElementById("editEventStatus").value = evt.status;
+      document.getElementById("editEventDate").value = evt.date;
+      document.getElementById("editEventLocation").value = evt.location;
+      document.getElementById("editEventDesc").value = evt.description;
+      const radio = document.querySelector(`input[name="editEventColor"][value="${evt.color || 'blue'}"]`);
+      if (radio) radio.checked = true;
+      openModal("editEventModal");
+    }
+
+    function handleUpdateEvent(e) {
+      e.preventDefault();
+      const id = document.getElementById("editEventTargetId").value;
+      const evt = events.find(e => e.id === id);
+      if (!evt) return;
+      evt.title = document.getElementById("editEventTitle").value.trim();
+      evt.type = document.getElementById("editEventType").value;
+      evt.status = document.getElementById("editEventStatus").value;
+      evt.date = document.getElementById("editEventDate").value.trim();
+      evt.location = document.getElementById("editEventLocation").value.trim();
+      evt.description = document.getElementById("editEventDesc").value.trim();
+      const radio = document.querySelector('input[name="editEventColor"]:checked');
+      if (radio) evt.color = radio.value;
+
+      closeModal("editEventModal");
+      showToast(`Event "${evt.title}" updated.`);
+      renderAllViews();
+    }
+
+    function deleteCurrentEvent() {
+      const id = document.getElementById("editEventTargetId").value;
+      const evt = events.find(e => e.id === id);
+      if (evt && confirm(`Delete event "${evt.title}"?`)) {
+        events = events.filter(e => e.id !== id);
+        closeModal("editEventModal");
+        showToast("Event removed from logs.");
+        renderAllViews();
+      }
+    }
+
+    function openEditWarningModal(id) {
+      const wrn = warnings.find(w => w.id === id);
+      if (!wrn) return;
+      document.getElementById("editWarningTargetId").value = wrn.id;
+      document.getElementById("editWarningMemberName").textContent = wrn.memberName;
+      document.getElementById("editWarningLevel").value = wrn.level;
+      document.getElementById("editWarningStatus").value = wrn.status;
+      document.getElementById("editWarningDate").value = wrn.date;
+      document.getElementById("editWarningReason").value = wrn.reason;
+      openModal("editWarningModal");
+    }
+
+    function handleUpdateWarning(e) {
+      e.preventDefault();
+      const id = document.getElementById("editWarningTargetId").value;
+      const wrn = warnings.find(w => w.id === id);
+      if (!wrn) return;
+      wrn.level = document.getElementById("editWarningLevel").value;
+      wrn.status = document.getElementById("editWarningStatus").value;
+      wrn.date = document.getElementById("editWarningDate").value;
+      wrn.reason = document.getElementById("editWarningReason").value.trim();
+      closeModal("editWarningModal");
+      showToast("Warning details updated.");
+      renderAllViews();
+    }
+
+    function deleteCurrentWarning() {
+      const id = document.getElementById("editWarningTargetId").value;
+      if (confirm("Dismiss this warning record?")) {
+        warnings = warnings.filter(w => w.id !== id);
+        closeModal("editWarningModal");
+        showToast("Warning dismissed.");
+        renderAllViews();
+      }
+    }
+
+    function openEditDischargedModal(id) {
+      const d = dischargedMembers.find(m => m.id === id);
+      if (!d) return;
+      document.getElementById("editDischargedTargetId").value = d.id;
+      document.getElementById("editDischargedMemberName").textContent = d.name;
+      document.getElementById("editDischargedType").value = d.dischargeType;
+      document.getElementById("editDischargedDate").value = d.date;
+      document.getElementById("editDischargedReason").value = d.dischargeReason;
+      openModal("editDischargedModal");
+    }
+
+    function handleUpdateDischarged(e) {
+      e.preventDefault();
+      const id = document.getElementById("editDischargedTargetId").value;
+      const d = dischargedMembers.find(m => m.id === id);
+      if (!d) return;
+      d.dischargeType = document.getElementById("editDischargedType").value;
+      d.date = document.getElementById("editDischargedDate").value;
+      d.dischargeReason = document.getElementById("editDischargedReason").value.trim();
+      closeModal("editDischargedModal");
+      showToast("Discharged record updated.");
+      renderAllViews();
+    }
+
+    function reinstateCurrentDischargedMember() {
+      const id = document.getElementById("editDischargedTargetId").value;
+      const d = dischargedMembers.find(m => m.id === id);
+      if (!d) return;
+      if (confirm(`Reinstate ${d.name} back to active team?`)) {
+        dischargedMembers = dischargedMembers.filter(m => m.id !== id);
+        members.push({
+          id: d.id,
+          name: d.name,
+          role: d.role,
+          position: "Member",
+          college: d.college,
+          studentId: d.studentId || "2024101",
+          phone: d.phone || "+20 100 000 0000",
+          attendanceCount: 0,
+          officialDays: ["Sunday", "Tuesday", "Thursday"],
+          extraDays: [],
+          strikes: 0,
+          score: 90,
+          status: "Active"
+        });
+        closeModal("editDischargedModal");
+        showToast(`${d.name} reinstated to active team!`);
+        renderAllViews();
+      }
     }
 
     function openWarningModal(mode = "issue") { const sel = document.getElementById("warningMemberSelect"); const activeM = members.filter(m => m.status !== "Discharged"); sel.innerHTML = activeM.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join(""); openModal("warningModal"); }
@@ -1943,35 +2184,9 @@
     function approveWarningRequest(wId) { const wrn = warnings.find(w => w.id === wId); if (wrn) { const mem = members.find(m => m.id === wrn.memberId); if (mem) { mem.strikes += 1; mem.score = Math.max(50, mem.score - 8); } wrn.status = "Confirmed Strike"; showToast(`Warning approved.`); renderAllViews(); } }
     function dismissWarning(wId) { warnings = warnings.filter(w => w.id !== wId); showToast("Warning dismissed."); renderAllViews(); }
 
-    function openScheduleModal(rId) { const rec = recruits.find(r => r.id === rId); if (!rec) return; document.getElementById("scheduleApplicantId").value = rec.id; document.getElementById("scheduleApplicantName").value = `${rec.name} (${rec.targetRole})`; document.getElementById("scheduleDate").value = new Date().toISOString().split("T")[0]; document.getElementById("scheduleTime").value = "12:00"; openModal("scheduleModal"); }
-    function handleScheduleInterview(e) { e.preventDefault(); const rec = recruits.find(r => r.id === document.getElementById("scheduleApplicantId").value); if (rec) { rec.interviewSchedule = `${document.getElementById("scheduleDate").value} at ${document.getElementById("scheduleTime").value}`; rec.interviewVenue = "Smart Village - Meeting Room 007"; rec.status = "Interview Scheduled"; showToast(`Interview scheduled for ${rec.name} in Room 007.`); } closeModal("scheduleModal"); renderAllViews(); }
-    function enlistRecruit(rId) { const rec = recruits.find(r => r.id === rId); if (!rec) return; members.push({ id: `mem-${Date.now()}`, name: rec.name, role: rec.targetRole, position: "Member", college: rec.college, studentId: '2024101', phone: '+20 100 000 0000', attendanceCount: 0, officialDays: ["Sunday", "Tuesday", "Thursday"], strikes: 0, score: 90, status: "Active" }); recruits = recruits.filter(r => r.id !== rId); showToast(`${rec.name} enlisted.`); renderAllViews(); }
-    function declineRecruit(rId) { recruits = recruits.filter(r => r.id !== rId); showToast("Applicant declined."); renderAllViews(); }
-    function requestRecruitRecommendation(rId, action) { const rec = recruits.find(r => r.id === rId); if (rec) { rec.hrRecommendation = `Requested ${action} (by ${currentUser.name})`; showToast("Recommendation submitted."); renderSideRecruits(); } }
-
     function openAddStarModal() { const activeM = members.filter(m => m.status !== "Discharged"); document.getElementById("starMemberSelect").innerHTML = activeM.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join(""); openModal("addStarModal"); }
     function handleSaveStarAmbassador(e) { e.preventDefault(); const mem = members.find(m => m.id === document.getElementById("starMemberSelect").value); if (!mem) return; starAmbassadors.unshift({ id: `star-${Date.now()}`, memberId: mem.id, name: mem.name, role: mem.role, college: mem.college, awardTitle: document.getElementById("starAwardTitle").value.trim(), citation: document.getElementById("starCitation").value.trim() }); closeModal("addStarModal"); document.getElementById("addStarForm").reset(); showToast(`Star Ambassador granted.`); renderStarAmbassadors(); }
     function removeStarAmbassador(sId) { starAmbassadors = starAmbassadors.filter(s => s.id !== sId); showToast("Star recognition removed."); renderStarAmbassadors(); }
-
-    function handleCreateRecruit(e) {
-      e.preventDefault();
-      const name = document.getElementById("newRecruitName").value.trim();
-      recruits.unshift({
-        id: `rec-${Date.now()}`,
-        name,
-        targetRole: document.getElementById("newRecruitTargetRole").value,
-        term: parseInt(document.getElementById("newRecruitTerm").value) || 3,
-        college: document.getElementById("newRecruitCollege").value,
-        interviewSchedule: null,
-        interviewVenue: null,
-        status: "Pending Schedule",
-        hrRecommendation: document.getElementById("newRecruitRecommendation").value.trim() || `Submitted by ${currentUser.name}`
-      });
-      closeModal("addRecruitModal");
-      document.getElementById("addRecruitForm").reset();
-      showToast(`Join application submitted for ${name}!`);
-      renderAllViews();
-    }
 
     function openSystemUsersModal() { if (currentUser.role !== "HR Vice Head") { showToast("Restricted access.", "danger"); return; } renderSystemUsersTable(); openModal("systemUsersModal"); }
     function renderSystemUsersTable() { document.getElementById("systemUsersTableBody").innerHTML = systemUsers.map(u => `<tr class="hover:bg-slate-50 transition"><td class="py-2.5 px-3"><input type="text" id="usr-name-${u.id}" value="${u.name}" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"></td><td class="py-2.5 px-3"><input type="text" id="usr-uname-${u.id}" value="${u.username}" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"></td><td class="py-2.5 px-3"><select id="usr-role-${u.id}" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"><option value="HR" ${u.role === 'HR' ? 'selected' : ''}>HR</option><option value="HR Head" ${u.role === 'HR Head' ? 'selected' : ''}>HR Head</option><option value="HR Vice Head" ${u.role === 'HR Vice Head' ? 'selected' : ''}>HR Vice Head</option><option value="Admission's Dean" ${u.role === "Admission's Dean" ? 'selected' : ''}>Admission's Dean</option></select></td><td class="py-2.5 px-3"><input type="text" id="usr-pwd-${u.id}" value="${u.password}" class="w-full px-2 py-1 bg-amber-50/80 border border-amber-300 font-mono text-xs font-bold rounded"></td><td class="py-2.5 px-3 text-right space-x-1"><button onclick="saveUserCredentials('${u.id}')" class="px-2 py-1 bg-[#002244] text-[#c59b27] font-bold rounded text-xs"><i class="fa-solid fa-floppy-disk"></i></button>${u.username !== currentUser.username ? `<button onclick="deleteSystemUser('${u.id}')" class="px-2 py-1 bg-rose-600 text-white font-bold rounded text-xs"><i class="fa-solid fa-trash"></i></button>` : ''}</td></tr>`).join(""); }
@@ -2007,10 +2222,10 @@
 
     function renderAllViews() {
       renderDashboard();
+      renderDashboardEvents();
       renderMembersTable();
       renderAttendanceSessions();
       renderSideWarnings();
-      renderSideRecruits();
     }
 
     window.onload = function() { applyUserRoleUI(); };

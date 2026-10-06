@@ -13,12 +13,13 @@ import DischargeModal from './components/modals/DischargeModal';
 import AddStarModal from './components/modals/AddStarModal';
 import AddAttendanceModal from './components/modals/AddAttendanceModal';
 import WarningModal from './components/modals/WarningModal';
-import ScheduleModal from './components/modals/ScheduleModal';
-import AddRecruitModal from './components/modals/AddRecruitModal';
 import SystemUsersModal from './components/modals/SystemUsersModal';
 import WarningsListModal from './components/modals/WarningsListModal';
-import JoinRequestsListModal from './components/modals/JoinRequestsListModal';
 import ExtraDaysModal from './components/modals/ExtraDaysModal';
+import AddEventModal from './components/modals/AddEventModal';
+import EditEventModal from './components/modals/EditEventModal';
+import EditWarningModal from './components/modals/EditWarningModal';
+import EditDischargedModal from './components/modals/EditDischargedModal';
 
 // Tabs
 import DashboardTab from './components/tabs/DashboardTab';
@@ -72,12 +73,13 @@ export default function App() {
       <AddStarModal />
       <AddAttendanceModal />
       <WarningModal />
-      <ScheduleModal />
-      <AddRecruitModal />
       <SystemUsersModal />
       <WarningsListModal />
-      <JoinRequestsListModal />
       <ExtraDaysModal />
+      <AddEventModal />
+      <EditEventModal />
+      <EditWarningModal />
+      <EditDischargedModal />
     </div>
   );
 }

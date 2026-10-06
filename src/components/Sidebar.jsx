@@ -8,10 +8,6 @@ export default function Sidebar() {
     warnings,
     approveWarningRequest,
     dismissWarning,
-    recruits,
-    enlistRecruit,
-    declineRecruit,
-    requestRecruitRecommendation,
     setActiveModal,
     setModalExtraData
   } = useAuth();
@@ -28,11 +24,6 @@ export default function Sidebar() {
   const handleOpenWarning = (mode) => {
     setModalExtraData({ mode });
     setActiveModal('warning');
-  };
-
-  const handleOpenSchedule = (recruitId) => {
-    setModalExtraData({ recruitId });
-    setActiveModal('schedule');
   };
 
   return (
@@ -125,43 +116,6 @@ export default function Sidebar() {
                   <span>Request Warning</span>
                 </button>
               ) : null}
-            </div>
-          </div>
-
-          {/* Join Requests Control Panel Button Card */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 hover:border-slate-300 transition">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-100 text-[#c59b27] flex items-center justify-center text-base font-bold shadow-sm">
-                  <i className="fa-solid fa-user-plus"></i>
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-[#002244]">Join Requests</h3>
-                  <p className="text-[10px] text-slate-500">Meeting Room 007</p>
-                </div>
-              </div>
-
-              <span className="px-2 py-0.5 bg-amber-100 text-amber-900 text-xs font-black rounded-full border border-amber-300">
-                {recruits.length}
-              </span>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
-              <button
-                onClick={() => setActiveModal('recruitsListModal')}
-                className="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 text-[#002244] font-bold text-xs rounded-xl border border-amber-200 flex items-center justify-center gap-2 transition"
-              >
-                <i className="fa-solid fa-folder-open text-[#c59b27]"></i>
-                <span>Open Join Requests ({recruits.length})</span>
-              </button>
-
-              <button
-                onClick={() => setActiveModal('addRecruit')}
-                className="w-full py-1.5 px-3 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center justify-center gap-1.5 transition"
-              >
-                <i className="fa-solid fa-plus text-[10px]"></i>
-                <span>Submit Join Request</span>
-              </button>
             </div>
           </div>
         </>

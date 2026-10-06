@@ -104,19 +104,35 @@ export default function AttendanceTab() {
                 </span>
                 <h4 className="font-bold text-sm text-[#002244] mt-1.5">{session.title}</h4>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedSessionId(session.id);
+                    setIsEditing(true);
+                    setEditTitle(session.title);
+                    setEditDate(session.date);
+                    setEditType(session.type);
+                    setEditRollCall([...(session.rollCall || [])]);
+                  }}
+                  className="text-slate-400 hover:text-[#002244] hover:bg-amber-100 transition p-1 rounded"
+                  title="Edit Session Details & Roll Call"
+                >
+                  <i className="fa-solid fa-pen-to-square text-xs"></i>
+                </button>
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     deleteAttendanceSession(session.id);
                   }}
-                  className="text-slate-300 hover:text-rose-600 transition p-1"
+                  className="text-slate-300 hover:text-rose-600 transition p-1 rounded"
                   title="Delete Attendance Session"
                 >
                   <i className="fa-solid fa-trash-can text-xs"></i>
                 </button>
-                <i className="fa-solid fa-calendar-day text-slate-400 text-base"></i>
+                <i className="fa-solid fa-calendar-day text-slate-400 text-base ml-1"></i>
               </div>
             </div>
 

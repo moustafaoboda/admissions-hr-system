@@ -130,6 +130,19 @@ export default function WarningsListModal() {
                     )}
                     {isHeadOrVice && (
                       <button
+                        onClick={() => {
+                          setModalExtraData({ warningId: wrn.id });
+                          setActiveModal('editWarning');
+                        }}
+                        className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 font-bold text-[10px] rounded transition flex items-center gap-1"
+                        title="Edit Warning"
+                      >
+                        <i className="fa-solid fa-pen-to-square text-[10px]"></i>
+                        <span>Edit</span>
+                      </button>
+                    )}
+                    {isHeadOrVice && (
+                      <button
                         onClick={() => dismissWarning(wrn.id)}
                         className="px-2.5 py-1 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-700 font-bold text-[10px] rounded transition flex items-center gap-1"
                         title="Remove / Dismiss Warning"

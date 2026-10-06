@@ -308,13 +308,14 @@ export default function DirectoryTab() {
                 <th className="py-2.5 px-3">ID & Phone</th>
                 <th className="py-2.5 px-3">Discharge Category</th>
                 <th className="py-2.5 px-3">Reason for Departure</th>
-                <th className="py-2.5 px-3 text-right">Date</th>
+                <th className="py-2.5 px-3">Date</th>
+                <th className="py-2.5 px-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {dischargedMembers.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-4 text-slate-400">
+                  <td colSpan="7" className="text-center py-4 text-slate-400">
                     No discharged member logs found.
                   </td>
                 </tr>
@@ -332,7 +333,22 @@ export default function DirectoryTab() {
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-slate-600 italic max-w-xs truncate">{d.dischargeReason}</td>
-                    <td className="py-2.5 px-3 text-right text-slate-500 font-mono">{d.date}</td>
+                    <td className="py-2.5 px-3 text-slate-500 font-mono">{d.date}</td>
+                    <td className="py-2.5 px-3 text-right">
+                      {isHeadOrVice && (
+                        <button
+                          onClick={() => {
+                            setModalExtraData({ dischargedId: d.id });
+                            setActiveModal('editDischarged');
+                          }}
+                          className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[10px] inline-flex items-center gap-1 transition"
+                          title="Edit Discharged Record"
+                        >
+                          <i className="fa-solid fa-pen-to-square text-[10px]"></i>
+                          <span>Edit Record</span>
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}

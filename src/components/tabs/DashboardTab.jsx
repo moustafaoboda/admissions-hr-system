@@ -7,8 +7,10 @@ export default function DashboardTab() {
     members,
     starAmbassadors,
     removeStarAmbassador,
-    recruits,
-    setActiveModal
+    events,
+    setActiveModal,
+    setModalExtraData,
+    deleteEvent
   } = useAuth();
 
   const isViceHead = currentUser?.role === "HR Vice Head";
@@ -96,15 +98,15 @@ export default function DashboardTab() {
           </div>
         </div>
 
-        {/* Pending Applicants */}
+        {/* Operational Events */}
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Join Applicants</p>
-            <p className="text-2xl font-black text-[#c59b27] mt-1">{recruits.length}</p>
-            <span className="text-[11px] text-slate-500 font-medium">Interviews in Rm 007</span>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Operational Events</p>
+            <p className="text-2xl font-black text-[#c59b27] mt-1">{events.length}</p>
+            <span className="text-[11px] text-slate-500 font-medium">Orientations & EDU Gate</span>
           </div>
           <div className="w-12 h-12 rounded-xl bg-amber-50 text-[#c59b27] flex items-center justify-center text-xl">
-            <i className="fa-solid fa-user-clock"></i>
+            <i className="fa-solid fa-calendar-check"></i>
           </div>
         </div>
       </div>
@@ -212,50 +214,89 @@ export default function DashboardTab() {
         {/* Orientations, EDU Gate, Meetings */}
         <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
           <div>
-            <h4 className="font-bold text-sm text-[#002244] mb-3 flex items-center gap-2">
-              <i className="fa-solid fa-[#c59b27] fa-calendar-check text-[#c59b27]"></i>
-              <span>Events & Operational Logs</span>
-            </h4>
-            <div className="space-y-2.5 text-xs">
-              <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-lg">
-                <div className="flex justify-between items-center font-bold text-[#002244]">
-                  <span className="flex items-center gap-1.5">
-                    <i className="fa-solid fa-[#c59b27] fa-compass text-amber-600"></i> Orientations
-                  </span>
-                  <span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[10px]">Active</span>
-                </div>
-                <p className="text-[11px] text-slate-600 mt-1">Campus tours & parent welcome briefings in Hall A.</p>
-              </div>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-bold text-sm text-[#002244] flex items-center gap-2">
+                <i className="fa-solid fa-calendar-check text-[#c59b27]"></i>
+                <span>Events & Operational Logs</span>
+              </h4>
+              <button
+                onClick={() => setActiveModal('addEvent')}
+                className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded text-[11px] font-bold flex items-center gap-1 transition"
+              >
+                <i className="fa-solid fa-plus text-[10px]"></i>
+                <span>Add Event</span>
+              </button>
+            </div>
 
-              <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-lg">
-                <div className="flex justify-between items-center font-bold text-blue-950">
-                  <span className="flex items-center gap-1.5">
-                    <i className="fa-solid fa-school-flag text-blue-600"></i> EDU Gate
-                  </span>
-                  <span className="bg-blue-100 text-blue-900 px-2 py-0.5 rounded text-[10px]">Scheduled</span>
-                </div>
-                <p className="text-[11px] text-slate-600 mt-1">Annual admissions exhibition & university portal drive.</p>
-              </div>
+            <div className="space-y-2.5 text-xs max-h-72 overflow-y-auto custom-scrollbar pr-1">
+              {events.length === 0 ? (
+                <div className="p-6 text-center text-slate-400">No events logged. Click "Add Event" to create one.</div>
+              ) : (
+                events.map(evt => {
+                  const colorClasses = evt.color === 'amber'
+                    ? 'bg-amber-50/80 border-amber-200 text-[#002244]'
+                    : evt.color === 'emerald'
+                    ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                    : evt.color === 'rose'
+                    ? 'bg-rose-50/80 border-rose-200 text-rose-950'
+                    : evt.color === 'purple'
+                    ? 'bg-purple-50/80 border-purple-200 text-purple-950'
+                    : 'bg-blue-50/80 border-blue-200 text-blue-950';
 
-              <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-lg">
-                <div className="flex justify-between items-center font-bold text-emerald-950">
-                  <span className="flex items-center gap-1.5">
-                    <i className="fa-solid fa-comments text-emerald-600"></i> Meetings
-                  </span>
-                  <span className="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded text-[10px]">Weekly</span>
-                </div>
-                <p className="text-[11px] text-slate-600 mt-1">General assembly & committee sync in Meeting Room 007.</p>
-              </div>
+                  const badgeClasses = evt.color === 'amber'
+                    ? 'bg-amber-100 text-amber-900'
+                    : evt.color === 'emerald'
+                    ? 'bg-emerald-100 text-emerald-900'
+                    : evt.color === 'rose'
+                    ? 'bg-rose-100 text-rose-900'
+                    : evt.color === 'purple'
+                    ? 'bg-purple-100 text-purple-900'
+                    : 'bg-blue-100 text-blue-900';
+
+                  return (
+                    <div key={evt.id} className={`p-3 border rounded-lg transition ${colorClasses}`}>
+                      <div className="flex justify-between items-center font-bold">
+                        <span className="flex items-center gap-1.5">
+                          <i className={`fa-solid ${
+                            evt.type === 'Orientations' ? 'fa-compass text-amber-600' :
+                            evt.type === 'EDU Gate' ? 'fa-school-flag text-blue-600' :
+                            evt.type === 'Meetings' ? 'fa-comments text-emerald-600' : 'fa-calendar-day text-purple-600'
+                          }`}></i>
+                          <span>{evt.title}</span>
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`${badgeClasses} px-2 py-0.5 rounded text-[10px]`}>{evt.status}</span>
+                          <button
+                            onClick={() => {
+                              setModalExtraData({ eventId: evt.id });
+                              setActiveModal('editEvent');
+                            }}
+                            className="p-1 bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 text-[10px] shadow-sm transition"
+                            title="Edit Event"
+                          >
+                            <i className="fa-solid fa-pen-to-square"></i>
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-600 mt-1">{evt.description || 'No description added.'}</p>
+                      <div className="mt-2 pt-1 border-t border-slate-200/50 flex justify-between items-center text-[10px] text-slate-500 font-medium">
+                        <span><i className="fa-solid fa-location-dot mr-1"></i>{evt.location || 'Campus'}</span>
+                        <span><i className="fa-solid fa-clock mr-1"></i>{evt.date || 'Scheduled'}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
           <div className="mt-4 pt-4 border-t border-slate-100 flex gap-2">
             <button
-              onClick={() => setActiveModal('addMember')}
+              onClick={() => setActiveModal('addEvent')}
               className="flex-1 py-2 bg-[#002244] hover:bg-[#00162e] text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5"
             >
-              <i className="fa-solid fa-user-plus text-[#c59b27]"></i>
-              <span>Add Member</span>
+              <i className="fa-solid fa-calendar-plus text-[#c59b27]"></i>
+              <span>Add Event</span>
             </button>
             <button
               onClick={() => setActiveModal('addAttendance')}
