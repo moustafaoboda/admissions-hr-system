@@ -59,31 +59,33 @@ export default function Header() {
 
           {/* User Controls & Role Info */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Realtime Live Sync Status Button */}
-            <button
-              onClick={() => setActiveModal('cloudSync')}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition border ${
-                syncStatus?.isCloudConnected
-                  ? 'bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border-emerald-500/50'
-                  : 'bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 border-amber-500/50'
-              }`}
-              title={syncStatus?.isCloudConnected ? "Cloud Real-Time Active across devices. Click to configure." : "Multi-Tab Sync Active. Click to connect Supabase Cloud database."}
-            >
-              <span className="relative flex h-2 w-2">
-                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                  syncStatus?.isCloudConnected ? 'bg-emerald-400' : 'bg-amber-400'
-                }`}></span>
-                <span className={`relative inline-flex rounded-full h-2 w-2 ${
-                  syncStatus?.isCloudConnected ? 'bg-emerald-400' : 'bg-amber-400'
-                }`}></span>
-              </span>
-              <span className="hidden sm:inline">
-                {syncStatus?.isCloudConnected ? 'Live Synced' : 'Sync Offline'}
-              </span>
-              {syncStatus?.isCloudConnected && (
-                <span className="text-[10px] opacity-75 font-mono">({syncStatus.onlinePeers || 1} live)</span>
-              )}
-            </button>
+            {/* Realtime Live Sync Status Button (HR Vice Head Exclusive) */}
+            {isViceHead && (
+              <button
+                onClick={() => setActiveModal('cloudSync')}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition border ${
+                  syncStatus?.isCloudConnected
+                    ? 'bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border-emerald-500/50'
+                    : 'bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 border-amber-500/50'
+                }`}
+                title={syncStatus?.isCloudConnected ? "Cloud Real-Time Active across devices. Click to configure." : "Multi-Tab Sync Active. Click to connect Supabase Cloud database."}
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                    syncStatus?.isCloudConnected ? 'bg-emerald-400' : 'bg-amber-400'
+                  }`}></span>
+                  <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                    syncStatus?.isCloudConnected ? 'bg-emerald-400' : 'bg-amber-400'
+                  }`}></span>
+                </span>
+                <span className="hidden sm:inline">
+                  {syncStatus?.isCloudConnected ? 'Live Synced' : 'Sync Offline'}
+                </span>
+                {syncStatus?.isCloudConnected && (
+                  <span className="text-[10px] opacity-75 font-mono">({syncStatus.onlinePeers || 1} live)</span>
+                )}
+              </button>
+            )}
 
             {/* System Icon Button (Leadership Only) */}
             {isHeadOrVice && (

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getStoredSupabaseConfig, saveSupabaseConfig, clearSupabaseConfig } from '../../lib/supabaseClient';
+import { getStoredSupabaseConfig, saveSupabaseConfig, clearSupabaseConfig, normalizeSupabaseUrl } from '../../lib/supabaseClient';
 
 export default function CloudSyncModal() {
-  const { activeModal, setActiveModal, syncStatus, refreshDataFromCloud, showToast } = useAuth();
+  const { activeModal, setActiveModal, syncStatus, refreshDataFromCloud, showToast, currentUser } = useAuth();
   const storedConfig = getStoredSupabaseConfig();
 
   const [url, setUrl] = useState(storedConfig.url || '');
@@ -12,30 +12,71 @@ export default function CloudSyncModal() {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
 
-  if (activeModal !== 'cloudSync') return null;
+  // Strictly visible and accessible to HR Vice Head only
+  if (activeModal !== 'cloudSync' || currentUser?.role !== "HR Vice Head") return null;
+
+  const isDashboardLink = url.includes('supabase.com/dashboard/project/');
+  const normalizedCandidate = normalizeSupabaseUrl(url);
 
   const handleTestConnection = async () => {
-    if (!url || !anonKey) {
+    if (!url.trim() || !anonKey.trim()) {
       setTestResult({ success: false, message: 'Please provide both Project URL and Anon API Key.' });
       return;
     }
     setIsTesting(true);
     setTestResult(null);
+
+    const cleanUrl = normalizeSupabaseUrl(url);
+    const cleanKey = anonKey.trim();
+
     try {
-      // Direct REST test to the Supabase endpoint
-      const response = await fetch(`${url.replace(/\/+$/, '')}/rest/v1/system_settings?select=key&limit=1`, {
+      // 1. Verify endpoint accessibility via Supabase Auth Health
+      const healthPromise = fetch(`${cleanUrl}/auth/v1/health`, {
+        headers: { apikey: cleanKey }
+      }).catch(err => {
+        throw new Error(`Cannot reach Supabase host (${cleanUrl}). Verify the URL format. (${err.message})`);
+      });
+
+      // 2. Verify REST API and table schema
+      const restPromise = fetch(`${cleanUrl}/rest/v1/members?select=id&limit=1`, {
         headers: {
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`
+          apikey: cleanKey,
+          Authorization: `Bearer ${cleanKey}`
         }
       });
-      if (response.ok || response.status === 200 || response.status === 206) {
-        setTestResult({ success: true, message: 'Connected to Supabase successfully! Realtime sync is ready.' });
+
+      const [healthRes, restRes] = await Promise.all([healthPromise, restPromise]);
+
+      if (restRes.ok) {
+        // Automatically adopt the cleaned URL in state
+        setUrl(cleanUrl);
+        setTestResult({
+          success: true,
+          message: 'Connected to Supabase successfully! Database tables and Realtime channels are active.'
+        });
+      } else if (restRes.status === 401 || restRes.status === 403) {
+        setTestResult({
+          success: false,
+          message: 'Connected to project, but Anon Key was rejected (Unauthorized). Please check your anon / public API key.'
+        });
+      } else if (restRes.status === 404 || restRes.status === 400) {
+        // Project exists, but tables might not be created yet
+        setUrl(cleanUrl);
+        setTestResult({
+          success: true,
+          message: 'Connected to Supabase project! Note: Please run the SQL commands from supabase/schema.sql in your Supabase SQL Editor to finish setting up tables.'
+        });
       } else {
-        setTestResult({ success: false, message: `Server replied with status ${response.status}. Check credentials and RLS policies.` });
+        setTestResult({
+          success: false,
+          message: `Server returned status ${restRes.status}. Ensure URL is https://<project-ref>.supabase.co.`
+        });
       }
     } catch (err) {
-      setTestResult({ success: false, message: `Connection failed: ${err.message}` });
+      setTestResult({
+        success: false,
+        message: `Connection failed: ${err.message}`
+      });
     } finally {
       setIsTesting(false);
     }
@@ -47,13 +88,21 @@ export default function CloudSyncModal() {
       showToast('Both URL and Anon Key are required.', 'danger');
       return;
     }
+    const cleanUrl = normalizeSupabaseUrl(url);
     setIsSaving(true);
-    saveSupabaseConfig(url.trim(), anonKey.trim());
+    saveSupabaseConfig(cleanUrl, anonKey.trim());
   };
 
   const handleDisconnect = () => {
     if (window.confirm('Are you sure you want to disconnect from this Supabase database? System will revert to local offline mode.')) {
       clearSupabaseConfig();
+    }
+  };
+
+  const handleFixUrl = () => {
+    if (normalizedCandidate) {
+      setUrl(normalizedCandidate);
+      setTestResult(null);
     }
   };
 
@@ -67,7 +116,12 @@ export default function CloudSyncModal() {
               <i className="fa-solid fa-cloud-arrow-up text-lg"></i>
             </div>
             <div>
-              <h2 className="text-lg font-bold brand-font text-white">Live Cloud Sync & Database</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold brand-font text-white">Live Cloud Sync & Database</h2>
+                <span className="bg-[#c59b27] text-[#002244] text-[10px] font-extrabold px-1.5 py-0.5 rounded uppercase">
+                  HR Vice Head Only
+                </span>
+              </div>
               <p className="text-xs text-slate-300">Synchronize all devices in real-time with zero lag</p>
             </div>
           </div>
@@ -131,15 +185,40 @@ export default function CloudSyncModal() {
               </label>
               <div className="relative">
                 <input
-                  type="url"
-                  placeholder="https://xyzcompany.supabase.co"
+                  type="text"
+                  placeholder="https://tehzetyysrrytrmsmrgp.supabase.co"
                   value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  className="w-full bg-black/40 border border-white/20 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-[#c59b27] placeholder-slate-500"
+                  onChange={(e) => {
+                    setUrl(e.target.value);
+                    setTestResult(null);
+                  }}
+                  className={`w-full bg-black/40 border rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none placeholder-slate-500 font-mono ${
+                    isDashboardLink ? 'border-amber-500/80' : 'border-white/20 focus:border-[#c59b27]'
+                  }`}
                 />
               </div>
+
+              {/* Auto-detected Dashboard URL notice */}
+              {isDashboardLink && (
+                <div className="mt-2 p-2.5 bg-amber-950/60 border border-amber-500/60 rounded-xl text-xs text-amber-200 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <i className="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+                    <span>
+                      Detected dashboard link. Convert to API URL: <strong className="text-white font-mono">{normalizedCandidate}</strong>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleFixUrl}
+                    className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-black font-bold text-[11px] rounded-lg transition"
+                  >
+                    Fix URL
+                  </button>
+                </div>
+              )}
+
               <p className="text-[11px] text-slate-400 mt-1">
-                From your Supabase Project Settings → API → Project URL.
+                Format must be: <code className="text-[#dfb743]">https://&lt;your-project-id&gt;.supabase.co</code> (found inside your Supabase Project Settings → API).
               </p>
             </div>
 
@@ -152,12 +231,15 @@ export default function CloudSyncModal() {
                   type="text"
                   placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                   value={anonKey}
-                  onChange={(e) => setAnonKey(e.target.value)}
+                  onChange={(e) => {
+                    setAnonKey(e.target.value);
+                    setTestResult(null);
+                  }}
                   className="w-full bg-black/40 border border-white/20 rounded-xl px-3.5 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-[#c59b27] placeholder-slate-500"
                 />
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
-                From your Supabase Project Settings → API → Project API Keys → anon / public.
+                From your Supabase Project Settings → API → Project API Keys → <strong className="text-white">anon / public</strong>.
               </p>
             </div>
 
@@ -167,7 +249,7 @@ export default function CloudSyncModal() {
                   ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300'
                   : 'bg-rose-950/60 border-rose-500 text-rose-300'
               }`}>
-                <i className={`fa-solid ${testResult.success ? 'fa-circle-check' : 'fa-circle-exclamation'}`}></i>
+                <i className={`fa-solid ${testResult.success ? 'fa-circle-check' : 'fa-circle-exclamation'} text-base flex-shrink-0`}></i>
                 <span>{testResult.message}</span>
               </div>
             )}
@@ -212,7 +294,7 @@ export default function CloudSyncModal() {
               <span>One-Time Database Schema Setup:</span>
             </div>
             <p>
-              Run the SQL commands from <code className="text-[#dfb743] bg-black/40 px-1 py-0.5 rounded">supabase/schema.sql</code> in your Supabase SQL Editor once to set up all tables and enable Realtime replication.
+              Remember to copy and run the SQL code from <code className="text-[#dfb743] bg-black/40 px-1 py-0.5 rounded">supabase/schema.sql</code> in your Supabase SQL Editor once so tables and Realtime are activated.
             </p>
           </div>
         </div>

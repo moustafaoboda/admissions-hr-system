@@ -1,12 +1,30 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Auto-corrects URLs if user accidentally copies the Supabase Dashboard page URL
+export function normalizeSupabaseUrl(url) {
+  if (!url) return '';
+  let cleaned = url.trim();
+
+  // If user copied browser URL from dashboard: https://supabase.com/dashboard/project/tehzetyysrrytrmsmrgp/settings/api
+  const dashboardMatch = cleaned.match(/supabase\.com\/dashboard\/project\/([a-zA-Z0-9_-]+)/i);
+  if (dashboardMatch && dashboardMatch[1]) {
+    return `https://${dashboardMatch[1]}.supabase.co`;
+  }
+
+  cleaned = cleaned.replace(/\/+$/, '');
+  if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
+    cleaned = `https://${cleaned}`;
+  }
+  return cleaned;
+}
+
 // Retrieve credentials either from localStorage or build environment variables
 export function getStoredSupabaseConfig() {
   try {
     const localUrl = localStorage.getItem('supabase_url');
     const localKey = localStorage.getItem('supabase_anon_key');
     if (localUrl && localKey) {
-      return { url: localUrl.trim(), key: localKey.trim(), source: 'local' };
+      return { url: normalizeSupabaseUrl(localUrl), key: localKey.trim(), source: 'local' };
     }
   } catch (e) {
     // ignore local storage errors
@@ -15,7 +33,7 @@ export function getStoredSupabaseConfig() {
   const envUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
   const envKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
   if (envUrl && envKey) {
-    return { url: envUrl, key: envKey, source: 'env' };
+    return { url: normalizeSupabaseUrl(envUrl), key: envKey, source: 'env' };
   }
 
   return { url: '', key: '', source: 'none' };
@@ -38,7 +56,8 @@ export const supabase = isSupabaseConfigured
 
 export function saveSupabaseConfig(url, anonKey) {
   try {
-    localStorage.setItem('supabase_url', url.trim());
+    const cleanUrl = normalizeSupabaseUrl(url);
+    localStorage.setItem('supabase_url', cleanUrl);
     localStorage.setItem('supabase_anon_key', anonKey.trim());
     window.location.reload();
   } catch (err) {
