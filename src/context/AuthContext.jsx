@@ -403,6 +403,14 @@ export function AuthProvider({ children }) {
 
   const [toasts, setToasts] = useState([]);
 
+  const showToast = useCallback((message, type = "success") => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3500);
+  }, []);
+
   // Data Collections with automatic local persistence across sessions
   const [systemUsers, setSystemUsers] = useState(() => loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS));
   const [members, setMembers] = useState(() => loadStoredState("aastmt_members", INITIAL_MEMBERS));
@@ -514,14 +522,6 @@ export function AuthProvider({ children }) {
     const timer = setInterval(checkExpiry, 60 * 1000); // Check every minute
     return () => clearInterval(timer);
   }, [currentUser, showToast]);
-
-  const showToast = useCallback((message, type = "success") => {
-    const id = Date.now() + Math.random();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3500);
-  }, []);
 
   // Broadcast Channels Refs
   const localBcRef = useRef(null);
