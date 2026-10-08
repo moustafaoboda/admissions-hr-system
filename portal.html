@@ -1838,8 +1838,21 @@
       } catch {}
     }
 
+    function isLegacyDemoStar(s) {
+      if (!s) return true;
+      const sId = s.id ? String(s.id).toLowerCase().trim() : '';
+      if (sId === 'star-1' || sId === 'star-2') return true;
+      const name = (s.name || '').toLowerCase().trim();
+      const award = (s.awardTitle || s.award_title || '').toLowerCase().trim();
+      const cit = (s.citation || '').toLowerCase().trim();
+      if (name.includes('farida') && (award.includes('operations champion') || cit.includes('volunteered for 3 non-scheduled'))) return true;
+      if (name.includes('youssef') && (award.includes('lead admissions ambassador') || cit.includes('spearheaded orientation'))) return true;
+      return false;
+    }
+
     function isStarDeleted(s) {
       if (!s) return true;
+      if (isLegacyDemoStar(s)) return true;
       const deletedStars = getDeletedIds('stars');
       if (!deletedStars || deletedStars.length === 0) return false;
 

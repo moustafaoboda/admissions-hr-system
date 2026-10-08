@@ -56,8 +56,21 @@ function removeDeletedId(entityKey, id) {
   } catch {}
 }
 
+function isLegacyDemoStar(s) {
+  if (!s) return true;
+  const sId = s.id ? String(s.id).toLowerCase().trim() : '';
+  if (sId === 'star-1' || sId === 'star-2') return true;
+  const name = (s.name || '').toLowerCase().trim();
+  const award = (s.awardTitle || s.award_title || '').toLowerCase().trim();
+  const cit = (s.citation || '').toLowerCase().trim();
+  if (name.includes('farida') && (award.includes('operations champion') || cit.includes('volunteered for 3 non-scheduled'))) return true;
+  if (name.includes('youssef') && (award.includes('lead admissions ambassador') || cit.includes('spearheaded orientation'))) return true;
+  return false;
+}
+
 function isStarDeleted(s) {
   if (!s) return true;
+  if (isLegacyDemoStar(s)) return true;
   const deletedStars = getDeletedIds('stars');
   if (!deletedStars || deletedStars.length === 0) return false;
 
@@ -1109,6 +1122,10 @@ export function AuthProvider({ children }) {
             handleRemoteMutation(payload.payload.type, payload.payload.payload, payload.payload.senderId);
           }
         })
+        .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+          // Automatic DB row changes trigger instant parity refresh across all connected devices
+          refreshDataFromCloud();
+        })
         .on('presence', { event: 'sync' }, () => {
           const presenceState = channel.presenceState();
           const peerCount = Object.keys(presenceState).length;
@@ -1118,6 +1135,9 @@ export function AuthProvider({ children }) {
           if (status === 'SUBSCRIBED') {
             channel.track({ onlineAt: new Date().toISOString() });
             setSyncStatus(prev => ({ ...prev, isCloudConnected: true }));
+            refreshDataFromCloud();
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            setSyncStatus(prev => ({ ...prev, isCloudConnected: false }));
           }
         });
 
@@ -1125,7 +1145,26 @@ export function AuthProvider({ children }) {
       refreshDataFromCloud();
     }
 
+    // 4. Background Sync Heartbeat (Polling every 3.5s ensures 100% parity across all devices even if backgrounded)
+    const heartbeatTimer = setInterval(() => {
+      refreshDataFromCloud();
+    }, 3500);
+
+    // 5. Re-sync immediately when tab gains focus, becomes visible, or reconnects to network
+    const handleActiveResume = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        refreshDataFromCloud();
+      }
+    };
+    window.addEventListener('focus', handleActiveResume);
+    window.addEventListener('online', handleActiveResume);
+    document.addEventListener('visibilitychange', handleActiveResume);
+
     return () => {
+      clearInterval(heartbeatTimer);
+      window.removeEventListener('focus', handleActiveResume);
+      window.removeEventListener('online', handleActiveResume);
+      document.removeEventListener('visibilitychange', handleActiveResume);
       window.removeEventListener('storage', handleStorageChange);
       if (localBcRef.current) {
         localBcRef.current.close();
