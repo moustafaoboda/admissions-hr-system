@@ -8,8 +8,7 @@ export default function Header() {
   if (!currentUser) return null;
 
   const isViceHead = currentUser.role === "HR Vice Head";
-  const isHeadOrVice = currentUser.role === "HR Head" || isViceHead;
-  const initials = currentUser.name.split(" ").map(n => n[0]).slice(0, 2).join("");
+  const initials = (currentUser?.name || "HR").split(" ").filter(Boolean).map(n => n[0]).slice(0, 2).join("") || "HR";
 
   return (
     <header className="bg-[#002244] text-white shadow-lg border-b-2 border-[#c59b27] sticky top-0 z-40">

@@ -17,9 +17,9 @@ export default function Sidebar() {
   const isHRMember = currentUser.role === "HR";
   const isDean = currentUser.role === "Admission's Dean";
 
-  const initials = currentUser.name.split(" ").map(n => n[0]).slice(0, 2).join("");
-  const confirmedWarningsCount = warnings.filter(w => w.status !== 'Pending HR Approval').length;
-  const pendingRequestsCount = warnings.filter(w => w.status === 'Pending HR Approval').length;
+  const initials = (currentUser?.name || "HR").split(" ").filter(Boolean).map(n => n[0]).slice(0, 2).join("") || "HR";
+  const confirmedWarningsCount = (warnings || []).filter(w => w.status !== 'Pending HR Approval').length;
+  const pendingRequestsCount = (warnings || []).filter(w => w.status === 'Pending HR Approval').length;
 
   const handleOpenWarning = (mode) => {
     setModalExtraData({ mode });

@@ -371,16 +371,21 @@ export function AuthProvider({ children }) {
     try {
       const saved = localStorage.getItem("aastmt_current_user");
       const loginTimeStr = localStorage.getItem("aastmt_login_timestamp");
-      if (saved && loginTimeStr) {
-        const loginTime = Number(loginTimeStr);
-        if (Date.now() - loginTime < ONE_WEEK_MS) {
-          return JSON.parse(saved);
-        } else {
-          // Expired after 1 week
-          localStorage.removeItem("aastmt_current_user");
-          localStorage.removeItem("aastmt_login_timestamp");
-          return null;
+      if (saved) {
+        if (loginTimeStr) {
+          const loginTime = Number(loginTimeStr);
+          if (Date.now() - loginTime < ONE_WEEK_MS) {
+            return JSON.parse(saved);
+          } else {
+            // Expired after 1 week
+            localStorage.removeItem("aastmt_current_user");
+            localStorage.removeItem("aastmt_login_timestamp");
+            return null;
+          }
         }
+        // If saved user exists but timestamp not set yet, initialize timestamp to now
+        localStorage.setItem("aastmt_login_timestamp", Date.now().toString());
+        return JSON.parse(saved);
       }
       return null;
     } catch {
@@ -712,11 +717,12 @@ export function AuthProvider({ children }) {
     if (!supabase) return;
 
     try {
+      let activeMems = [];
+      let disMems = [];
+
       // 1. Members
       const { data: dbMembers, error: mErr } = await supabase.from('members').select('*');
       if (!mErr && dbMembers && dbMembers.length > 0) {
-        const activeMems = [];
-        const disMems = [];
         dbMembers.forEach(row => {
           const formatted = {
             id: row.id,
