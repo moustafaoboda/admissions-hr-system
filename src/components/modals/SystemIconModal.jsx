@@ -114,7 +114,7 @@ export default function SystemIconModal() {
           <div className="bg-gradient-to-r from-[#00162e] via-[#002244] to-[#0d3868] p-4 rounded-xl text-white flex items-center gap-4 border border-[#c59b27]/40 shadow-sm">
             <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center border-2 border-[#c59b27] shadow-lg overflow-hidden flex-shrink-0">
               {currentConfig.type === "image" && currentConfig.imageUrl ? (
-                <img src={currentConfig.imageUrl} alt="System Crest Preview" className="w-full h-full object-contain p-1" />
+                <img src={currentConfig.imageUrl} alt="System Crest Preview" className="w-full h-full object-cover rounded-full block" />
               ) : (
                 <i className={`fa-solid ${currentConfig.value || 'fa-anchor'} text-[#c59b27] text-2xl`}></i>
               )}

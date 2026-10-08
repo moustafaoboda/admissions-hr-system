@@ -196,7 +196,7 @@
         <!-- User Info Card -->
         <div class="bg-gradient-to-br from-[#002244] to-[#00162e] text-white rounded-2xl p-4 border-2 border-[#c59b27] shadow-md relative overflow-hidden">
           <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-full bg-[#c59b27] text-[#002244] font-black flex items-center justify-center text-base border-2 border-white shadow" id="sideUserAvatar">OF</div>
+            <div class="w-12 h-12 rounded-full bg-[#c59b27] text-[#002244] font-black flex items-center justify-center text-base border-2 border-white shadow overflow-hidden flex-shrink-0" id="sideUserAvatar">OF</div>
             <div class="flex-grow">
               <div class="font-extrabold text-sm text-white leading-tight" id="sideUserName">Omar Farouk</div>
               <div class="text-xs text-[#dfb743] font-bold mt-0.5" id="sideUserRole">HR Vice Head</div>
@@ -2483,7 +2483,7 @@
       const sideAvatarEl = document.getElementById("sideUserAvatar");
       if (sideAvatarEl) {
         if (currentUser.avatar) {
-          sideAvatarEl.innerHTML = `<img src="${currentUser.avatar}" alt="${currentUser.name}" class="w-full h-full object-cover">`;
+          sideAvatarEl.innerHTML = `<img src="${currentUser.avatar}" alt="${currentUser.name}" class="w-full h-full object-cover rounded-full block">`;
         } else {
           sideAvatarEl.textContent = initials;
         }
@@ -2722,7 +2722,7 @@
         const memberAvatarMarkup = `
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex-shrink-0 flex items-center justify-center font-bold text-xs text-[#002244] shadow-xs">
-              ${m.avatar ? `<img src="${m.avatar}" class="w-full h-full object-cover" alt="${m.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span>${memInitials}</span>'">` : `<span>${memInitials}</span>`}
+              ${m.avatar ? `<img src="${m.avatar}" class="w-full h-full object-cover rounded-full block" alt="${m.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span>${memInitials}</span>'">` : `<span>${memInitials}</span>`}
             </div>
             <div>
               <div class="font-bold text-slate-800 text-sm leading-snug">${m.name}</div>
@@ -2873,7 +2873,7 @@
       const editAvatarPrev = document.getElementById("editMemberAvatarPreview");
       if (editAvatarPrev) {
         if (mem.avatar) {
-          editAvatarPrev.innerHTML = `<img src="${mem.avatar}" class="w-full h-full object-cover">`;
+          editAvatarPrev.innerHTML = `<img src="${mem.avatar}" class="w-full h-full object-cover rounded-full block">`;
         } else {
           editAvatarPrev.innerHTML = `<i class="fa-solid fa-user text-slate-300 text-base"></i>`;
         }
@@ -2915,7 +2915,7 @@
         const reader = new FileReader();
         reader.onload = function(e) {
           document.getElementById("editMemberAvatarUrl").value = e.target.result;
-          document.getElementById("editMemberAvatarPreview").innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+          document.getElementById("editMemberAvatarPreview").innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover rounded-full block">`;
         };
         reader.readAsDataURL(input.files[0]);
       }
@@ -2924,7 +2924,7 @@
     function handleEditMemberAvatarUrlChange(val) {
       const prev = document.getElementById("editMemberAvatarPreview");
       if (val.trim()) {
-        prev.innerHTML = `<img src="${val.trim()}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-user text-slate-300\\'></i>'">`;
+        prev.innerHTML = `<img src="${val.trim()}" class="w-full h-full object-cover rounded-full block" onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-user text-slate-300\\'></i>'">`;
       } else {
         prev.innerHTML = `<i class="fa-solid fa-user text-slate-300 text-base"></i>`;
       }
@@ -2942,7 +2942,7 @@
         const reader = new FileReader();
         reader.onload = function(e) {
           document.getElementById("addMemberAvatarUrl").value = e.target.result;
-          document.getElementById("addMemberAvatarPreview").innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+          document.getElementById("addMemberAvatarPreview").innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover rounded-full block">`;
         };
         reader.readAsDataURL(input.files[0]);
       }
@@ -2951,7 +2951,7 @@
     function handleAddMemberAvatarUrlChange(val) {
       const prev = document.getElementById("addMemberAvatarPreview");
       if (val.trim()) {
-        prev.innerHTML = `<img src="${val.trim()}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-user text-slate-300\\'></i>'">`;
+        prev.innerHTML = `<img src="${val.trim()}" class="w-full h-full object-cover rounded-full block" onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-user text-slate-300\\'></i>'">`;
       } else {
         prev.innerHTML = `<i class="fa-solid fa-user text-slate-300 text-base"></i>`;
       }
@@ -3662,7 +3662,7 @@
       const prev = document.getElementById("profileModalAvatarPreview");
       if (!prev) return;
       if (avatarUrl && avatarUrl.trim()) {
-        prev.innerHTML = `<img src="${avatarUrl.trim()}" class="w-full h-full object-cover" onerror="this.parentElement.textContent='${(currentUser.name || 'HR').slice(0, 2).toUpperCase()}'">`;
+        prev.innerHTML = `<img src="${avatarUrl.trim()}" class="w-full h-full object-cover rounded-full block" onerror="this.parentElement.textContent='${(currentUser.name || 'HR').slice(0, 2).toUpperCase()}'">`;
       } else {
         const initials = (currentUser.name || "HR").split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() || "HR";
         prev.textContent = initials;
@@ -3764,11 +3764,11 @@
       const loginContainer = document.getElementById("loginBrandIconContainer");
 
       const iconContent = systemIcon.type === "image" && systemIcon.imageUrl
-        ? `<img src="${systemIcon.imageUrl}" alt="AASTMT Logo" class="w-full h-full object-contain p-0.5">`
+        ? `<img src="${systemIcon.imageUrl}" alt="AASTMT Logo" class="w-full h-full object-cover rounded-full">`
         : `<i class="fa-solid ${systemIcon.value || 'fa-anchor'} text-[#c59b27] text-lg"></i>`;
 
       const loginIconContent = systemIcon.type === "image" && systemIcon.imageUrl
-        ? `<img src="${systemIcon.imageUrl}" alt="AASTMT Logo" class="w-full h-full object-contain p-1">`
+        ? `<img src="${systemIcon.imageUrl}" alt="AASTMT Logo" class="w-full h-full object-cover rounded-full">`
         : `<i class="fa-solid ${systemIcon.value || 'fa-anchor'} text-[#c59b27] text-2xl"></i>`;
 
       if (headerContainer) headerContainer.innerHTML = iconContent;
@@ -3789,7 +3789,7 @@
       const prevEl = document.getElementById("systemIconModalPreview");
       if (prevEl) {
         if (pendingSystemIcon.type === "image" && pendingSystemIcon.imageUrl) {
-          prevEl.innerHTML = `<img src="${pendingSystemIcon.imageUrl}" class="w-full h-full object-contain p-1">`;
+          prevEl.innerHTML = `<img src="${pendingSystemIcon.imageUrl}" class="w-full h-full object-cover rounded-full">`;
         } else {
           prevEl.innerHTML = `<i class="fa-solid ${pendingSystemIcon.value || 'fa-anchor'} text-[#c59b27] text-2xl"></i>`;
         }

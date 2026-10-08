@@ -33,7 +33,7 @@ export default function Sidebar() {
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-[#c59b27] text-[#002244] font-black flex items-center justify-center text-base border-2 border-white shadow overflow-hidden flex-shrink-0">
             {currentUser.avatar ? (
-              <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
+              <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover rounded-full block" />
             ) : (
               initials || 'HR'
             )}

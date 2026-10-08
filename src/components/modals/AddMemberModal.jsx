@@ -76,7 +76,7 @@ export default function AddMemberModal() {
             <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
               <div className="w-12 h-12 rounded-full bg-[#002244] text-[#c59b27] font-black flex items-center justify-center text-sm border-2 border-white shadow overflow-hidden flex-shrink-0">
                 {avatar ? (
-                  <img src={avatar} alt="Member Avatar" className="w-full h-full object-cover" />
+                  <img src={avatar} alt="Member Avatar" className="w-full h-full object-cover rounded-full block" />
                 ) : (
                   <i className="fa-solid fa-user text-slate-300 text-base"></i>
                 )}

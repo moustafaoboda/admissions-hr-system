@@ -26,7 +26,7 @@ export default function Header() {
                     className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center border border-[#c59b27] shadow-md transition overflow-hidden cursor-pointer"
                   >
                     {systemIcon?.type === "image" && systemIcon?.imageUrl ? (
-                      <img src={systemIcon.imageUrl} alt="System Logo" className="w-full h-full object-contain p-1" />
+                      <img src={systemIcon.imageUrl} alt="System Logo" className="w-full h-full object-cover rounded-full block" />
                     ) : (
                       <i className={`fa-solid ${systemIcon?.value || 'fa-anchor'} text-[#c59b27] text-lg sm:text-xl`}></i>
                     )}
@@ -41,7 +41,7 @@ export default function Header() {
                   title="Arab Academy for Science, Technology and Maritime Transport"
                 >
                   {systemIcon?.type === "image" && systemIcon?.imageUrl ? (
-                    <img src={systemIcon.imageUrl} alt="System Logo" className="w-full h-full object-contain p-1" />
+                    <img src={systemIcon.imageUrl} alt="System Logo" className="w-full h-full object-cover rounded-full block" />
                   ) : (
                     <i className={`fa-solid ${systemIcon?.value || 'fa-anchor'} text-[#c59b27] text-lg sm:text-xl`}></i>
                   )}
@@ -87,7 +87,7 @@ export default function Header() {
             <div className="bg-white/10 border border-white/20 rounded-lg px-2.5 py-1.5 flex items-center gap-2 text-xs">
               <div className="w-7 h-7 rounded-full bg-[#c59b27] text-[#002244] font-bold flex items-center justify-center text-xs overflow-hidden border border-white/40 flex-shrink-0">
                 {currentUser.avatar ? (
-                  <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
+                  <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover rounded-full block" />
                 ) : (
                   initials || 'HR'
                 )}
