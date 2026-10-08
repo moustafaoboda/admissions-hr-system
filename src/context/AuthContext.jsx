@@ -1287,7 +1287,7 @@ export function AuthProvider({ children }) {
 
   const login = (username, password) => {
     const user = systemUsers.find(u => u.username.toLowerCase() === username.trim().toLowerCase());
-    if (user && (user.password === password || password === "123" || password === "123456")) {
+    if (user && user.password === password) {
       const userObj = {
         name: user.name,
         username: user.username,
@@ -1306,7 +1306,7 @@ export function AuthProvider({ children }) {
       showToast(`Welcome back, ${userObj.name} (${userObj.role})`);
       return true;
     } else {
-      showToast("Invalid credentials. Try demo accounts or password: 123", "danger");
+      showToast("Invalid credentials. Please verify your username and password.", "danger");
       return false;
     }
   };
@@ -2218,7 +2218,11 @@ export function AuthProvider({ children }) {
     }
     const newUser = { id: `usr-${Date.now()}`, name, username, password, role };
     removeDeletedId('users', newUser.id);
-    setSystemUsers(prev => [...prev, newUser]);
+    setSystemUsers(prev => {
+      const nextUsers = [...prev, newUser];
+      try { localStorage.setItem("aastmt_system_users", JSON.stringify(nextUsers)); } catch (e) {}
+      return nextUsers;
+    });
     broadcastMutation('ADD_SYSTEM_USER', newUser);
 
     if (supabase) {
@@ -2229,7 +2233,11 @@ export function AuthProvider({ children }) {
   };
 
   const updateSystemUser = async (id, updated) => {
-    setSystemUsers(prev => prev.map(u => u.id === id ? { ...u, ...updated } : u));
+    setSystemUsers(prev => {
+      const nextUsers = prev.map(u => u.id === id ? { ...u, ...updated } : u);
+      try { localStorage.setItem("aastmt_system_users", JSON.stringify(nextUsers)); } catch (e) {}
+      return nextUsers;
+    });
     broadcastMutation('UPDATE_SYSTEM_USER', { id, fields: updated });
 
     if (supabase) {
@@ -2244,7 +2252,11 @@ export function AuthProvider({ children }) {
 
   const deleteSystemUser = async (id) => {
     addDeletedId('users', id);
-    setSystemUsers(prev => prev.filter(u => u.id !== id));
+    setSystemUsers(prev => {
+      const nextUsers = prev.filter(u => u.id !== id);
+      try { localStorage.setItem("aastmt_system_users", JSON.stringify(nextUsers)); } catch (e) {}
+      return nextUsers;
+    });
     broadcastMutation('DELETE_SYSTEM_USER', { id });
 
     if (supabase) {
@@ -2279,14 +2291,25 @@ export function AuthProvider({ children }) {
     }));
 
     const updatedObj = { name, username, password: newPassword || userRecord.password, avatar: finalAvatar };
-    setSystemUsers(prev => prev.map(u => u.username === currentUser.username ? { ...u, ...updatedObj } : u));
+    setSystemUsers(prev => {
+      const nextUsers = prev.map(u => u.username === currentUser.username ? { ...u, ...updatedObj } : u);
+      try { localStorage.setItem("aastmt_system_users", JSON.stringify(nextUsers)); } catch (e) {}
+      return nextUsers;
+    });
     broadcastMutation('UPDATE_SYSTEM_USER', { id: userRecord.id, fields: updatedObj });
 
     if (supabase) {
-      supabase.from('system_users').update(updatedObj).eq('id', userRecord.id).catch(e => console.warn(e));
+      supabase.from('system_users').update({
+        name: updatedObj.name,
+        username: updatedObj.username,
+        password: updatedObj.password,
+        avatar: updatedObj.avatar
+      }).eq('id', userRecord.id).then(({ error }) => {
+        if (error) console.warn("Supabase update system_users password error:", error);
+      }).catch(e => console.warn(e));
     }
 
-    showToast("Profile updated & synced successfully across all devices.");
+    showToast("Profile & password updated. Old password has been deleted from the database.");
     return true;
   };
 

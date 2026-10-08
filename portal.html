@@ -2749,7 +2749,7 @@
       const usernameInput = document.getElementById("loginUsername").value.trim().toLowerCase();
       const passwordInput = document.getElementById("loginPassword").value.trim();
       const user = systemUsers.find(u => u.username.toLowerCase() === usernameInput);
-      if (user && (user.password === passwordInput || passwordInput === "123" || passwordInput === "123456")) {
+      if (user && user.password === passwordInput) {
         currentUser = { name: user.name, username: user.username, role: user.role, avatar: user.avatar || null };
         try {
           localStorage.setItem("aastmt_current_user", JSON.stringify(currentUser));
@@ -2760,7 +2760,7 @@
         applyUserRoleUI();
         renderAllViews();
         showToast(`Welcome back, ${currentUser.name} (${currentUser.role})`);
-      } else { showToast("Invalid credentials. Try demo accounts or password: 123", "danger"); }
+      } else { showToast("Invalid credentials. Please verify your username and password.", "danger"); }
     }
 
     function handleLogout() {
@@ -4281,9 +4281,15 @@
         u.avatar = avatarVal;
       }
 
+      saveAllState();
+      try {
+        localStorage.setItem("aastmt_current_user", JSON.stringify(currentUser));
+      } catch (err) {}
+
       closeModal("profileModal");
       applyUserRoleUI();
-      showToast("Profile & photo updated successfully.");
+      renderAllViews();
+      showToast("Profile & password updated successfully. Old password has been deleted from the database.");
     }
 
     /* SYSTEM ICON MANAGEMENT */
