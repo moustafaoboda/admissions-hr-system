@@ -7,7 +7,8 @@ export default function Header() {
 
   if (!currentUser) return null;
 
-  const isViceHead = currentUser.role === "HR Vice Head";
+  const isViceHead = currentUser?.role === "HR Vice Head";
+  const isHeadOrVice = currentUser?.role === "HR Head" || isViceHead;
   const initials = (currentUser?.name || "HR").split(" ").filter(Boolean).map(n => n[0]).slice(0, 2).join("") || "HR";
 
   return (
