@@ -224,26 +224,7 @@ const INITIAL_DISCHARGED_MEMBERS = [
   }
 ];
 
-const INITIAL_STAR_AMBASSADORS = [
-  {
-    id: "star-1",
-    memberId: "mem-1",
-    name: "Youssef El-Sayed",
-    role: "Operations",
-    college: "Engineering & Tech",
-    awardTitle: "Lead Admissions Ambassador of the Month",
-    citation: "Spearheaded orientation tours for 120+ prospective parents with zero scheduling conflicts."
-  },
-  {
-    id: "star-2",
-    memberId: "mem-4",
-    name: "Farida Ahmed",
-    role: "Operations",
-    college: "Logistics & Transport",
-    awardTitle: "Operations Champion",
-    citation: "Volunteered for 3 non-scheduled weekend open day shifts at the Smart Village registration booth."
-  }
-];
+const INITIAL_STAR_AMBASSADORS = [];
 
 const INITIAL_ATTENDANCE_SESSIONS = [
   {
@@ -485,7 +466,7 @@ export function AuthProvider({ children }) {
     return loadStoredState("aastmt_discharged_members", INITIAL_DISCHARGED_MEMBERS).filter(m => !isMemberDeleted(m));
   });
   const [starAmbassadors, setStarAmbassadors] = useState(() => {
-    return loadStoredState("aastmt_star_ambassadors", INITIAL_STAR_AMBASSADORS).filter(s => !isStarDeleted(s));
+    return loadStoredState("aastmt_star_ambassadors", []).filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isStarDeleted(s));
   });
   const [attendanceSessions, setAttendanceSessions] = useState(() => {
     const deleted = getDeletedIds("sessions");
@@ -643,10 +624,16 @@ export function AuthProvider({ children }) {
         break;
 
       case 'ADD_STAR':
+        if (payload.id) removeDeletedId('stars', payload.id);
+        if (payload.memberId) removeDeletedId('stars', payload.memberId);
+        if (payload.name) removeDeletedId('stars', payload.name.toLowerCase().trim());
         setStarAmbassadors(prev => [payload, ...prev.filter(s => s.id !== payload.id && (!payload.memberId || (s.memberId !== payload.memberId && s.member_id !== payload.memberId)))]);
         break;
 
       case 'REMOVE_STAR':
+        if (payload.id) addDeletedId('stars', payload.id);
+        if (payload.memberId) addDeletedId('stars', payload.memberId);
+        if (payload.name) addDeletedId('stars', payload.name.toLowerCase().trim());
         setStarAmbassadors(prev => prev.filter(s => {
           if (payload.id && s.id === payload.id) return false;
           if (payload.memberId && (s.memberId === payload.memberId || s.member_id === payload.memberId)) return false;
@@ -843,33 +830,13 @@ export function AuthProvider({ children }) {
           }
         });
 
-        // Two-way merge: Preserve local members that aren't in cloud yet
-        const localActive = loadStoredState("aastmt_members", INITIAL_MEMBERS).filter(m => !isMemberDeleted(m));
-        localActive.forEach(lm => {
-          if (!activeMems.some(am => am.id === lm.id || (am.studentId && am.studentId === lm.studentId) || (am.name && am.name.toLowerCase() === lm.name.toLowerCase())) &&
-              !disMems.some(dm => dm.id === lm.id || (dm.studentId && dm.studentId === lm.studentId) || (dm.name && dm.name.toLowerCase() === lm.name.toLowerCase()))) {
-            activeMems.push(lm);
-            supabase.from('members').upsert([{
-              id: lm.id,
-              name: lm.name,
-              role: lm.role,
-              position: lm.position,
-              college: lm.college,
-              student_id: lm.studentId,
-              phone: lm.phone,
-              attendance_count: lm.attendanceCount || 0,
-              official_days: lm.officialDays || [],
-              extra_days: lm.extraDays || [],
-              strikes: lm.strikes || 0,
-              score: lm.score || 90,
-              status: lm.status || 'Active',
-              avatar: lm.avatar || null
-            }]).catch(() => {});
-          }
-        });
-
+        // Database is authoritative source of truth:
         setMembers(activeMems);
-        if (disMems.length > 0) setDischargedMembers(disMems);
+        try { localStorage.setItem("aastmt_members", JSON.stringify(activeMems)); } catch (e) {}
+        if (disMems.length > 0 || dbMembers.some(m => m.status === 'Discharged')) {
+          setDischargedMembers(disMems);
+          try { localStorage.setItem("aastmt_discharged_members", JSON.stringify(disMems)); } catch (e) {}
+        }
       } else if (!mErr && (!dbMembers || dbMembers.length === 0)) {
         // First-time sync: Seed current local members into Supabase
         const currentMems = loadStoredState("aastmt_members", INITIAL_MEMBERS).filter(m => !isMemberDeleted(m));
@@ -908,6 +875,7 @@ export function AuthProvider({ children }) {
             avatar: u.avatar || null
           }));
         setSystemUsers(validUsers);
+        try { localStorage.setItem("aastmt_system_users", JSON.stringify(validUsers)); } catch (e) {}
       } else if (!uErr && (!dbUsers || dbUsers.length === 0)) {
         const currentUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS).filter(u => !deletedUserIds.includes(u.id));
         if (currentUsers.length > 0) {
@@ -915,25 +883,21 @@ export function AuthProvider({ children }) {
         }
       }
 
-      // 3. Star Ambassadors (Rock-Solid Persistent Two-Way Sync)
+      // 3. Star Ambassadors (Direct Supabase Sync - DB is Single Source of Truth)
       const { data: dbStars, error: sErr } = await supabase.from('star_ambassadors').select('*');
 
       if (!sErr && dbStars) {
+        // Delete any legacy demo stars ('star-1', 'star-2') or tombstoned records from cloud DB
         dbStars.forEach(s => {
-          if (isStarDeleted(s)) {
+          if (s.id === 'star-1' || s.id === 'star-2' || isStarDeleted(s)) {
             if (s.id) supabase.from('star_ambassadors').delete().eq('id', s.id).catch(() => {});
             if (s.member_id) supabase.from('star_ambassadors').delete().eq('member_id', s.member_id).catch(() => {});
           }
         });
-      }
 
-      const allKnownMembers = [...activeMems, ...disMems, ...members];
-      const localStars = loadStoredState("aastmt_star_ambassadors", INITIAL_STAR_AMBASSADORS)
-        .filter(s => !isStarDeleted(s));
-
-      if (!sErr && dbStars) {
+        const allKnownMembers = [...activeMems, ...disMems, ...members];
         const validDbStars = dbStars
-          .filter(s => !isStarDeleted(s))
+          .filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isStarDeleted(s))
           .map(s => {
             const m = allKnownMembers.find(mem => mem.id === s.member_id);
             return {
@@ -948,27 +912,11 @@ export function AuthProvider({ children }) {
             };
           });
 
-        // Two-way merge: preserve local stars that aren't in cloud yet
-        const mergedStars = [...validDbStars];
-        localStars.forEach(ls => {
-          if (!mergedStars.some(ms => ms.id === ls.id || (ms.memberId && ms.memberId === ls.memberId) || (ms.name && ms.name.toLowerCase() === ls.name.toLowerCase()))) {
-            mergedStars.push(ls);
-            // Push local addition up to cloud
-            supabase.from('star_ambassadors').upsert([{
-              id: ls.id,
-              member_id: ls.memberId,
-              name: ls.name,
-              role: ls.role,
-              college: ls.college,
-              award_title: ls.awardTitle,
-              citation: ls.citation
-            }]).catch(() => {});
-          }
-        });
-
-        setStarAmbassadors(mergedStars);
-        try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(mergedStars)); } catch (e) {}
-      } else {
+        setStarAmbassadors(validDbStars);
+        try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(validDbStars)); } catch (e) {}
+      } else if (sErr) {
+        const localStars = loadStoredState("aastmt_star_ambassadors", [])
+          .filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isStarDeleted(s));
         setStarAmbassadors(localStars);
       }
 
@@ -996,27 +944,8 @@ export function AuthProvider({ children }) {
             rollCall: s.roll_call || []
           }));
 
-        const localSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS)
-          .filter(s => !deletedSessionIds.includes(s.id));
-        const mergedSessions = [...validSessions];
-        localSessions.forEach(ls => {
-          if (!mergedSessions.some(ms => ms.id === ls.id)) {
-            mergedSessions.push(ls);
-            supabase.from('attendance_sessions').upsert([{
-              id: ls.id,
-              title: ls.title,
-              date: ls.date,
-              day_name: ls.dayName,
-              session_type: ls.type,
-              present_count: ls.presentCount,
-              total_count: ls.totalCount,
-              roll_call: ls.rollCall
-            }]).catch(() => {});
-          }
-        });
-
-        setAttendanceSessions(mergedSessions);
-        try { localStorage.setItem("aastmt_attendance_sessions", JSON.stringify(mergedSessions)); } catch (e) {}
+        setAttendanceSessions(validSessions);
+        try { localStorage.setItem("aastmt_attendance_sessions", JSON.stringify(validSessions)); } catch (e) {}
       } else if (!aErr && (!dbSessions || dbSessions.length === 0)) {
         const currentSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS)
           .filter(s => !deletedSessionIds.includes(s.id));
@@ -1055,14 +984,8 @@ export function AuthProvider({ children }) {
             date: w.date,
             status: w.status
           }));
-        const localWarnings = loadStoredState("aastmt_warnings", INITIAL_WARNINGS).filter(w => !deletedWarningIds.includes(w.id));
-        const mergedWarnings = [...validWarnings];
-        localWarnings.forEach(lw => {
-          if (!mergedWarnings.some(mw => mw.id === lw.id)) {
-            mergedWarnings.push(lw);
-          }
-        });
-        setWarnings(mergedWarnings);
+        setWarnings(validWarnings);
+        try { localStorage.setItem("aastmt_warnings", JSON.stringify(validWarnings)); } catch (e) {}
       }
 
       // 6. Monitoring Notes
@@ -1091,14 +1014,8 @@ export function AuthProvider({ children }) {
             date: n.date,
             time: n.time
           }));
-        const localNotes = loadStoredState("aastmt_monitoring_notes", INITIAL_MONITORING_NOTES).filter(n => !deletedNoteIds.includes(n.id));
-        const mergedNotes = [...validNotes];
-        localNotes.forEach(ln => {
-          if (!mergedNotes.some(mn => mn.id === ln.id)) {
-            mergedNotes.push(ln);
-          }
-        });
-        setMonitoringNotes(mergedNotes);
+        setMonitoringNotes(validNotes);
+        try { localStorage.setItem("aastmt_monitoring_notes", JSON.stringify(validNotes)); } catch (e) {}
       }
 
       // 7. Events
@@ -1124,24 +1041,8 @@ export function AuthProvider({ children }) {
             date: e.date,
             color: e.color
           }));
-        const localEvents = loadStoredState("aastmt_events", INITIAL_EVENTS).filter(e => !deletedEventIds.includes(e.id));
-        const mergedEvents = [...validEvents];
-        localEvents.forEach(le => {
-          if (!mergedEvents.some(me => me.id === le.id)) {
-            mergedEvents.push(le);
-            supabase.from('events').upsert([{
-              id: le.id,
-              title: le.title,
-              type: le.type,
-              status: le.status,
-              description: le.description,
-              location: le.location,
-              date: le.date,
-              color: le.color
-            }]).catch(() => {});
-          }
-        });
-        setEvents(mergedEvents);
+        setEvents(validEvents);
+        try { localStorage.setItem("aastmt_events", JSON.stringify(validEvents)); } catch (e) {}
       }
 
       // 8. System Settings (Branding Icon)
@@ -1632,6 +1533,7 @@ export function AuthProvider({ children }) {
     if (supabase) {
       if (targetId) supabase.from('star_ambassadors').delete().eq('id', targetId).catch(err => console.warn('Supabase remove star error:', err));
       if (targetMemberId) supabase.from('star_ambassadors').delete().eq('member_id', targetMemberId).catch(err => console.warn('Supabase remove star by member error:', err));
+      if (targetName) supabase.from('star_ambassadors').delete().ilike('name', targetName).catch(err => console.warn('Supabase remove star by name error:', err));
     }
 
     logActivity(`Removed star recognition for: ${target?.name || targetName || 'Ambassador'}`, "Members");

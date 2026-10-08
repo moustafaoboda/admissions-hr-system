@@ -1913,10 +1913,7 @@
       { id: "dis-1", name: "Hassan Mahmoud", role: "PR", position: "Member", college: "Management & Tech", studentId: "2022099", phone: "+20 109 888 7766", dischargeType: "Voluntary Left", dischargeReason: "Graduated and relocated to Alexandria.", date: "2026-08-30", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" }
     ];
 
-    const INITIAL_STAR_AMBASSADORS = [
-      { id: "star-1", memberId: "mem-1", name: "Youssef El-Sayed", role: "Operations", college: "Engineering & Tech", awardTitle: "Lead Admissions Ambassador of the Month", citation: "Spearheaded orientation tours for 120+ prospective parents with zero scheduling conflicts." },
-      { id: "star-2", memberId: "mem-4", name: "Farida Ahmed", role: "Operations", college: "Logistics & Transport", awardTitle: "Operations Champion", citation: "Volunteered for 3 non-scheduled weekend open day shifts at the Smart Village registration booth." }
-    ];
+    const INITIAL_STAR_AMBASSADORS = [];
 
     const INITIAL_ATTENDANCE_SESSIONS = [
       {
@@ -2060,7 +2057,7 @@
     let systemUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS).filter(u => !getDeletedIds("users").includes(u.id));
     let members = loadStoredState("aastmt_members", INITIAL_MEMBERS).filter(m => !isMemberDeleted(m));
     let dischargedMembers = loadStoredState("aastmt_discharged_members", INITIAL_DISCHARGED_MEMBERS).filter(m => !isMemberDeleted(m));
-    let starAmbassadors = loadStoredState("aastmt_star_ambassadors", INITIAL_STAR_AMBASSADORS).filter(s => !isStarDeleted(s));
+    let starAmbassadors = loadStoredState("aastmt_star_ambassadors", []).filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isStarDeleted(s));
     let attendanceSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS).filter(s => !getDeletedIds("sessions").includes(s.id));
     let warnings = loadStoredState("aastmt_warnings", INITIAL_WARNINGS).filter(w => !getDeletedIds("warnings").includes(w.id));
     let events = loadStoredState("aastmt_events", INITIAL_EVENTS).filter(e => !getDeletedIds("events").includes(e.id));

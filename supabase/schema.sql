@@ -221,10 +221,7 @@ INSERT INTO members (id, name, role, position, college, student_id, phone, atten
 INSERT INTO members (id, name, role, position, college, student_id, phone, status, discharge_type, discharge_reason, avatar) VALUES
 ('dis-1', 'Hassan Mahmoud', 'PR', 'Member', 'Management & Tech', '2022099', '+20 109 888 7766', 'Discharged', 'Voluntary Left', 'Graduated and relocated to Alexandria.', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80');
 
--- Seed Star Ambassador
-INSERT INTO star_ambassadors (id, member_id, award_title, citation) VALUES
-('star-1', 'mem-1', 'Lead Admissions Ambassador of the Month', 'Spearheaded orientation tours for 120+ prospective parents with zero scheduling conflicts.'),
-('star-2', 'mem-4', 'Operations Champion', 'Volunteered for 3 non-scheduled weekend open day shifts at the Smart Village registration booth.');
+
 
 -- Seed System Setting (Default Anchor Icon)
 INSERT INTO system_settings (key, value) VALUES
