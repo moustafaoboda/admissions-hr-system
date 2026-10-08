@@ -6,6 +6,7 @@ export default function DashboardTab() {
   const {
     currentUser,
     members,
+    attendanceSessions,
     starAmbassadors,
     removeStarAmbassador,
     events,
@@ -21,12 +22,22 @@ export default function DashboardTab() {
 
   // KPI calculations
   const totalMembers = activeMembers.length;
-  const avgAttendanceRate = totalMembers > 0
-    ? (activeMembers.reduce((acc, m) => {
-        const rate = m.attendanceCount > 0 ? Math.min(100, Math.round((m.attendanceCount / 12) * 100)) : 100;
-        return acc + rate;
-      }, 0) / totalMembers).toFixed(1)
-    : '100.0';
+
+  // Real-time dynamic calculation from Attendance Tab sessions
+  const totalEligibleRollCalls = (attendanceSessions || []).reduce((acc, s) => {
+    return acc + (s.totalCount || (s.rollCall ? s.rollCall.length : 0));
+  }, 0);
+
+  const totalPresentRollCalls = (attendanceSessions || []).reduce((acc, s) => {
+    return acc + (s.presentCount !== undefined ? s.presentCount : (s.rollCall ? s.rollCall.filter(r => r.isPresent).length : 0));
+  }, 0);
+
+  const avgAttendanceRate = totalEligibleRollCalls > 0
+    ? ((totalPresentRollCalls / totalEligibleRollCalls) * 100).toFixed(1)
+    : (totalMembers > 0
+        ? (activeMembers.reduce((acc, m) => acc + (m.attendanceCount > 0 ? Math.min(100, Math.round((m.attendanceCount / 12) * 100)) : 100), 0) / totalMembers).toFixed(1)
+        : '100.0');
+
   const totalStrikes = activeMembers.reduce((acc, m) => acc + m.strikes, 0);
 
   // Functional roles breakdown (Strictly: PR, HR, Operations, Digital Transformation, Innovation)

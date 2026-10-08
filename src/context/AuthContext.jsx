@@ -6,6 +6,24 @@ const AuthContext = createContext(null);
 // Unique client identifier to prevent processing self-broadcasts
 const CLIENT_ID = 'client_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
 
+// Helper to load persistent state from localStorage with fallback
+function loadStoredState(key, fallback) {
+  try {
+    const item = localStorage.getItem(key);
+    if (item !== null && item !== undefined) {
+      const parsed = JSON.parse(item);
+      if (Array.isArray(fallback)) {
+        if (Array.isArray(parsed)) return parsed;
+      } else if (parsed !== null && parsed !== undefined) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn(`Error reading ${key} from localStorage:`, e);
+  }
+  return fallback;
+}
+
 const INITIAL_SYSTEM_USERS = [
   { id: "usr-1", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
   { id: "usr-2", name: "Tarek Hegazy", username: "tarek.hegazy", password: "123", role: "HR Head", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" },
@@ -346,22 +364,38 @@ const INITIAL_MONITORING_NOTES = [
 ];
 
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [activeTab, setActiveTab] = useState("dashboard");
+  // Persistent login session
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("aastmt_current_user");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      return localStorage.getItem("aastmt_active_tab") || "dashboard";
+    } catch {
+      return "dashboard";
+    }
+  });
+
   const [toasts, setToasts] = useState([]);
 
-  // Data Collections
-  const [systemUsers, setSystemUsers] = useState(INITIAL_SYSTEM_USERS);
-  const [members, setMembers] = useState(INITIAL_MEMBERS);
-  const [dischargedMembers, setDischargedMembers] = useState(INITIAL_DISCHARGED_MEMBERS);
-  const [starAmbassadors, setStarAmbassadors] = useState(INITIAL_STAR_AMBASSADORS);
-  const [attendanceSessions, setAttendanceSessions] = useState(INITIAL_ATTENDANCE_SESSIONS);
-  const [warnings, setWarnings] = useState(INITIAL_WARNINGS);
-  const [events, setEvents] = useState(INITIAL_EVENTS);
-  const [monitoringNotes, setMonitoringNotes] = useState(INITIAL_MONITORING_NOTES);
+  // Data Collections with automatic local persistence across sessions
+  const [systemUsers, setSystemUsers] = useState(() => loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS));
+  const [members, setMembers] = useState(() => loadStoredState("aastmt_members", INITIAL_MEMBERS));
+  const [dischargedMembers, setDischargedMembers] = useState(() => loadStoredState("aastmt_discharged_members", INITIAL_DISCHARGED_MEMBERS));
+  const [starAmbassadors, setStarAmbassadors] = useState(() => loadStoredState("aastmt_star_ambassadors", INITIAL_STAR_AMBASSADORS));
+  const [attendanceSessions, setAttendanceSessions] = useState(() => loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS));
+  const [warnings, setWarnings] = useState(() => loadStoredState("aastmt_warnings", INITIAL_WARNINGS));
+  const [events, setEvents] = useState(() => loadStoredState("aastmt_events", INITIAL_EVENTS));
+  const [monitoringNotes, setMonitoringNotes] = useState(() => loadStoredState("aastmt_monitoring_notes", INITIAL_MONITORING_NOTES));
   const [monitoringSelectedMemberId, setMonitoringSelectedMemberId] = useState("");
-  const [recruits, setRecruits] = useState([]);
-  const [activityLogs, setActivityLogs] = useState(INITIAL_ACTIVITY_LOGS);
+  const [recruits, setRecruits] = useState(() => loadStoredState("aastmt_recruits", []));
+  const [activityLogs, setActivityLogs] = useState(() => loadStoredState("aastmt_activity_logs", INITIAL_ACTIVITY_LOGS));
 
   // Sync Status
   const [syncStatus, setSyncStatus] = useState({
@@ -383,6 +417,61 @@ export function AuthProvider({ children }) {
       return { type: "icon", value: "fa-anchor", imageUrl: "" };
     }
   });
+
+  // Ensure all data updates are immediately saved in localStorage (so closing the browser never resets anything)
+  useEffect(() => {
+    try { localStorage.setItem("aastmt_members", JSON.stringify(members)); } catch (e) {}
+  }, [members]);
+
+  useEffect(() => {
+    try { localStorage.setItem("aastmt_discharged_members", JSON.stringify(dischargedMembers)); } catch (e) {}
+  }, [dischargedMembers]);
+
+  useEffect(() => {
+    try { localStorage.setItem("aastmt_attendance_sessions", JSON.stringify(attendanceSessions)); } catch (e) {}
+  }, [attendanceSessions]);
+
+  useEffect(() => {
+    try { localStorage.setItem("aastmt_warnings", JSON.stringify(warnings)); } catch (e) {}
+  }, [warnings]);
+
+  useEffect(() => {
+    try { localStorage.setItem("aastmt_events", JSON.stringify(events)); } catch (e) {}
+  }, [events]);
+
+  useEffect(() => {
+    try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(starAmbassadors)); } catch (e) {}
+  }, [starAmbassadors]);
+
+  useEffect(() => {
+    try { localStorage.setItem("aastmt_monitoring_notes", JSON.stringify(monitoringNotes)); } catch (e) {}
+  }, [monitoringNotes]);
+
+  useEffect(() => {
+    try { localStorage.setItem("aastmt_system_users", JSON.stringify(systemUsers)); } catch (e) {}
+  }, [systemUsers]);
+
+  useEffect(() => {
+    try { localStorage.setItem("aastmt_recruits", JSON.stringify(recruits)); } catch (e) {}
+  }, [recruits]);
+
+  useEffect(() => {
+    try { localStorage.setItem("aastmt_activity_logs", JSON.stringify(activityLogs)); } catch (e) {}
+  }, [activityLogs]);
+
+  useEffect(() => {
+    try {
+      if (currentUser) {
+        localStorage.setItem("aastmt_current_user", JSON.stringify(currentUser));
+      } else {
+        localStorage.removeItem("aastmt_current_user");
+      }
+    } catch (e) {}
+  }, [currentUser]);
+
+  useEffect(() => {
+    try { localStorage.setItem("aastmt_active_tab", activeTab); } catch (e) {}
+  }, [activeTab]);
 
   const showToast = useCallback((message, type = "success") => {
     const id = Date.now() + Math.random();
@@ -444,10 +533,22 @@ export function AuthProvider({ children }) {
 
       case 'UPDATE_ATTENDANCE_SESSION':
         setAttendanceSessions(prev => prev.map(s => s.id === payload.id ? { ...s, ...payload.data } : s));
+        if (payload.deltas) {
+          setMembers(prev => prev.map(m => {
+            const delta = payload.deltas[m.id];
+            if (delta) {
+              return { ...m, attendanceCount: Math.max(0, m.attendanceCount + delta) };
+            }
+            return m;
+          }));
+        }
         break;
 
       case 'DELETE_ATTENDANCE_SESSION':
         setAttendanceSessions(prev => prev.filter(s => s.id !== payload.id));
+        if (payload.wasPresentIds && payload.wasPresentIds.length > 0) {
+          setMembers(prev => prev.map(m => payload.wasPresentIds.includes(m.id) ? { ...m, attendanceCount: Math.max(0, m.attendanceCount - 1) } : m));
+        }
         break;
 
       case 'SUBMIT_WARNING':
@@ -569,7 +670,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Fetch initial/latest data from Supabase Cloud Database
+  // Fetch initial/latest data from Supabase Cloud Database with auto-seed fallback
   const refreshDataFromCloud = useCallback(async () => {
     if (!supabase) return;
 
@@ -606,6 +707,25 @@ export function AuthProvider({ children }) {
         });
         setMembers(activeMems);
         if (disMems.length > 0) setDischargedMembers(disMems);
+      } else if (!mErr && (!dbMembers || dbMembers.length === 0)) {
+        // First-time sync: Seed current local members into Supabase
+        const currentMems = loadStoredState("aastmt_members", INITIAL_MEMBERS);
+        const seedPayload = currentMems.map(m => ({
+          id: m.id,
+          name: m.name,
+          role: m.role,
+          position: m.position,
+          college: m.college,
+          student_id: m.studentId,
+          phone: m.phone,
+          attendance_count: m.attendanceCount || 0,
+          official_days: m.officialDays,
+          strikes: m.strikes || 0,
+          score: m.score || 90,
+          status: m.status || 'Active',
+          avatar: m.avatar || null
+        }));
+        supabase.from('members').insert(seedPayload).catch(() => {});
       }
 
       // 2. System Users
@@ -619,6 +739,9 @@ export function AuthProvider({ children }) {
           role: u.role,
           avatar: u.avatar || null
         })));
+      } else if (!uErr && (!dbUsers || dbUsers.length === 0)) {
+        const currentUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS);
+        supabase.from('system_users').insert(currentUsers).catch(() => {});
       }
 
       // 3. Star Ambassadors
@@ -648,6 +771,18 @@ export function AuthProvider({ children }) {
           totalCount: s.total_count,
           rollCall: s.roll_call || []
         })));
+      } else if (!aErr && (!dbSessions || dbSessions.length === 0)) {
+        const currentSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS);
+        supabase.from('attendance_sessions').insert(currentSessions.map(s => ({
+          id: s.id,
+          title: s.title,
+          date: s.date,
+          day_name: s.dayName,
+          session_type: s.type,
+          present_count: s.presentCount,
+          total_count: s.totalCount,
+          roll_call: s.rollCall
+        }))).catch(() => {});
       }
 
       // 5. Warnings
@@ -714,7 +849,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Initialize Realtime Listeners
+  // Initialize Realtime Listeners & Storage Cross-Tab Sync
   useEffect(() => {
     // 1. Multi-Tab Local Broadcast Channel
     if (typeof window !== 'undefined' && window.BroadcastChannel) {
@@ -727,7 +862,26 @@ export function AuthProvider({ children }) {
       };
     }
 
-    // 2. Supabase Realtime Channel
+    // 2. LocalStorage cross-tab sync listener
+    const handleStorageChange = (e) => {
+      if (!e.key || !e.newValue) return;
+      try {
+        const val = JSON.parse(e.newValue);
+        if (e.key === "aastmt_members") setMembers(val);
+        else if (e.key === "aastmt_discharged_members") setDischargedMembers(val);
+        else if (e.key === "aastmt_attendance_sessions") setAttendanceSessions(val);
+        else if (e.key === "aastmt_warnings") setWarnings(val);
+        else if (e.key === "aastmt_events") setEvents(val);
+        else if (e.key === "aastmt_star_ambassadors") setStarAmbassadors(val);
+        else if (e.key === "aastmt_monitoring_notes") setMonitoringNotes(val);
+        else if (e.key === "aastmt_system_users") setSystemUsers(val);
+        else if (e.key === "aastmt_system_icon") setSystemIcon(val);
+        else if (e.key === "aastmt_activity_logs") setActivityLogs(val);
+      } catch (err) {}
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    // 3. Supabase Realtime Channel
     if (supabase) {
       const channel = supabase.channel('admissions_realtime_broadcast', {
         config: {
@@ -760,6 +914,7 @@ export function AuthProvider({ children }) {
     }
 
     return () => {
+      window.removeEventListener('storage', handleStorageChange);
       if (localBcRef.current) {
         localBcRef.current.close();
       }
@@ -871,6 +1026,7 @@ export function AuthProvider({ children }) {
         avatar: user.avatar || null
       };
       setCurrentUser(userObj);
+      try { localStorage.setItem("aastmt_current_user", JSON.stringify(userObj)); } catch(e) {}
       if (userObj.role === "Admission's Dean" || userObj.role === "HR") {
         setActiveTab("dashboard");
       }
@@ -885,6 +1041,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     setCurrentUser(null);
+    try { localStorage.removeItem("aastmt_current_user"); } catch (e) {}
     setActiveModal('login');
     showToast("Logged out successfully.");
   };
@@ -1101,19 +1258,60 @@ export function AuthProvider({ children }) {
 
   const deleteAttendanceSession = async (sessionId) => {
     const s = attendanceSessions.find(x => x.id === sessionId);
+    const wasPresentIds = s?.rollCall ? s.rollCall.filter(r => r.isPresent).map(r => r.memberId) : [];
+
+    // Decrement attendance count for members who were marked present in this deleted session
+    if (wasPresentIds.length > 0) {
+      setMembers(prev => prev.map(m => wasPresentIds.includes(m.id) ? { ...m, attendanceCount: Math.max(0, m.attendanceCount - 1) } : m));
+      if (supabase) {
+        wasPresentIds.forEach(memId => {
+          const memObj = members.find(m => m.id === memId);
+          if (memObj) {
+            supabase.from('members').update({ attendance_count: Math.max(0, memObj.attendanceCount - 1) }).eq('id', memId).catch(e => console.warn(e));
+          }
+        });
+      }
+    }
+
     setAttendanceSessions(prev => prev.filter(x => x.id !== sessionId));
-    broadcastMutation('DELETE_ATTENDANCE_SESSION', { id: sessionId });
+    broadcastMutation('DELETE_ATTENDANCE_SESSION', { id: sessionId, wasPresentIds });
 
     if (supabase) {
       supabase.from('attendance_sessions').delete().eq('id', sessionId).catch(err => console.warn('Supabase delete session error:', err));
     }
 
     logActivity(`Deleted attendance session: ${s ? s.title : sessionId}`, "Attendance");
-    showToast("Attendance session deleted & synced.");
+    showToast("Attendance session deleted & member totals updated.");
   };
 
   const updateAttendanceSession = async (sessionId, updatedData) => {
     let finalSession = null;
+    const oldSession = attendanceSessions.find(s => s.id === sessionId);
+    const memberAttendanceDeltas = {};
+
+    // Track member attendance count changes if rollCall was edited
+    if (oldSession && updatedData.rollCall) {
+      const oldPresent = new Set((oldSession.rollCall || []).filter(r => r.isPresent).map(r => r.memberId));
+      const newPresent = new Set((updatedData.rollCall || []).filter(r => r.isPresent).map(r => r.memberId));
+
+      setMembers(prev => prev.map(m => {
+        const wasP = oldPresent.has(m.id);
+        const isP = newPresent.has(m.id);
+        if (!wasP && isP) {
+          memberAttendanceDeltas[m.id] = (memberAttendanceDeltas[m.id] || 0) + 1;
+          const newCnt = m.attendanceCount + 1;
+          if (supabase) supabase.from('members').update({ attendance_count: newCnt }).eq('id', m.id).catch(e => console.warn(e));
+          return { ...m, attendanceCount: newCnt };
+        } else if (wasP && !isP) {
+          memberAttendanceDeltas[m.id] = (memberAttendanceDeltas[m.id] || 0) - 1;
+          const newCnt = Math.max(0, m.attendanceCount - 1);
+          if (supabase) supabase.from('members').update({ attendance_count: newCnt }).eq('id', m.id).catch(e => console.warn(e));
+          return { ...m, attendanceCount: newCnt };
+        }
+        return m;
+      }));
+    }
+
     setAttendanceSessions(prev => prev.map(s => {
       if (s.id === sessionId) {
         const presentCount = updatedData.rollCall ? updatedData.rollCall.filter(r => r.isPresent).length : s.presentCount;
@@ -1123,7 +1321,8 @@ export function AuthProvider({ children }) {
       }
       return s;
     }));
-    broadcastMutation('UPDATE_ATTENDANCE_SESSION', { id: sessionId, data: updatedData });
+
+    broadcastMutation('UPDATE_ATTENDANCE_SESSION', { id: sessionId, data: updatedData, deltas: memberAttendanceDeltas });
 
     if (supabase && finalSession) {
       supabase.from('attendance_sessions').update({
@@ -1138,7 +1337,7 @@ export function AuthProvider({ children }) {
     }
 
     logActivity(`Updated attendance session: ${updatedData.title || sessionId}`, "Attendance");
-    showToast("Attendance session details updated & synced.");
+    showToast("Attendance session details & member totals updated.");
   };
 
   const createAttendanceSession = async (title, date, sessionType, rollCallRecords) => {
