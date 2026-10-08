@@ -24,6 +24,36 @@ function loadStoredState(key, fallback) {
   return fallback;
 }
 
+// Helper to track and persist deletions so reloads / cloud sync never resurrect deleted items
+function getDeletedIds(entityKey) {
+  try {
+    const raw = localStorage.getItem(`aastmt_deleted_${entityKey}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function addDeletedId(entityKey, id) {
+  try {
+    if (!id) return;
+    const current = getDeletedIds(entityKey);
+    if (!current.includes(id)) {
+      const updated = [...current, id];
+      localStorage.setItem(`aastmt_deleted_${entityKey}`, JSON.stringify(updated));
+    }
+  } catch {}
+}
+
+function removeDeletedId(entityKey, id) {
+  try {
+    if (!id) return;
+    const current = getDeletedIds(entityKey);
+    const updated = current.filter(x => x !== id);
+    localStorage.setItem(`aastmt_deleted_${entityKey}`, JSON.stringify(updated));
+  } catch {}
+}
+
 const INITIAL_SYSTEM_USERS = [
   { id: "usr-1", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
   { id: "usr-2", name: "Tarek Hegazy", username: "tarek.hegazy", password: "123", role: "HR Head", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" },
@@ -412,14 +442,38 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Data Collections with automatic local persistence across sessions
-  const [systemUsers, setSystemUsers] = useState(() => loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS));
-  const [members, setMembers] = useState(() => loadStoredState("aastmt_members", INITIAL_MEMBERS));
-  const [dischargedMembers, setDischargedMembers] = useState(() => loadStoredState("aastmt_discharged_members", INITIAL_DISCHARGED_MEMBERS));
-  const [starAmbassadors, setStarAmbassadors] = useState(() => loadStoredState("aastmt_star_ambassadors", INITIAL_STAR_AMBASSADORS));
-  const [attendanceSessions, setAttendanceSessions] = useState(() => loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS));
-  const [warnings, setWarnings] = useState(() => loadStoredState("aastmt_warnings", INITIAL_WARNINGS));
-  const [events, setEvents] = useState(() => loadStoredState("aastmt_events", INITIAL_EVENTS));
-  const [monitoringNotes, setMonitoringNotes] = useState(() => loadStoredState("aastmt_monitoring_notes", INITIAL_MONITORING_NOTES));
+  const [systemUsers, setSystemUsers] = useState(() => {
+    const deleted = getDeletedIds("users");
+    return loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS).filter(u => !deleted.includes(u.id));
+  });
+  const [members, setMembers] = useState(() => {
+    const deleted = getDeletedIds("members");
+    return loadStoredState("aastmt_members", INITIAL_MEMBERS).filter(m => !deleted.includes(m.id));
+  });
+  const [dischargedMembers, setDischargedMembers] = useState(() => {
+    const deleted = getDeletedIds("members");
+    return loadStoredState("aastmt_discharged_members", INITIAL_DISCHARGED_MEMBERS).filter(m => !deleted.includes(m.id));
+  });
+  const [starAmbassadors, setStarAmbassadors] = useState(() => {
+    const deleted = getDeletedIds("stars");
+    return loadStoredState("aastmt_star_ambassadors", INITIAL_STAR_AMBASSADORS).filter(s => !deleted.includes(s.id));
+  });
+  const [attendanceSessions, setAttendanceSessions] = useState(() => {
+    const deleted = getDeletedIds("sessions");
+    return loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS).filter(s => !deleted.includes(s.id));
+  });
+  const [warnings, setWarnings] = useState(() => {
+    const deleted = getDeletedIds("warnings");
+    return loadStoredState("aastmt_warnings", INITIAL_WARNINGS).filter(w => !deleted.includes(w.id));
+  });
+  const [events, setEvents] = useState(() => {
+    const deleted = getDeletedIds("events");
+    return loadStoredState("aastmt_events", INITIAL_EVENTS).filter(e => !deleted.includes(e.id));
+  });
+  const [monitoringNotes, setMonitoringNotes] = useState(() => {
+    const deleted = getDeletedIds("notes");
+    return loadStoredState("aastmt_monitoring_notes", INITIAL_MONITORING_NOTES).filter(n => !deleted.includes(n.id));
+  });
   const [monitoringSelectedMemberId, setMonitoringSelectedMemberId] = useState("");
   const [recruits, setRecruits] = useState(() => loadStoredState("aastmt_recruits", []));
   const [activityLogs, setActivityLogs] = useState(() => loadStoredState("aastmt_activity_logs", INITIAL_ACTIVITY_LOGS));
@@ -719,11 +773,21 @@ export function AuthProvider({ children }) {
     try {
       let activeMems = [];
       let disMems = [];
+      const deletedMemIds = getDeletedIds('members');
 
       // 1. Members
       const { data: dbMembers, error: mErr } = await supabase.from('members').select('*');
       if (!mErr && dbMembers && dbMembers.length > 0) {
+        if (deletedMemIds.length > 0) {
+          deletedMemIds.forEach(delId => {
+            if (dbMembers.some(m => m.id === delId)) {
+              supabase.from('members').delete().eq('id', delId).catch(() => {});
+            }
+          });
+        }
+
         dbMembers.forEach(row => {
+          if (deletedMemIds.includes(row.id)) return;
           const formatted = {
             id: row.id,
             name: row.name,
@@ -748,11 +812,36 @@ export function AuthProvider({ children }) {
             activeMems.push(formatted);
           }
         });
+
+        // Two-way merge: Preserve local members that aren't in cloud yet
+        const localActive = loadStoredState("aastmt_members", INITIAL_MEMBERS).filter(m => !deletedMemIds.includes(m.id));
+        localActive.forEach(lm => {
+          if (!activeMems.some(am => am.id === lm.id) && !disMems.some(dm => dm.id === lm.id)) {
+            activeMems.push(lm);
+            supabase.from('members').upsert([{
+              id: lm.id,
+              name: lm.name,
+              role: lm.role,
+              position: lm.position,
+              college: lm.college,
+              student_id: lm.studentId,
+              phone: lm.phone,
+              attendance_count: lm.attendanceCount || 0,
+              official_days: lm.officialDays || [],
+              extra_days: lm.extraDays || [],
+              strikes: lm.strikes || 0,
+              score: lm.score || 90,
+              status: lm.status || 'Active',
+              avatar: lm.avatar || null
+            }]).catch(() => {});
+          }
+        });
+
         setMembers(activeMems);
         if (disMems.length > 0) setDischargedMembers(disMems);
       } else if (!mErr && (!dbMembers || dbMembers.length === 0)) {
         // First-time sync: Seed current local members into Supabase
-        const currentMems = loadStoredState("aastmt_members", INITIAL_MEMBERS);
+        const currentMems = loadStoredState("aastmt_members", INITIAL_MEMBERS).filter(m => !deletedMemIds.includes(m.id));
         const seedPayload = currentMems.map(m => ({
           id: m.id,
           name: m.name,
@@ -772,57 +861,145 @@ export function AuthProvider({ children }) {
       }
 
       // 2. System Users
+      const deletedUserIds = getDeletedIds('users');
       const { data: dbUsers, error: uErr } = await supabase.from('system_users').select('*');
       if (!uErr && dbUsers && dbUsers.length > 0) {
-        setSystemUsers(dbUsers.map(u => ({
-          id: u.id,
-          name: u.name,
-          username: u.username,
-          password: u.password,
-          role: u.role,
-          avatar: u.avatar || null
-        })));
+        const validUsers = dbUsers
+          .filter(u => !deletedUserIds.includes(u.id))
+          .map(u => ({
+            id: u.id,
+            name: u.name,
+            username: u.username,
+            password: u.password,
+            role: u.role,
+            avatar: u.avatar || null
+          }));
+        setSystemUsers(validUsers);
       } else if (!uErr && (!dbUsers || dbUsers.length === 0)) {
-        const currentUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS);
+        const currentUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS).filter(u => !deletedUserIds.includes(u.id));
         supabase.from('system_users').insert(currentUsers).catch(() => {});
       }
 
-      // 3. Star Ambassadors
+      // 3. Star Ambassadors (Rock-Solid Persistent Two-Way Sync)
+      const deletedStarIds = getDeletedIds('stars');
       const { data: dbStars, error: sErr } = await supabase.from('star_ambassadors').select('*');
-      if (!sErr && dbStars && dbStars.length > 0) {
-        const allKnownMembers = [...activeMems, ...disMems, ...members];
-        const resolvedStars = dbStars.map(s => {
-          const m = allKnownMembers.find(mem => mem.id === s.member_id);
-          return {
-            id: s.id,
-            memberId: s.member_id,
-            name: s.name || m?.name || 'Ambassador',
-            role: s.role || m?.role || 'Operations',
-            college: s.college || m?.college || 'AASTMT',
-            avatar: m?.avatar || null,
-            awardTitle: s.award_title,
-            citation: s.citation
-          };
+
+      if (!sErr && dbStars && deletedStarIds.length > 0) {
+        deletedStarIds.forEach(delId => {
+          if (dbStars.some(s => s.id === delId)) {
+            supabase.from('star_ambassadors').delete().eq('id', delId).catch(() => {});
+          }
         });
-        setStarAmbassadors(resolvedStars);
-        try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(resolvedStars)); } catch (e) {}
+      }
+
+      const allKnownMembers = [...activeMems, ...disMems, ...members];
+      const localStars = loadStoredState("aastmt_star_ambassadors", INITIAL_STAR_AMBASSADORS)
+        .filter(s => !deletedStarIds.includes(s.id));
+
+      if (!sErr && dbStars) {
+        const validDbStars = dbStars
+          .filter(s => !deletedStarIds.includes(s.id))
+          .map(s => {
+            const m = allKnownMembers.find(mem => mem.id === s.member_id);
+            return {
+              id: s.id,
+              memberId: s.member_id,
+              name: s.name || m?.name || 'Ambassador',
+              role: s.role || m?.role || 'Operations',
+              college: s.college || m?.college || 'AASTMT',
+              avatar: m?.avatar || null,
+              awardTitle: s.award_title,
+              citation: s.citation
+            };
+          });
+
+        // Two-way merge: preserve local stars that aren't in cloud yet
+        const mergedStars = [...validDbStars];
+        localStars.forEach(ls => {
+          if (!mergedStars.some(ms => ms.id === ls.id)) {
+            mergedStars.push(ls);
+            // Push local addition up to cloud
+            supabase.from('star_ambassadors').upsert([{
+              id: ls.id,
+              member_id: ls.memberId,
+              name: ls.name,
+              role: ls.role,
+              college: ls.college,
+              award_title: ls.awardTitle,
+              citation: ls.citation
+            }]).catch(() => {});
+          }
+        });
+
+        // If cloud was empty but local has stars, seed cloud
+        if (validDbStars.length === 0 && localStars.length > 0) {
+          localStars.forEach(ls => {
+            supabase.from('star_ambassadors').upsert([{
+              id: ls.id,
+              member_id: ls.memberId,
+              name: ls.name,
+              role: ls.role,
+              college: ls.college,
+              award_title: ls.awardTitle,
+              citation: ls.citation
+            }]).catch(() => {});
+          });
+        }
+
+        setStarAmbassadors(mergedStars);
+        try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(mergedStars)); } catch (e) {}
+      } else {
+        setStarAmbassadors(localStars);
       }
 
       // 4. Attendance Sessions
+      const deletedSessionIds = getDeletedIds('sessions');
       const { data: dbSessions, error: aErr } = await supabase.from('attendance_sessions').select('*');
       if (!aErr && dbSessions && dbSessions.length > 0) {
-        setAttendanceSessions(dbSessions.map(s => ({
-          id: s.id,
-          title: s.title,
-          date: s.date,
-          dayName: s.day_name,
-          type: s.session_type,
-          presentCount: s.present_count,
-          totalCount: s.total_count,
-          rollCall: s.roll_call || []
-        })));
+        if (deletedSessionIds.length > 0) {
+          deletedSessionIds.forEach(delId => {
+            if (dbSessions.some(s => s.id === delId)) {
+              supabase.from('attendance_sessions').delete().eq('id', delId).catch(() => {});
+            }
+          });
+        }
+        const validSessions = dbSessions
+          .filter(s => !deletedSessionIds.includes(s.id))
+          .map(s => ({
+            id: s.id,
+            title: s.title,
+            date: s.date,
+            dayName: s.day_name,
+            type: s.session_type,
+            presentCount: s.present_count,
+            totalCount: s.total_count,
+            rollCall: s.roll_call || []
+          }));
+
+        const localSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS)
+          .filter(s => !deletedSessionIds.includes(s.id));
+        const mergedSessions = [...validSessions];
+        localSessions.forEach(ls => {
+          if (!mergedSessions.some(ms => ms.id === ls.id)) {
+            mergedSessions.push(ls);
+            supabase.from('attendance_sessions').upsert([{
+              id: ls.id,
+              title: ls.title,
+              date: ls.date,
+              day_name: ls.dayName,
+              session_type: ls.type,
+              present_count: ls.presentCount,
+              total_count: ls.totalCount,
+              roll_call: ls.rollCall
+            }]).catch(() => {});
+          }
+        });
+
+        setAttendanceSessions(mergedSessions);
+        try { localStorage.setItem("aastmt_attendance_sessions", JSON.stringify(mergedSessions)); } catch (e) {}
       } else if (!aErr && (!dbSessions || dbSessions.length === 0)) {
-        const currentSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS);
+        const currentSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS)
+          .filter(s => !deletedSessionIds.includes(s.id));
         supabase.from('attendance_sessions').insert(currentSessions.map(s => ({
           id: s.id,
           title: s.title,
@@ -836,51 +1013,115 @@ export function AuthProvider({ children }) {
       }
 
       // 5. Warnings
+      const deletedWarningIds = getDeletedIds('warnings');
       const { data: dbWarnings, error: wErr } = await supabase.from('disciplinary_warnings').select('*');
       if (!wErr && dbWarnings && dbWarnings.length > 0) {
-        setWarnings(dbWarnings.map(w => ({
-          id: w.id,
-          memberId: w.member_id,
-          memberName: w.member_name || '',
-          level: w.level,
-          reason: w.reason,
-          reportedBy: w.reported_by,
-          date: w.date,
-          status: w.status
-        })));
+        if (deletedWarningIds.length > 0) {
+          deletedWarningIds.forEach(delId => {
+            if (dbWarnings.some(w => w.id === delId)) {
+              supabase.from('disciplinary_warnings').delete().eq('id', delId).catch(() => {});
+            }
+          });
+        }
+        const validWarnings = dbWarnings
+          .filter(w => !deletedWarningIds.includes(w.id))
+          .map(w => ({
+            id: w.id,
+            memberId: w.member_id,
+            memberName: w.member_name || '',
+            level: w.level,
+            reason: w.reason,
+            reportedBy: w.reported_by,
+            date: w.date,
+            status: w.status
+          }));
+        const localWarnings = loadStoredState("aastmt_warnings", INITIAL_WARNINGS).filter(w => !deletedWarningIds.includes(w.id));
+        const mergedWarnings = [...validWarnings];
+        localWarnings.forEach(lw => {
+          if (!mergedWarnings.some(mw => mw.id === lw.id)) {
+            mergedWarnings.push(lw);
+          }
+        });
+        setWarnings(mergedWarnings);
       }
 
       // 6. Monitoring Notes
+      const deletedNoteIds = getDeletedIds('notes');
       const { data: dbNotes, error: nErr } = await supabase.from('monitoring_notes').select('*');
       if (!nErr && dbNotes && dbNotes.length > 0) {
-        setMonitoringNotes(dbNotes.map(n => ({
-          id: n.id,
-          memberId: n.member_id,
-          memberName: n.member_name,
-          memberRole: n.member_role,
-          memberCollege: n.member_college,
-          authorName: n.author_name,
-          authorRole: n.author_role,
-          category: n.category,
-          note: n.note,
-          date: n.date,
-          time: n.time
-        })));
+        if (deletedNoteIds.length > 0) {
+          deletedNoteIds.forEach(delId => {
+            if (dbNotes.some(n => n.id === delId)) {
+              supabase.from('monitoring_notes').delete().eq('id', delId).catch(() => {});
+            }
+          });
+        }
+        const validNotes = dbNotes
+          .filter(n => !deletedNoteIds.includes(n.id))
+          .map(n => ({
+            id: n.id,
+            memberId: n.member_id,
+            memberName: n.member_name,
+            memberRole: n.member_role,
+            memberCollege: n.member_college,
+            authorName: n.author_name,
+            authorRole: n.author_role,
+            category: n.category,
+            note: n.note,
+            date: n.date,
+            time: n.time
+          }));
+        const localNotes = loadStoredState("aastmt_monitoring_notes", INITIAL_MONITORING_NOTES).filter(n => !deletedNoteIds.includes(n.id));
+        const mergedNotes = [...validNotes];
+        localNotes.forEach(ln => {
+          if (!mergedNotes.some(mn => mn.id === ln.id)) {
+            mergedNotes.push(ln);
+          }
+        });
+        setMonitoringNotes(mergedNotes);
       }
 
       // 7. Events
+      const deletedEventIds = getDeletedIds('events');
       const { data: dbEvents, error: eErr } = await supabase.from('events').select('*');
       if (!eErr && dbEvents && dbEvents.length > 0) {
-        setEvents(dbEvents.map(e => ({
-          id: e.id,
-          title: e.title,
-          type: e.type,
-          status: e.status,
-          description: e.description,
-          location: e.location,
-          date: e.date,
-          color: e.color
-        })));
+        if (deletedEventIds.length > 0) {
+          deletedEventIds.forEach(delId => {
+            if (dbEvents.some(e => e.id === delId)) {
+              supabase.from('events').delete().eq('id', delId).catch(() => {});
+            }
+          });
+        }
+        const validEvents = dbEvents
+          .filter(e => !deletedEventIds.includes(e.id))
+          .map(e => ({
+            id: e.id,
+            title: e.title,
+            type: e.type,
+            status: e.status,
+            description: e.description,
+            location: e.location,
+            date: e.date,
+            color: e.color
+          }));
+        const localEvents = loadStoredState("aastmt_events", INITIAL_EVENTS).filter(e => !deletedEventIds.includes(e.id));
+        const mergedEvents = [...validEvents];
+        localEvents.forEach(le => {
+          if (!mergedEvents.some(me => me.id === le.id)) {
+            mergedEvents.push(le);
+            supabase.from('events').upsert([{
+              id: le.id,
+              title: le.title,
+              type: le.type,
+              status: le.status,
+              description: le.description,
+              location: le.location,
+              date: le.date,
+              color: le.color
+            }]).catch(() => {});
+          }
+        });
+        setEvents(mergedEvents);
       }
 
       // 8. System Settings (Branding Icon)
@@ -1137,6 +1378,8 @@ export function AuthProvider({ children }) {
       avatar: newMem.avatar || null
     };
 
+    removeDeletedId("members", mem.id);
+
     setMembers(prev => [...prev, mem]);
     broadcastMutation('ADD_MEMBER', mem);
 
@@ -1210,6 +1453,7 @@ export function AuthProvider({ children }) {
   };
 
   const deleteMember = (id) => {
+    addDeletedId("members", id);
     const mem = members.find(m => m.id === id);
     setMembers(prev => prev.filter(m => m.id !== id));
     broadcastMutation('DELETE_MEMBER', { id });
@@ -1284,20 +1528,43 @@ export function AuthProvider({ children }) {
       citation
     };
 
+    removeDeletedId('stars', star.id);
+
     setStarAmbassadors(prev => {
-      const updated = [star, ...prev];
+      const updated = [star, ...prev.filter(s => s.id !== star.id)];
       try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(updated)); } catch (e) {}
       return updated;
     });
     broadcastMutation('ADD_STAR', star);
 
     if (supabase) {
-      supabase.from('star_ambassadors').insert([{
-        id: star.id,
-        member_id: star.memberId,
-        award_title: star.awardTitle,
-        citation: star.citation
-      }]).catch(err => console.warn('Supabase add star error:', err));
+      // First ensure the member is in Supabase members table so foreign key constraint is satisfied
+      supabase.from('members').upsert([{
+        id: mem.id,
+        name: mem.name,
+        role: mem.role,
+        position: mem.position,
+        college: mem.college,
+        student_id: mem.studentId,
+        phone: mem.phone,
+        attendance_count: mem.attendanceCount || 0,
+        official_days: mem.officialDays || ["Sunday", "Tuesday", "Thursday"],
+        extra_days: mem.extraDays || [],
+        strikes: mem.strikes || 0,
+        score: mem.score || 90,
+        status: mem.status || 'Active',
+        avatar: mem.avatar || null
+      }]).then(() => {
+        supabase.from('star_ambassadors').upsert([{
+          id: star.id,
+          member_id: star.memberId,
+          name: star.name,
+          role: star.role,
+          college: star.college,
+          award_title: star.awardTitle,
+          citation: star.citation
+        }]).catch(err => console.warn('Supabase add star error:', err));
+      }).catch(err => console.warn('Supabase ensure member error:', err));
     }
 
     logActivity(`Granted star ambassador recognition to ${mem.name}`, "Members", awardTitle);
@@ -1305,6 +1572,8 @@ export function AuthProvider({ children }) {
   };
 
   const removeStarAmbassador = async (starId) => {
+    addDeletedId('stars', starId);
+
     setStarAmbassadors(prev => {
       const updated = prev.filter(s => s.id !== starId);
       try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(updated)); } catch (e) {}
@@ -1321,6 +1590,7 @@ export function AuthProvider({ children }) {
   };
 
   const deleteAttendanceSession = async (sessionId) => {
+    addDeletedId('sessions', sessionId);
     const s = attendanceSessions.find(x => x.id === sessionId);
     const wasPresentIds = s?.rollCall ? s.rollCall.filter(r => r.isPresent).map(r => r.memberId) : [];
 
@@ -1431,6 +1701,8 @@ export function AuthProvider({ children }) {
       rollCall: rollCallRecords
     };
 
+    removeDeletedId('sessions', session.id);
+
     setAttendanceSessions(prev => [session, ...prev]);
     broadcastMutation('CREATE_ATTENDANCE_SESSION', { session, updatedMemberIds: presentMemberIds });
 
@@ -1487,6 +1759,8 @@ export function AuthProvider({ children }) {
         status: "Confirmed Strike"
       };
 
+      removeDeletedId('warnings', wrn.id);
+
       setWarnings(prev => [wrn, ...prev]);
       broadcastMutation('SUBMIT_WARNING', { warning: wrn, memberId: mem.id, incrementStrikes: true });
 
@@ -1520,6 +1794,8 @@ export function AuthProvider({ children }) {
         date: new Date().toISOString().split("T")[0],
         status: "Pending HR Approval"
       };
+
+      removeDeletedId('warnings', wrn.id);
 
       setWarnings(prev => [wrn, ...prev]);
       broadcastMutation('SUBMIT_WARNING', { warning: wrn, memberId: mem.id, incrementStrikes: false });
@@ -1578,6 +1854,7 @@ export function AuthProvider({ children }) {
       showToast("Only HR Leadership can remove warnings.", "warning");
       return;
     }
+    addDeletedId('warnings', warningId);
     const wrn = warnings.find(w => w.id === warningId);
     setWarnings(prev => prev.filter(w => w.id !== warningId));
     broadcastMutation('DISMISS_WARNING', { id: warningId });
@@ -1674,6 +1951,7 @@ export function AuthProvider({ children }) {
       date: newEvent.date || new Date().toISOString().split('T')[0],
       color: newEvent.color || 'blue'
     };
+    removeDeletedId('events', evt.id);
     setEvents(prev => [...prev, evt]);
     broadcastMutation('ADD_EVENT', evt);
 
@@ -1706,6 +1984,7 @@ export function AuthProvider({ children }) {
       showToast("Only HR Leadership can remove events.", "warning");
       return;
     }
+    addDeletedId('events', id);
     const evt = events.find(e => e.id === id);
     setEvents(prev => prev.filter(e => e.id !== id));
     broadcastMutation('DELETE_EVENT', { id });
@@ -1734,6 +2013,7 @@ export function AuthProvider({ children }) {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
+    removeDeletedId('notes', newNote.id);
     setMonitoringNotes(prev => [newNote, ...prev]);
     broadcastMutation('ADD_MONITORING_NOTE', newNote);
 
@@ -1795,6 +2075,7 @@ export function AuthProvider({ children }) {
   };
 
   const deleteMonitoringNote = async (id) => {
+    addDeletedId('notes', id);
     setMonitoringNotes(prev => prev.filter(n => n.id !== id));
     broadcastMutation('DELETE_MONITORING_NOTE', { id });
 
@@ -1877,6 +2158,7 @@ export function AuthProvider({ children }) {
       return;
     }
     const newUser = { id: `usr-${Date.now()}`, name, username, password, role };
+    removeDeletedId('users', newUser.id);
     setSystemUsers(prev => [...prev, newUser]);
     broadcastMutation('ADD_SYSTEM_USER', newUser);
 
@@ -1902,6 +2184,7 @@ export function AuthProvider({ children }) {
   };
 
   const deleteSystemUser = async (id) => {
+    addDeletedId('users', id);
     setSystemUsers(prev => prev.filter(u => u.id !== id));
     broadcastMutation('DELETE_SYSTEM_USER', { id });
 
