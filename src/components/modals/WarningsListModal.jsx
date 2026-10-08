@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { MemberAvatar, UserAvatar } from '../common/Avatars';
 
 export default function WarningsListModal() {
   const {
@@ -85,16 +86,19 @@ export default function WarningsListModal() {
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="font-bold text-[#002244] text-sm flex items-center gap-1.5">
-                      <span>{wrn.memberName}</span>
-                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase ${
-                        wrn.status === 'Pending HR Approval' ? 'bg-amber-200 text-amber-900' : 'bg-rose-200 text-rose-900'
-                      }`}>
-                        {wrn.status}
-                      </span>
+                  <div className="flex items-start gap-3">
+                    <MemberAvatar name={wrn.memberName} size="w-9 h-9 text-xs" className="border border-rose-300" />
+                    <div>
+                      <div className="font-bold text-[#002244] text-sm flex items-center gap-1.5">
+                        <span>{wrn.memberName}</span>
+                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase ${
+                          wrn.status === 'Pending HR Approval' ? 'bg-amber-200 text-amber-900' : 'bg-rose-200 text-rose-900'
+                        }`}>
+                          {wrn.status}
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-semibold text-rose-700 mt-0.5">{wrn.level}</div>
                     </div>
-                    <div className="text-[11px] font-semibold text-rose-700 mt-0.5">{wrn.level}</div>
                   </div>
                   <span className="text-[10px] text-slate-400 font-medium">{wrn.date}</span>
                 </div>
@@ -104,7 +108,10 @@ export default function WarningsListModal() {
                 </p>
 
                 <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between">
-                  <span className="text-[10px] text-slate-500">Reported by: <span className="font-semibold text-slate-700">{wrn.reportedBy}</span></span>
+                  <span className="text-[10px] text-slate-500 inline-flex items-center gap-1">
+                    <UserAvatar user={wrn.reportedBy} name={wrn.reportedBy} size="w-4 h-4 text-[8px]" />
+                    <span>Reported by: <span className="font-semibold text-slate-700">{wrn.reportedBy}</span></span>
+                  </span>
 
                   <div className="flex items-center gap-2">
                     {isHeadOrVice && (

@@ -38,6 +38,7 @@ export default function App() {
 
   const isHeadOrVice = currentUser?.role === "HR Head" || currentUser?.role === "HR Vice Head";
   const isHRMember = currentUser?.role === "HR";
+  const isDean = currentUser?.role === "Admission's Dean";
 
   if (!currentUser) {
     return (
@@ -67,8 +68,8 @@ export default function App() {
             {activeTab === 'dashboard' && <DashboardTab />}
             {activeTab === 'directory' && <DirectoryTab />}
             {!isHRMember && activeTab === 'attendance' && <AttendanceTab />}
-            {activeTab === 'monitoring' && <MonitoringTab />}
-            {!isHRMember && activeTab === 'copilot' && <CopilotTab />}
+            {!isDean && activeTab === 'monitoring' && <MonitoringTab />}
+            {!isHRMember && !isDean && activeTab === 'copilot' && <CopilotTab />}
             {isHeadOrVice && activeTab === 'activityLog' && <ActivityLogTab />}
           </div>
         </div>

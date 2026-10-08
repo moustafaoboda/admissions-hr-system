@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { MemberAvatar, UserAvatar } from '../common/Avatars';
 
 export default function MonitoringTab() {
   const {
@@ -144,6 +145,27 @@ export default function MonitoringTab() {
                   </option>
                 ))}
               </select>
+
+              {/* Target Member Preview Card */}
+              {activeMembers.find(m => m.id === targetMemberId) && (() => {
+                const mem = activeMembers.find(m => m.id === targetMemberId);
+                const rate = mem.attendanceCount > 0 ? Math.min(100, Math.round((mem.attendanceCount / 12) * 100)) : 100;
+                return (
+                  <div className="flex items-center gap-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-lg mt-2 shadow-xs">
+                    <MemberAvatar member={mem} size="w-10 h-10 text-xs" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="font-bold text-slate-800 text-xs truncate">{mem.name}</span>
+                        <span className="text-[10px] bg-amber-100 text-amber-900 font-bold px-1.5 py-0.2 rounded border border-amber-300">{mem.role}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 truncate">{mem.college} • ID: {mem.studentId || 'N/A'}</div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200 whitespace-nowrap">
+                      {rate}% Att.
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Note Category */}
@@ -184,9 +206,7 @@ export default function MonitoringTab() {
             {/* Author Identity Preview Banner */}
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-[#002244] text-[#c59b27] flex items-center justify-center font-bold text-[10px]">
-                  <i className="fa-solid fa-user-pen"></i>
-                </div>
+                <UserAvatar user={currentUser} size="w-8 h-8 text-xs" />
                 <div>
                   <div className="text-[10px] text-slate-400 font-semibold uppercase">Note Author</div>
                   <div className="font-bold text-slate-800">{currentUser?.name}</div>
@@ -271,9 +291,12 @@ export default function MonitoringTab() {
                     <div className="flex items-start justify-between gap-3">
                       {/* Target Member Info */}
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[#002244] text-[#c59b27] font-extrabold flex items-center justify-center text-xs shadow-sm flex-shrink-0 border-2 border-[#c59b27]">
-                          {initials}
-                        </div>
+                        <MemberAvatar
+                          memberId={n.memberId}
+                          name={n.memberName}
+                          size="w-10 h-10 text-xs"
+                          className="border-2 border-[#c59b27]"
+                        />
                         <div>
                           <div className="flex items-center flex-wrap gap-1.5">
                             <h4 className="font-extrabold text-sm text-[#002244]">{n.memberName}</h4>
@@ -331,7 +354,7 @@ export default function MonitoringTab() {
                     {/* Footer: Prominently Display Author's Name next to the note */}
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs flex-wrap gap-2">
                       <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50/40 border border-amber-200/80 px-2.5 py-1 rounded-lg">
-                        <i className="fa-solid fa-pen-fancy text-[#c59b27] text-xs"></i>
+                        <UserAvatar user={n.authorName} name={n.authorName} size="w-5 h-5 text-[9px]" />
                         <span className="text-slate-600 text-[11px] font-medium">Written by:</span>
                         <span className="font-extrabold text-[#002244] text-[11px]">{n.authorName}</span>
                         <span className="text-[10px] bg-[#002244] text-[#c59b27] font-extrabold px-1.5 py-0.5 rounded shadow-xs">

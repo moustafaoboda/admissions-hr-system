@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { MemberAvatar } from '../common/Avatars';
 
 export default function EditWarningModal() {
   const { activeModal, modalExtraData, setActiveModal, warnings, updateWarning, dismissWarning } = useAuth();
@@ -52,10 +53,13 @@ export default function EditWarningModal() {
     <div className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-200">
         <div className="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-rose-500">
-          <h3 className="font-bold text-sm flex items-center gap-2">
-            <i className="fa-solid fa-pen-to-square text-rose-400"></i>
-            <span>Edit Warning Record: {memberName}</span>
-          </h3>
+          <div className="flex items-center gap-2.5">
+            <MemberAvatar name={memberName} size="w-9 h-9 text-xs" className="border border-rose-400" />
+            <div>
+              <h3 className="font-bold text-sm">Edit Warning Record: {memberName}</h3>
+              <p className="text-[10px] text-slate-300">Update disciplinary strike details</p>
+            </div>
+          </div>
           <button onClick={() => setActiveModal('warningsListModal')} className="text-slate-400 hover:text-white">
             <i className="fa-solid fa-xmark"></i>
           </button>

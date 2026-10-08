@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { MemberAvatar, UserAvatar } from '../common/Avatars';
 
 export default function EditMonitoringNoteModal() {
   const {
@@ -54,10 +55,13 @@ export default function EditMonitoringNoteModal() {
     <div className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-200">
         <div className="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
-          <h3 className="font-bold text-sm flex items-center gap-2">
-            <i className="fa-solid fa-pen-to-square text-[#c59b27]"></i>
-            <span>Edit Monitoring Note</span>
-          </h3>
+          <div className="flex items-center gap-2.5">
+            <MemberAvatar memberId={targetMemberId} name={currentNote?.memberName} size="w-9 h-9 text-xs" className="border border-[#c59b27]" />
+            <div>
+              <h3 className="font-bold text-sm">Edit Monitoring Note</h3>
+              <p className="text-[10px] text-slate-300">Member: {currentNote?.memberName || 'Ambassador'}</p>
+            </div>
+          </div>
           <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-white">
             <i className="fa-solid fa-xmark"></i>
           </button>
@@ -117,11 +121,14 @@ export default function EditMonitoringNoteModal() {
 
           {/* Author Badge */}
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-slate-600 text-[11px] flex items-center justify-between">
-            <span>
-              Originally Written by:{' '}
-              <strong className="text-slate-900 font-bold">
-                {currentNote.authorName} ({currentNote.authorRole})
-              </strong>
+            <span className="flex items-center gap-1.5">
+              <UserAvatar user={currentNote.authorName} name={currentNote.authorName} size="w-5 h-5 text-[9px]" />
+              <span>
+                Originally Written by:{' '}
+                <strong className="text-slate-900 font-bold">
+                  {currentNote.authorName} ({currentNote.authorRole})
+                </strong>
+              </span>
             </span>
             <span className="text-slate-500 font-mono">
               {currentNote.date} {currentNote.time || ''}

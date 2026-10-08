@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { MemberAvatar } from '../common/Avatars';
 
 export default function AttendanceTab() {
   const {
@@ -262,14 +263,14 @@ export default function AttendanceTab() {
                       scheduledRollCall.map(r => (
                         <span
                           key={r.memberId || r.name}
-                          className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md font-semibold border ${
+                          className={`inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-md font-semibold border ${
                             r.isPresent
                               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                               : (r.isExcused ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-rose-50 text-rose-800 border-rose-200')
                           }`}
                           title={r.isPresent ? 'Present' : (r.isExcused ? `Excused: ${r.excuseReason || 'Yes'}` : 'Absent')}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full ${r.isPresent ? 'bg-emerald-500' : (r.isExcused ? 'bg-amber-500' : 'bg-rose-500')}`}></span>
+                          <MemberAvatar memberId={r.memberId} name={r.name} size="w-4 h-4 text-[8px]" />
                           <span>{r.name}</span>
                           {!r.isPresent && (
                             r.isExcused ? <span className="text-[9px] font-bold text-amber-600">(Exc)</span> : <span className="text-[9px] font-bold text-rose-600">(Abs)</span>
@@ -396,7 +397,12 @@ export default function AttendanceTab() {
               <tbody className="divide-y divide-slate-100">
                 {(isEditing ? editRollCall : getSessionScheduledRollCall(activeSession)).map((rc, idx) => (
                   <tr key={rc.memberId || idx} className="hover:bg-slate-50 transition">
-                    <td className="py-2.5 px-3 font-bold text-slate-800">{rc.name}</td>
+                    <td className="py-2.5 px-3 font-bold text-slate-800">
+                      <div className="flex items-center gap-2">
+                        <MemberAvatar memberId={rc.memberId} name={rc.name} size="w-7 h-7 text-[10px]" />
+                        <span>{rc.name}</span>
+                      </div>
+                    </td>
                     <td className="py-2.5 px-3 text-slate-600">{rc.role}</td>
 
                     <td className="py-2.5 px-3 text-center">

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { UserAvatar } from '../common/Avatars';
 
 export default function ActivityLogTab() {
   const {
@@ -202,8 +203,8 @@ export default function ActivityLogTab() {
                   )}
 
                   <div className="flex items-center flex-wrap gap-3 text-[11px] text-slate-500 pt-1">
-                    <span className="flex items-center gap-1 font-semibold text-slate-700">
-                      <i className="fa-solid fa-user-circle text-[#002244]"></i>
+                    <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+                      <UserAvatar user={log.user} name={log.user} size="w-5 h-5 text-[9px]" />
                       <span>{log.user}</span>
                       <span className="text-[10px] bg-slate-100 px-1.5 py-0.2 rounded font-normal text-slate-600">({log.role})</span>
                     </span>

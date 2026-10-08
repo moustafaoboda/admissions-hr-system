@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { MemberAvatar } from '../common/Avatars';
 
 export default function DirectoryTab() {
   const {
@@ -363,7 +364,12 @@ export default function DirectoryTab() {
                 ) : (
                   dischargedMembers.map(d => (
                     <tr key={d.id} className="hover:bg-slate-50">
-                      <td className="py-2 px-3 font-bold text-slate-700">{d.name}</td>
+                      <td className="py-2 px-3 font-bold text-slate-700 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <MemberAvatar member={d} size="w-7 h-7 text-[10px]" />
+                          <span>{d.name}</span>
+                        </div>
+                      </td>
                       <td className="py-2 px-3 text-slate-600">{d.role}</td>
                       <td className="py-2 px-3 text-slate-600">{d.college}</td>
                       <td className="py-2 px-3">

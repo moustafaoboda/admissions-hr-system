@@ -129,7 +129,8 @@ const INITIAL_DISCHARGED_MEMBERS = [
     phone: "+20 109 888 7766",
     dischargeType: "Voluntary Left",
     dischargeReason: "Graduated and relocated to Alexandria.",
-    date: "2026-08-30"
+    date: "2026-08-30",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80"
   }
 ];
 

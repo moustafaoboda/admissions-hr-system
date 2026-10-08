@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { MemberAvatar } from '../common/Avatars';
 
 export default function AddAttendanceModal() {
   const { members, activeModal, setActiveModal, createAttendanceSession } = useAuth();
@@ -150,7 +151,8 @@ export default function AddAttendanceModal() {
             <div className="divide-y divide-slate-100">
               {rollCall.map(item => (
                 <div key={item.memberId} className="p-3 hover:bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <MemberAvatar memberId={item.memberId} name={item.name} size="w-7 h-7 text-[10px]" />
                     <span className="font-bold text-slate-800 text-xs">{item.name}</span>
                     <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-semibold text-slate-600">{item.role}</span>
                   </div>

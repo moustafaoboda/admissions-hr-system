@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { MemberAvatar, UserAvatar } from '../common/Avatars';
 
 export default function WarningRequestsModal() {
   const {
@@ -63,17 +64,23 @@ export default function WarningRequestsModal() {
                 className="p-4 rounded-xl border border-amber-200 bg-amber-50/70 space-y-2.5 shadow-sm"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-[#002244]">{wrn.memberName}</span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900 border border-amber-300">
-                        {wrn.level}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
-                      <span><i className="fa-regular fa-calendar mr-1"></i>{wrn.date}</span>
-                      <span>•</span>
-                      <span><i className="fa-solid fa-user-pen mr-1"></i>Reported by: <strong className="text-slate-700">{wrn.reportedBy}</strong></span>
+                  <div className="flex items-start gap-3">
+                    <MemberAvatar name={wrn.memberName} size="w-9 h-9 text-xs" className="border border-amber-300" />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-[#002244]">{wrn.memberName}</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900 border border-amber-300">
+                          {wrn.level}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-2">
+                        <span><i className="fa-regular fa-calendar mr-1"></i>{wrn.date}</span>
+                        <span>•</span>
+                        <span className="inline-flex items-center gap-1">
+                          <UserAvatar user={wrn.reportedBy} name={wrn.reportedBy} size="w-4 h-4 text-[8px]" />
+                          <span>Reported by: <strong className="text-slate-700">{wrn.reportedBy}</strong></span>
+                        </span>
+                      </div>
                     </div>
                   </div>
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { UserAvatar } from '../common/Avatars';
 
 export default function SystemUsersModal() {
   const {
@@ -155,12 +156,15 @@ export default function SystemUsersModal() {
                     return (
                       <tr key={u.id} className="hover:bg-slate-50 transition">
                         <td className="py-2.5 px-3">
-                          <input
-                            type="text"
-                            value={rowData.name}
-                            onChange={(e) => handleFieldChange(u.id, 'name', e.target.value)}
-                            className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"
-                          />
+                          <div className="flex items-center gap-2">
+                            <UserAvatar user={u} size="w-7 h-7 text-[10px]" />
+                            <input
+                              type="text"
+                              value={rowData.name}
+                              onChange={(e) => handleFieldChange(u.id, 'name', e.target.value)}
+                              className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                            />
+                          </div>
                         </td>
                         <td className="py-2.5 px-3">
                           <input

@@ -115,6 +115,11 @@
           <i class="fa-solid fa-arrow-right-to-bracket text-[#c59b27]"></i>
           <span>Sign In to Portal</span>
         </button>
+
+        <div class="pt-3 border-t border-slate-100">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">Quick Profile Access</div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="loginQuickUsersList"></div>
+        </div>
       </form>
     </div>
   </div>
@@ -559,9 +564,10 @@
                   <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Choose Member <span class="text-rose-500">*</span>
                   </label>
-                  <select id="monitoringTargetMember" required class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none font-medium">
+                  <select id="monitoringTargetMember" onchange="updateMonitoringTargetMemberPreview()" required class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none font-medium">
                     <option value="">-- Select Team Member --</option>
                   </select>
+                  <div id="monitoringTargetMemberCard" class="mt-2"></div>
                 </div>
 
                 <!-- Category / Tag -->
@@ -590,8 +596,8 @@
 
                 <!-- Author Identity Preview Banner -->
                 <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
-                  <div class="flex items-center gap-2">
-                    <div class="w-7 h-7 rounded-full bg-[#002244] text-[#c59b27] flex items-center justify-center font-bold text-[10px]">
+                  <div class="flex items-center gap-2.5">
+                    <div id="monitoringAuthorAvatarPreview" class="w-8 h-8 rounded-full bg-[#002244] text-[#c59b27] flex items-center justify-center font-bold text-xs overflow-hidden flex-shrink-0 border border-[#c59b27]">
                       <i class="fa-solid fa-user-pen"></i>
                     </div>
                     <div>
@@ -1559,7 +1565,8 @@
       <form id="warningForm" onsubmit="handleWarningSubmit(event)" class="p-5 space-y-3 text-xs">
         <div>
           <label class="block font-bold text-slate-700 mb-1">Select Member</label>
-          <select id="warningMemberSelect" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"></select>
+          <select id="warningMemberSelect" onchange="updateWarningMemberPreview()" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"></select>
+          <div id="warningMemberPreviewCard" class="mt-2"></div>
         </div>
         <div>
           <label class="block font-bold text-slate-700 mb-1">Warning Level / Type</label>
@@ -1587,7 +1594,7 @@
     <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
       <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-rose-500">
         <h3 class="font-bold text-sm flex items-center gap-2">
-          <i class="fa-solid fa-pen-to-square text-rose-400"></i>
+          <span id="editWarningMemberAvatar"></span>
           <span>Edit Warning Record: <span id="editWarningMemberName"></span></span>
         </h3>
         <button onclick="closeModal('editWarningModal')" class="text-slate-400 hover:text-white">
@@ -1640,7 +1647,7 @@
     <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
       <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-rose-600">
         <h3 class="font-bold text-sm flex items-center gap-2">
-          <i class="fa-solid fa-user-pen text-rose-400"></i>
+          <span id="editDischargedMemberAvatar"></span>
           <span>Edit Discharged Log: <span id="editDischargedMemberName"></span></span>
         </h3>
         <button onclick="closeModal('editDischargedModal')" class="text-slate-400 hover:text-white">
@@ -1693,7 +1700,8 @@
       <form id="addStarForm" onsubmit="handleSaveStarAmbassador(event)" class="p-5 space-y-3 text-xs">
         <div>
           <label class="block font-bold text-slate-700 mb-1">Select Active Member</label>
-          <select id="starMemberSelect" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"></select>
+          <select id="starMemberSelect" onchange="updateStarMemberPreview()" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"></select>
+          <div id="starMemberPreviewCard" class="mt-2"></div>
         </div>
         <div>
           <label class="block font-bold text-slate-700 mb-1">Commendation Title</label>
@@ -1710,12 +1718,14 @@
         </div>
       </form>
     </div>
+  </div>
+
   <!-- EDIT MONITORING NOTE MODAL -->
   <div id="editMonitoringNoteModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
       <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
         <h3 class="font-bold text-sm flex items-center gap-2">
-          <i class="fa-solid fa-pen-to-square text-[#c59b27]"></i>
+          <span id="editNoteTargetMemberAvatar"></span>
           <span>Edit Monitoring Note</span>
         </h3>
         <button onclick="closeModal('editMonitoringNoteModal')" class="text-slate-400 hover:text-white">
@@ -1750,7 +1760,10 @@
         </div>
 
         <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-slate-600 text-[11px] flex items-center justify-between">
-          <span>Originally Written by: <strong id="editNoteAuthorBadge" class="text-slate-900 font-bold"></strong></span>
+          <span class="inline-flex items-center gap-1.5">
+            <span id="editNoteAuthorAvatarBadge"></span>
+            <span>Originally Written by: <strong id="editNoteAuthorBadge" class="text-slate-900 font-bold"></strong></span>
+          </span>
           <span id="editNoteDateBadge" class="text-slate-500 font-mono"></span>
         </div>
 
@@ -1804,7 +1817,7 @@
     ];
 
     let dischargedMembers = [
-      { id: "dis-1", name: "Hassan Mahmoud", role: "PR", position: "Member", college: "Management & Tech", studentId: "2022099", phone: "+20 109 888 7766", dischargeType: "Voluntary Left", dischargeReason: "Graduated and relocated to Alexandria.", date: "2026-08-30" }
+      { id: "dis-1", name: "Hassan Mahmoud", role: "PR", position: "Member", college: "Management & Tech", studentId: "2022099", phone: "+20 109 888 7766", dischargeType: "Voluntary Left", dischargeReason: "Graduated and relocated to Alexandria.", date: "2026-08-30", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" }
     ];
 
     let starAmbassadors = [
@@ -2021,6 +2034,46 @@
       }
     }
 
+    function getMemberAvatarMarkup(memberOrIdOrName, sizeClass = "w-8 h-8 text-xs", extraClasses = "") {
+      let mem = null;
+      if (typeof memberOrIdOrName === "object" && memberOrIdOrName !== null) {
+        mem = memberOrIdOrName;
+      } else if (typeof memberOrIdOrName === "string") {
+        const raw = memberOrIdOrName.toLowerCase().trim();
+        mem = members.find(m => m.id === memberOrIdOrName || m.name.toLowerCase() === raw || raw.includes(m.name.toLowerCase()))
+           || dischargedMembers.find(d => d.id === memberOrIdOrName || d.name.toLowerCase() === raw || raw.includes(d.name.toLowerCase()));
+      }
+      const name = mem ? mem.name : (typeof memberOrIdOrName === "string" ? memberOrIdOrName : "Member");
+      const avatar = mem ? mem.avatar : null;
+      const initials = (name || "MB").split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() || "MB";
+
+      return `
+        <div class="${sizeClass} rounded-full overflow-hidden border border-slate-200 bg-[#002244] text-[#c59b27] flex-shrink-0 inline-flex items-center justify-center font-extrabold shadow-xs ${extraClasses}">
+          ${avatar ? `<img src="${avatar}" class="w-full h-full object-cover rounded-full block" alt="${name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span>${initials}</span>'">` : `<span>${initials}</span>`}
+        </div>
+      `;
+    }
+
+    function getUserAvatarMarkup(userOrName, sizeClass = "w-6 h-6 text-[10px]", extraClasses = "") {
+      let usr = null;
+      if (typeof userOrName === "object" && userOrName !== null) {
+        usr = userOrName;
+      } else if (typeof userOrName === "string") {
+        const raw = userOrName.toLowerCase().trim();
+        usr = systemUsers.find(u => raw.includes(u.username.toLowerCase()) || raw.includes(u.name.toLowerCase()) || u.name.toLowerCase().includes(raw))
+           || (currentUser && (raw.includes(currentUser.name.toLowerCase()) || currentUser.name.toLowerCase().includes(raw)) ? currentUser : null);
+      }
+      const name = usr ? usr.name : (typeof userOrName === "string" ? userOrName.split("(")[0].trim() : "User");
+      const avatar = usr ? usr.avatar : null;
+      const initials = (name || "HR").split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() || "HR";
+
+      return `
+        <div class="${sizeClass} rounded-full overflow-hidden border border-[#c59b27]/60 bg-[#c59b27] text-[#002244] flex-shrink-0 inline-flex items-center justify-center font-extrabold shadow-xs ${extraClasses}">
+          ${avatar ? `<img src="${avatar}" class="w-full h-full object-cover rounded-full block" alt="${name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span>${initials}</span>'">` : `<span>${initials}</span>`}
+        </div>
+      `;
+    }
+
     function deleteActivityLog(id) {
       if (confirm("Delete this activity log entry?")) {
         activityLogs = activityLogs.filter(a => a.id !== id);
@@ -2113,7 +2166,10 @@
                 </div>
                 ${log.details ? `<p class="text-[11px] text-slate-500 italic">${log.details}</p>` : ''}
                 <div class="flex items-center gap-3 text-[10px] text-slate-400">
-                  <span class="font-semibold text-slate-700"><i class="fa-solid fa-user-circle text-slate-400 mr-1"></i>By: ${log.user} (${log.role})</span>
+                  <span class="font-semibold text-slate-700 inline-flex items-center gap-1.5">
+                    ${getUserAvatarMarkup(log.user, "w-5 h-5 text-[9px]")}
+                    <span>By: <strong class="text-slate-800">${log.user}</strong> <span class="text-slate-500 font-normal">(${log.role})</span></span>
+                  </span>
                   <span><i class="fa-regular fa-calendar mr-1"></i>${log.date} ${log.time}</span>
                 </div>
               </div>
@@ -2163,12 +2219,15 @@
       container.innerHTML = pending.map(w => `
         <div class="p-3.5 rounded-xl border bg-amber-50/70 border-amber-300 transition space-y-2">
           <div class="flex items-start justify-between gap-2">
-            <div>
-              <div class="font-bold text-[#002244] text-sm flex items-center gap-2">
-                <span>${w.memberName}</span>
-                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded uppercase bg-amber-200 text-amber-900 border border-amber-300">Pending Approval</span>
+            <div class="flex items-center gap-2.5">
+              ${getMemberAvatarMarkup(w.memberId || w.memberName, "w-10 h-10 text-xs border border-amber-400")}
+              <div>
+                <div class="font-bold text-[#002244] text-sm flex items-center gap-2">
+                  <span>${w.memberName}</span>
+                  <span class="text-[10px] font-extrabold px-2 py-0.5 rounded uppercase bg-amber-200 text-amber-900 border border-amber-300">Pending Approval</span>
+                </div>
+                <div class="text-[11px] font-semibold text-rose-700 mt-0.5">${w.level}</div>
               </div>
-              <div class="text-[11px] font-semibold text-rose-700 mt-0.5">${w.level}</div>
             </div>
             <span class="text-[10px] text-slate-500 font-mono">${w.date}</span>
           </div>
@@ -2176,7 +2235,11 @@
           <p class="text-slate-700 text-xs italic bg-white/80 p-2.5 rounded-lg border border-amber-200">"${w.reason}"</p>
 
           <div class="pt-2 border-t border-amber-200/60 flex items-center justify-between text-xs flex-wrap gap-2">
-            <span class="text-[10px] text-slate-600">Submitted by: <strong class="text-slate-800">${w.reportedBy}</strong></span>
+            <span class="text-[10px] text-slate-600 inline-flex items-center gap-1.5">
+              <span>Submitted by:</span>
+              ${getUserAvatarMarkup(w.reportedBy, "w-5 h-5 text-[9px]")}
+              <strong class="text-slate-800">${w.reportedBy}</strong>
+            </span>
 
             ${isLeadership ? `
               <div class="flex items-center gap-1.5">
@@ -2202,7 +2265,72 @@
     function quickRequestWarningForMember(memberId) {
       openWarningModal('request');
       const sel = document.getElementById("warningMemberSelect");
-      if (sel) sel.value = memberId;
+      if (sel) {
+        sel.value = memberId;
+        updateWarningMemberPreview();
+      }
+    }
+
+    function updateMonitoringTargetMemberPreview() {
+      const selVal = document.getElementById("monitoringTargetMember")?.value;
+      const container = document.getElementById("monitoringTargetMemberCard");
+      if (!container) return;
+      if (!selVal) { container.innerHTML = ""; return; }
+      const m = members.find(x => x.id === selVal);
+      if (!m) { container.innerHTML = ""; return; }
+      const rate = m.attendanceCount > 0 ? Math.min(100, Math.round((m.attendanceCount / 12) * 100)) : 100;
+      container.innerHTML = `
+        <div class="p-2.5 bg-gradient-to-r from-slate-50 to-amber-50/30 rounded-xl border border-amber-200/80 flex items-center gap-3 shadow-xs">
+          ${getMemberAvatarMarkup(m, "w-11 h-11 text-xs border-2 border-[#c59b27]")}
+          <div class="flex-grow min-w-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="font-bold text-xs text-[#002244] truncate">${m.name}</span>
+              <span class="bg-[#002244] text-[#c59b27] text-[10px] font-extrabold px-1.5 py-0.2 rounded">${m.role} (${m.position})</span>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-0.5 truncate">${m.college} • ID: ${m.studentId || '-'}</div>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <div class="text-[9px] text-slate-400 font-bold uppercase">Rate</div>
+            <div class="text-xs font-black ${rate >= 90 ? 'text-emerald-700' : 'text-blue-700'}">${rate}%</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateWarningMemberPreview() {
+      const selVal = document.getElementById("warningMemberSelect")?.value;
+      const container = document.getElementById("warningMemberPreviewCard");
+      if (!container) return;
+      if (!selVal) { container.innerHTML = ""; return; }
+      const m = members.find(x => x.id === selVal);
+      if (!m) { container.innerHTML = ""; return; }
+      container.innerHTML = `
+        <div class="p-2 bg-rose-50/70 border border-rose-200 rounded-lg flex items-center gap-2.5">
+          ${getMemberAvatarMarkup(m, "w-9 h-9 text-xs border border-rose-300")}
+          <div class="flex-grow min-w-0">
+            <div class="font-bold text-xs text-[#002244] truncate">${m.name}</div>
+            <div class="text-[10px] text-rose-700 font-semibold">${m.role} • Current Strikes: ${m.strikes || 0}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateStarMemberPreview() {
+      const selVal = document.getElementById("starMemberSelect")?.value;
+      const container = document.getElementById("starMemberPreviewCard");
+      if (!container) return;
+      if (!selVal) { container.innerHTML = ""; return; }
+      const m = members.find(x => x.id === selVal);
+      if (!m) { container.innerHTML = ""; return; }
+      container.innerHTML = `
+        <div class="p-2 bg-amber-50/80 border border-amber-300 rounded-lg flex items-center gap-2.5">
+          ${getMemberAvatarMarkup(m, "w-9 h-9 text-xs border border-[#c59b27]")}
+          <div class="flex-grow min-w-0">
+            <div class="font-bold text-xs text-[#002244] truncate">${m.name}</div>
+            <div class="text-[10px] text-amber-800 font-semibold">${m.role} • ${m.college}</div>
+          </div>
+        </div>
+      `;
     }
 
     function populateMonitoringMemberSelect() {
@@ -2215,6 +2343,7 @@
         const cur = targetSelect.value;
         targetSelect.innerHTML = `<option value="">-- Select Team Member --</option>` + activeM.map(m => `<option value="${m.id}">${m.name} (${m.role} • ${m.college})</option>`).join("");
         if (cur) targetSelect.value = cur;
+        updateMonitoringTargetMemberPreview();
       }
 
       if (filterSelect) {
@@ -2268,8 +2397,6 @@
       }
 
       container.innerHTML = filtered.map(n => {
-        const initials = (n.memberName || "Member").split(" ").map(x => x[0]).slice(0, 2).join("");
-        
         let badgeColor = "bg-blue-100 text-blue-800 border-blue-200";
         if (n.category.includes("Commendation")) badgeColor = "bg-emerald-100 text-emerald-800 border-emerald-200";
         else if (n.category.includes("Warning") || n.category.includes("Behavior")) badgeColor = "bg-rose-100 text-rose-800 border-rose-200";
@@ -2281,9 +2408,7 @@
             <div class="flex items-start justify-between gap-3">
               <!-- Member Info -->
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-[#002244] text-[#c59b27] font-extrabold flex items-center justify-center text-xs shadow-sm flex-shrink-0 border-2 border-[#c59b27]">
-                  ${initials}
-                </div>
+                ${getMemberAvatarMarkup(n.memberId || n.memberName, "w-11 h-11 text-xs border-2 border-[#c59b27]")}
                 <div>
                   <div class="flex items-center flex-wrap gap-1.5">
                     <h4 class="font-extrabold text-sm text-[#002244]">${n.memberName}</h4>
@@ -2321,7 +2446,7 @@
             <!-- Footer: Written by HR Member (Prominently displayed) -->
             <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs flex-wrap gap-2">
               <div class="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50/40 border border-amber-200/80 px-2.5 py-1 rounded-lg">
-                <i class="fa-solid fa-pen-fancy text-[#c59b27] text-xs"></i>
+                ${getUserAvatarMarkup(n.authorName, "w-5 h-5 text-[9px]")}
                 <span class="text-slate-600 text-[11px] font-medium">Written by:</span>
                 <span class="font-extrabold text-[#002244] text-[11px]">${n.authorName}</span>
                 <span class="text-[10px] bg-[#002244] text-[#c59b27] font-extrabold px-1.5 py-0.5 rounded shadow-xs">${n.authorRole}</span>
@@ -2389,6 +2514,10 @@
       document.getElementById("editNoteCategory").value = note.category;
       document.getElementById("editNoteContent").value = note.note;
       document.getElementById("editNoteAuthorBadge").textContent = `${note.authorName} (${note.authorRole})`;
+      const noteAuthorAv = document.getElementById("editNoteAuthorAvatarBadge");
+      if (noteAuthorAv) noteAuthorAv.innerHTML = getUserAvatarMarkup(note.authorName, "w-5 h-5 text-[9px]");
+      const noteTargetAv = document.getElementById("editNoteTargetMemberAvatar");
+      if (noteTargetAv) noteTargetAv.innerHTML = getMemberAvatarMarkup(note.memberId || note.memberName, "w-6 h-6 text-[9px]");
       document.getElementById("editNoteDateBadge").textContent = `${note.date} ${note.time || ''}`;
       openModal("editMonitoringNoteModal");
     }
@@ -2476,6 +2605,20 @@
       showToast("Logged out successfully.");
     }
 
+    function renderLoginQuickUsers() {
+      const container = document.getElementById("loginQuickUsersList");
+      if (!container) return;
+      container.innerHTML = systemUsers.map(u => `
+        <button type="button" onclick="quickFillLogin('${u.username}')" class="p-2 bg-slate-50 hover:bg-amber-50/50 border border-slate-200 hover:border-[#c59b27] rounded-xl flex flex-col items-center text-center transition group cursor-pointer shadow-2xs">
+          <div class="w-10 h-10 rounded-full overflow-hidden border border-[#c59b27] bg-[#c59b27] text-[#002244] flex-shrink-0 flex items-center justify-center font-bold text-xs shadow-xs mb-1.5 group-hover:scale-105 transition">
+            ${u.avatar ? `<img src="${u.avatar}" class="w-full h-full object-cover rounded-full block" alt="${u.name}">` : (u.name || "HR").slice(0, 2).toUpperCase()}
+          </div>
+          <div class="font-bold text-[10px] text-[#002244] leading-tight truncate w-full">${u.name}</div>
+          <div class="text-[9px] text-[#c59b27] font-semibold mt-0.5 truncate w-full">${u.role}</div>
+        </button>
+      `).join("");
+    }
+
     function applyUserRoleUI() {
       document.getElementById("sideUserName").textContent = currentUser.name;
       document.getElementById("sideUserRole").textContent = currentUser.role;
@@ -2489,6 +2632,7 @@
         }
       }
       renderSystemIcon();
+      renderLoginQuickUsers();
 
       const isViceHead = currentUser.role === "HR Vice Head";
       const isHeadOrVice = currentUser.role === "HR Head" || isViceHead;
@@ -2561,6 +2705,8 @@
       if (noteAuthorEl) noteAuthorEl.textContent = currentUser.name;
       const noteAuthorRoleEl = document.getElementById("monitoringAuthorRolePreview");
       if (noteAuthorRoleEl) noteAuthorRoleEl.textContent = currentUser.role;
+      const noteAuthorAvatarEl = document.getElementById("monitoringAuthorAvatarPreview");
+      if (noteAuthorAvatarEl) noteAuthorAvatarEl.innerHTML = getUserAvatarMarkup(currentUser, "w-8 h-8 text-xs");
 
       const sideWarningActionBtn = document.getElementById("sideWarningActionBtn");
       if (sideWarningActionBtn) {
@@ -2643,8 +2789,11 @@
           <div class="bg-gradient-to-br from-amber-50/60 via-white to-amber-50/20 border border-amber-300 rounded-xl p-4 shadow-sm relative group">
             ${isHeadOrVice ? `<button onclick="removeStarAmbassador('${star.id}')" class="absolute top-3 right-3 text-slate-400 hover:text-rose-600 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>` : ''}
             <div class="flex items-center gap-3">
-              <div class="w-11 h-11 rounded-full bg-[#002244] text-[#c59b27] flex items-center justify-center font-bold text-sm border-2 border-[#c59b27] shadow-sm overflow-hidden flex-shrink-0">
-                ${mem && mem.avatar ? `<img src="${mem.avatar}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-crown text-xs"></i>`}
+              <div class="relative">
+                ${getMemberAvatarMarkup(mem || star.memberId || star.name, "w-12 h-12 text-sm border-2 border-[#c59b27]")}
+                <span class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#c59b27] text-[#002244] flex items-center justify-center text-[10px] shadow">
+                  <i class="fa-solid fa-crown text-[9px]"></i>
+                </span>
               </div>
               <div><div class="font-bold text-sm text-[#002244]">${star.name}</div><div class="text-[10px] text-amber-700 font-extrabold uppercase tracking-wide">${star.awardTitle}</div></div>
             </div>
@@ -2842,14 +2991,19 @@
       if (dischargedMembers.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-400">No discharged members logged.</td></tr>`; return; }
       const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
       tbody.innerHTML = dischargedMembers.map(d => `
-        <tr class="hover:bg-slate-50">
-          <td class="py-2.5 px-3 font-bold text-slate-800">${d.name}</td>
-          <td class="py-2.5 px-3 text-slate-600">${d.role} • ${d.college}</td>
-          <td class="py-2.5 px-3 text-slate-600 font-mono">${d.studentId || '-'} | ${d.phone || '-'}</td>
-          <td class="py-2.5 px-3"><span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold ${d.dischargeType === 'Voluntary Left' ? 'bg-amber-100 text-amber-900' : 'bg-rose-100 text-rose-900'}">${d.dischargeType}</span></td>
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-2.5 px-3 whitespace-nowrap">
+            <div class="flex items-center gap-2.5">
+              ${getMemberAvatarMarkup(d, "w-8 h-8 text-xs")}
+              <span class="font-bold text-slate-800 text-sm">${d.name}</span>
+            </div>
+          </td>
+          <td class="py-2.5 px-3 text-slate-600 whitespace-nowrap">${d.role} • ${d.college}</td>
+          <td class="py-2.5 px-3 text-slate-600 font-mono whitespace-nowrap">${d.studentId || '-'} | ${d.phone || '-'}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap"><span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold ${d.dischargeType === 'Voluntary Left' ? 'bg-amber-100 text-amber-900' : 'bg-rose-100 text-rose-900'}">${d.dischargeType}</span></td>
           <td class="py-2.5 px-3 text-slate-600 italic max-w-xs truncate">${d.dischargeReason}</td>
-          <td class="py-2.5 px-3 text-slate-500 font-mono">${d.date}</td>
-          <td class="py-2.5 px-3 text-right">
+          <td class="py-2.5 px-3 text-slate-500 font-mono whitespace-nowrap">${d.date}</td>
+          <td class="py-2.5 px-3 text-right whitespace-nowrap">
             ${isLeadership ? `<button onclick="openEditDischargedModal('${d.id}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[10px] inline-flex items-center gap-1 transition"><i class="fa-solid fa-pen-to-square text-[10px]"></i><span>Edit Record</span></button>` : '-'}
           </td>
         </tr>
@@ -3079,12 +3233,12 @@
         s.totalCount = total;
 
         const memberPills = rcList.length > 0 ? rcList.map(r => `
-          <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md font-semibold border ${
+          <span class="inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-md font-semibold border ${
             r.isPresent
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
               : (r.isExcused ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-rose-50 text-rose-800 border-rose-200')
           }" title="${r.isPresent ? 'Present' : (r.isExcused ? `Excused: ${r.excuseReason || 'Yes'}` : 'Absent')}">
-            <span class="w-1.5 h-1.5 rounded-full ${r.isPresent ? 'bg-emerald-500' : (r.isExcused ? 'bg-amber-500' : 'bg-rose-500')}"></span>
+            ${getMemberAvatarMarkup(r.memberId || r.name, "w-4 h-4 text-[8px]")}
             <span>${r.name}</span>
             ${!r.isPresent ? (r.isExcused ? '<span class="text-[9px] font-bold text-amber-600">(Exc)</span>' : '<span class="text-[9px] font-bold text-rose-600">(Abs)</span>') : ''}
           </span>
@@ -3192,7 +3346,12 @@
       if (isInspectorEditing && isHeadOrVice) {
         tbody.innerHTML = rollCallData.map((rc, idx) => `
           <tr class="hover:bg-slate-50">
-            <td class="py-2.5 px-3 font-bold text-slate-800">${rc.name}</td>
+            <td class="py-2.5 px-3">
+              <div class="flex items-center gap-2">
+                ${getMemberAvatarMarkup(rc.memberId || rc.name, "w-7 h-7 text-[10px]")}
+                <span class="font-bold text-slate-800 text-xs">${rc.name}</span>
+              </div>
+            </td>
             <td class="py-2.5 px-3 text-slate-600">${rc.role}</td>
             <td class="py-2.5 px-3 text-center">
               <select id="edit-status-${idx}" class="px-2 py-1 border rounded text-xs font-semibold ${rc.isPresent ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'}">
@@ -3213,7 +3372,12 @@
       } else {
         tbody.innerHTML = rollCallData.map(rc => `
           <tr class="hover:bg-slate-50">
-            <td class="py-2.5 px-3 font-bold text-slate-800">${rc.name}</td>
+            <td class="py-2.5 px-3">
+              <div class="flex items-center gap-2">
+                ${getMemberAvatarMarkup(rc.memberId || rc.name, "w-7 h-7 text-[10px]")}
+                <span class="font-bold text-slate-800 text-xs">${rc.name}</span>
+              </div>
+            </td>
             <td class="py-2.5 px-3 text-slate-600">${rc.role}</td>
             <td class="py-2.5 px-3 text-center"><span class="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold ${rc.isPresent ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${rc.isPresent ? 'Present' : 'Absent'}</span></td>
             <td class="py-2.5 px-3 text-slate-600">${!rc.isPresent ? (rc.isExcused ? `<span class="bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded text-[10px] font-bold">Excused: ${rc.excuseReason || 'Recorded'}</span>` : `<span class="text-rose-600 font-bold">Unexcused</span>`) : '-'}</td>
@@ -3297,9 +3461,12 @@
 
       container.innerHTML = scheduledM.map(m => `
         <div class="p-3 hover:bg-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <span class="font-bold text-slate-800 text-xs">${m.name}</span>
-            <span class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-semibold text-slate-600">${m.role}</span>
+          <div class="flex items-center gap-2.5">
+            ${getMemberAvatarMarkup(m, "w-8 h-8 text-xs")}
+            <div>
+              <span class="font-bold text-slate-800 text-xs">${m.name}</span>
+              <span class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded font-semibold text-slate-600 ml-1">${m.role}</span>
+            </div>
           </div>
           <div class="flex items-center gap-3">
             <label class="flex items-center gap-1.5 cursor-pointer font-bold text-xs">
@@ -3383,18 +3550,25 @@
       container.innerHTML = confirmedOnly.map(w => `
         <div class="p-3.5 rounded-xl border transition bg-rose-50/50 border-rose-200">
           <div class="flex items-start justify-between gap-2">
-            <div>
-              <div class="font-bold text-[#002244] text-sm flex items-center gap-1.5">
-                <span>${w.memberName}</span>
-                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded uppercase bg-rose-200 text-rose-900">${w.status}</span>
+            <div class="flex items-center gap-2.5">
+              ${getMemberAvatarMarkup(w.memberId || w.memberName, "w-9 h-9 text-xs border border-rose-300")}
+              <div>
+                <div class="font-bold text-[#002244] text-sm flex items-center gap-1.5">
+                  <span>${w.memberName}</span>
+                  <span class="text-[10px] font-extrabold px-2 py-0.5 rounded uppercase bg-rose-200 text-rose-900">${w.status}</span>
+                </div>
+                <div class="text-[11px] font-semibold text-rose-700 mt-0.5">${w.level}</div>
               </div>
-              <div class="text-[11px] font-semibold text-rose-700 mt-0.5">${w.level}</div>
             </div>
             <span class="text-[10px] text-slate-400 font-medium">${w.date}</span>
           </div>
           <p class="text-slate-600 text-xs mt-2 italic bg-white/70 p-2 rounded-lg border border-slate-200/60">"${w.reason}"</p>
           <div class="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between">
-            <span class="text-[10px] text-slate-500">Reported by: <span class="font-semibold text-slate-700">${w.reportedBy}</span></span>
+            <span class="text-[10px] text-slate-500 inline-flex items-center gap-1.5">
+              <span>Reported by:</span>
+              ${getUserAvatarMarkup(w.reportedBy, "w-4 h-4 text-[8px]")}
+              <span class="font-semibold text-slate-700">${w.reportedBy}</span>
+            </span>
             <div class="flex items-center gap-2">
               ${isHeadOrVice ? `<button onclick="openEditWarningModal('${w.id}')" class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 font-bold text-[10px] rounded flex items-center gap-1"><i class="fa-solid fa-pen-to-square text-[10px]"></i><span>Edit</span></button>` : ''}
               ${isHeadOrVice ? `<button onclick="dismissWarning('${w.id}')" class="px-2 py-1 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-700 font-bold text-[10px] rounded flex items-center gap-1"><i class="fa-solid fa-trash-can text-[10px]"></i><span>Remove</span></button>` : ''}
@@ -3553,6 +3727,8 @@
       if (!wrn) return;
       document.getElementById("editWarningTargetId").value = wrn.id;
       document.getElementById("editWarningMemberName").textContent = wrn.memberName;
+      const wrnAv = document.getElementById("editWarningMemberAvatar");
+      if (wrnAv) wrnAv.innerHTML = getMemberAvatarMarkup(wrn.memberId || wrn.memberName, "w-6 h-6 text-[9px]");
       document.getElementById("editWarningLevel").value = wrn.level;
       document.getElementById("editWarningStatus").value = wrn.status;
       document.getElementById("editWarningDate").value = wrn.date;
@@ -3597,6 +3773,8 @@
       if (!d) return;
       document.getElementById("editDischargedTargetId").value = d.id;
       document.getElementById("editDischargedMemberName").textContent = d.name;
+      const disAv = document.getElementById("editDischargedMemberAvatar");
+      if (disAv) disAv.innerHTML = getMemberAvatarMarkup(d, "w-6 h-6 text-[9px]");
       document.getElementById("editDischargedType").value = d.dischargeType;
       document.getElementById("editDischargedDate").value = d.date;
       document.getElementById("editDischargedReason").value = d.dischargeReason;
@@ -3643,18 +3821,48 @@
       }
     }
 
-    function openWarningModal(mode = "issue") { const sel = document.getElementById("warningMemberSelect"); const activeM = members.filter(m => m.status !== "Discharged"); sel.innerHTML = activeM.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join(""); openModal("warningModal"); }
-    function quickIssueWarningForMember(memberId) { openWarningModal(); document.getElementById("warningMemberSelect").value = memberId; }
+    function openWarningModal(mode = "issue") {
+      const sel = document.getElementById("warningMemberSelect");
+      const activeM = members.filter(m => m.status !== "Discharged");
+      sel.innerHTML = activeM.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join("");
+      updateWarningMemberPreview();
+      openModal("warningModal");
+    }
+    function quickIssueWarningForMember(memberId) {
+      openWarningModal();
+      document.getElementById("warningMemberSelect").value = memberId;
+      updateWarningMemberPreview();
+    }
     function handleWarningSubmit(e) { e.preventDefault(); if (currentUser.role === "Admission's Dean") { showToast("Dean profile has read-only access.", "warning"); return; } const mem = members.find(m => m.id === document.getElementById("warningMemberSelect").value); if (!mem) return; const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head"; if (isLeadership) { mem.strikes += 1; mem.score = Math.max(50, mem.score - 8); warnings.unshift({ id: `wrn-${Date.now()}`, memberId: mem.id, memberName: mem.name, level: document.getElementById("warningLevelSelect").value, reason: document.getElementById("warningReasonText").value.trim(), reportedBy: `${currentUser.name} (${currentUser.role})`, date: new Date().toISOString().split("T")[0], status: "Confirmed Strike" }); showToast(`Warning recorded for ${mem.name}.`); } else { warnings.unshift({ id: `wrn-${Date.now()}`, memberId: mem.id, memberName: mem.name, level: document.getElementById("warningLevelSelect").value, reason: document.getElementById("warningReasonText").value.trim(), reportedBy: `${currentUser.name} (HR Request)`, date: new Date().toISOString().split("T")[0], status: "Pending HR Approval" }); showToast(`Warning request submitted.`); } closeModal("warningModal"); document.getElementById("warningForm").reset(); renderAllViews(); }
     function approveWarningRequest(wId) { if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") { showToast("Only HR Leadership can approve warnings.", "warning"); return; } const wrn = warnings.find(w => w.id === wId); if (wrn) { const mem = members.find(m => m.id === wrn.memberId); if (mem) { mem.strikes += 1; mem.score = Math.max(50, mem.score - 8); } wrn.status = "Confirmed Strike"; showToast(`Warning approved.`); renderAllViews(); } }
     function dismissWarning(wId) { if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") { showToast("Only HR Leadership can dismiss warnings.", "warning"); return; } warnings = warnings.filter(w => w.id !== wId); showToast("Warning dismissed."); renderAllViews(); }
 
-    function openAddStarModal() { const activeM = members.filter(m => m.status !== "Discharged"); document.getElementById("starMemberSelect").innerHTML = activeM.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join(""); openModal("addStarModal"); }
+    function openAddStarModal() {
+      const activeM = members.filter(m => m.status !== "Discharged");
+      document.getElementById("starMemberSelect").innerHTML = activeM.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join("");
+      updateStarMemberPreview();
+      openModal("addStarModal");
+    }
     function handleSaveStarAmbassador(e) { e.preventDefault(); const mem = members.find(m => m.id === document.getElementById("starMemberSelect").value); if (!mem) return; starAmbassadors.unshift({ id: `star-${Date.now()}`, memberId: mem.id, name: mem.name, role: mem.role, college: mem.college, awardTitle: document.getElementById("starAwardTitle").value.trim(), citation: document.getElementById("starCitation").value.trim() }); closeModal("addStarModal"); document.getElementById("addStarForm").reset(); showToast(`Star Ambassador granted.`); renderStarAmbassadors(); }
     function removeStarAmbassador(sId) { starAmbassadors = starAmbassadors.filter(s => s.id !== sId); showToast("Star recognition removed."); renderStarAmbassadors(); }
 
     function openSystemUsersModal() { if (currentUser.role !== "HR Vice Head") { showToast("Restricted access.", "danger"); return; } renderSystemUsersTable(); openModal("systemUsersModal"); }
-    function renderSystemUsersTable() { document.getElementById("systemUsersTableBody").innerHTML = systemUsers.map(u => `<tr class="hover:bg-slate-50 transition"><td class="py-2.5 px-3"><input type="text" id="usr-name-${u.id}" value="${u.name}" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"></td><td class="py-2.5 px-3"><input type="text" id="usr-uname-${u.id}" value="${u.username}" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"></td><td class="py-2.5 px-3"><select id="usr-role-${u.id}" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"><option value="HR" ${u.role === 'HR' ? 'selected' : ''}>HR</option><option value="HR Head" ${u.role === 'HR Head' ? 'selected' : ''}>HR Head</option><option value="HR Vice Head" ${u.role === 'HR Vice Head' ? 'selected' : ''}>HR Vice Head</option><option value="Admission's Dean" ${u.role === "Admission's Dean" ? 'selected' : ''}>Admission's Dean</option></select></td><td class="py-2.5 px-3"><input type="text" id="usr-pwd-${u.id}" value="${u.password}" class="w-full px-2 py-1 bg-amber-50/80 border border-amber-300 font-mono text-xs font-bold rounded"></td><td class="py-2.5 px-3 text-right space-x-1"><button onclick="saveUserCredentials('${u.id}')" class="px-2 py-1 bg-[#002244] text-[#c59b27] font-bold rounded text-xs"><i class="fa-solid fa-floppy-disk"></i></button>${u.username !== currentUser.username ? `<button onclick="deleteSystemUser('${u.id}')" class="px-2 py-1 bg-rose-600 text-white font-bold rounded text-xs"><i class="fa-solid fa-trash"></i></button>` : ''}</td></tr>`).join(""); }
+    function renderSystemUsersTable() {
+      document.getElementById("systemUsersTableBody").innerHTML = systemUsers.map(u => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-2.5 px-3">
+            <div class="flex items-center gap-2">
+              ${getUserAvatarMarkup(u, "w-8 h-8 text-xs border border-[#c59b27]")}
+              <input type="text" id="usr-name-${u.id}" value="${u.name}" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs">
+            </div>
+          </td>
+          <td class="py-2.5 px-3"><input type="text" id="usr-uname-${u.id}" value="${u.username}" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"></td>
+          <td class="py-2.5 px-3"><select id="usr-role-${u.id}" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"><option value="HR" ${u.role === 'HR' ? 'selected' : ''}>HR</option><option value="HR Head" ${u.role === 'HR Head' ? 'selected' : ''}>HR Head</option><option value="HR Vice Head" ${u.role === 'HR Vice Head' ? 'selected' : ''}>HR Vice Head</option><option value="Admission's Dean" ${u.role === "Admission's Dean" ? 'selected' : ''}>Admission's Dean</option></select></td>
+          <td class="py-2.5 px-3"><input type="text" id="usr-pwd-${u.id}" value="${u.password}" class="w-full px-2 py-1 bg-amber-50/80 border border-amber-300 font-mono text-xs font-bold rounded"></td>
+          <td class="py-2.5 px-3 text-right space-x-1 whitespace-nowrap"><button onclick="saveUserCredentials('${u.id}')" class="px-2 py-1 bg-[#002244] text-[#c59b27] font-bold rounded text-xs hover:bg-[#00162e] transition" title="Save Credentials"><i class="fa-solid fa-floppy-disk"></i></button>${u.username !== currentUser.username ? `<button onclick="deleteSystemUser('${u.id}')" class="px-2 py-1 bg-rose-600 text-white font-bold rounded text-xs hover:bg-rose-700 transition" title="Delete User"><i class="fa-solid fa-trash"></i></button>` : ''}</td>
+        </tr>
+      `).join("");
+    }
     function saveUserCredentials(uId) { const u = systemUsers.find(x => x.id === uId); if (u) { u.name = document.getElementById(`usr-name-${uId}`).value.trim(); u.username = document.getElementById(`usr-uname-${uId}`).value.trim(); u.role = document.getElementById(`usr-role-${uId}`).value; u.password = document.getElementById(`usr-pwd-${uId}`).value.trim(); if (u.username === currentUser.username) { currentUser.name = u.name; currentUser.role = u.role; applyUserRoleUI(); } showToast(`Updated credentials.`); renderSystemUsersTable(); } }
     function handleAddNewUser(e) { e.preventDefault(); systemUsers.push({ id: `usr-${Date.now()}`, name: document.getElementById("newUserName").value.trim(), username: document.getElementById("newUserUsername").value.trim(), password: document.getElementById("newUserPassword").value.trim(), role: document.getElementById("newUserRole").value }); document.getElementById("addNewUserForm").reset(); showToast(`Added user.`); renderSystemUsersTable(); }
     function deleteSystemUser(uId) { systemUsers = systemUsers.filter(u => u.id !== uId); showToast("User login removed."); renderSystemUsersTable(); }

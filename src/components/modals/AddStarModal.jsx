@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { MemberAvatar } from '../common/Avatars';
 
 export default function AddStarModal() {
   const { members, activeModal, setActiveModal, addStarAmbassador } = useAuth();
@@ -50,6 +51,23 @@ export default function AddStarModal() {
                 <option key={m.id} value={m.id}>{m.name} ({m.role} - {m.college})</option>
               ))}
             </select>
+
+            {/* Member Preview Card */}
+            {members.find(m => m.id === memberId) && (() => {
+              const mem = members.find(m => m.id === memberId);
+              return (
+                <div className="flex items-center gap-2.5 p-2 bg-slate-50 border border-slate-200 rounded-lg mt-2 shadow-xs">
+                  <MemberAvatar member={mem} size="w-9 h-9 text-xs" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="font-bold text-slate-800 text-xs truncate">{mem.name}</span>
+                      <span className="text-[10px] bg-amber-100 text-amber-900 font-bold px-1.5 py-0.2 rounded border border-amber-300">{mem.role}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 truncate">{mem.college}</div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           <div>

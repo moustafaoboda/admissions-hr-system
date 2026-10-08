@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { MemberAvatar } from '../common/Avatars';
 
 export default function DashboardTab() {
   const {
@@ -154,8 +155,16 @@ export default function DashboardTab() {
                   </button>
                 )}
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#002244] text-[#c59b27] flex items-center justify-center font-bold text-sm border-2 border-[#c59b27]">
-                    <i className="fa-solid fa-crown text-xs"></i>
+                  <div className="relative flex-shrink-0">
+                    <MemberAvatar
+                      memberId={star.memberId}
+                      name={star.name}
+                      size="w-11 h-11 text-xs"
+                      className="border-2 border-[#c59b27]"
+                    />
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#c59b27] text-[#002244] flex items-center justify-center text-[10px] font-black shadow-xs">
+                      <i className="fa-solid fa-crown"></i>
+                    </div>
                   </div>
                   <div>
                     <div className="font-bold text-sm text-[#002244]">{star.name}</div>
