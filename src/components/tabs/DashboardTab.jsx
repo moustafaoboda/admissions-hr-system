@@ -10,9 +10,11 @@ export default function DashboardTab() {
     starAmbassadors,
     removeStarAmbassador,
     events,
+    warnings,
     setActiveModal,
     setModalExtraData,
-    deleteEvent
+    deleteEvent,
+    switchTab
   } = useAuth();
 
   const isViceHead = currentUser?.role === "HR Vice Head";
@@ -38,7 +40,10 @@ export default function DashboardTab() {
         ? (activeMembers.reduce((acc, m) => acc + (m.attendanceCount > 0 ? Math.min(100, Math.round((m.attendanceCount / 12) * 100)) : 100), 0) / totalMembers).toFixed(1)
         : '100.0');
 
-  const totalStrikes = activeMembers.reduce((acc, m) => acc + m.strikes, 0);
+  // Real-time dynamic calculation from Warnings log
+  const totalActualWarnings = (warnings || []).length;
+  const confirmedWarnings = (warnings || []).filter(w => w.status === 'Confirmed Strike').length;
+  const pendingWarnings = (warnings || []).filter(w => w.status === 'Pending HR Approval').length;
 
   // Functional roles breakdown (Strictly: PR, HR, Operations, Digital Transformation, Innovation)
   const targetRoles = ["PR", "HR", "Operations", "Digital Transformation", "Innovation"];
@@ -98,14 +103,20 @@ export default function DashboardTab() {
           </div>
         </div>
 
-        {/* Warnings & Strikes */}
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+        {/* Warnings & Disciplinary Log */}
+        <div
+          onClick={() => switchTab('warnings')}
+          className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:border-rose-300 hover:shadow-md transition group"
+          title="Click to view all Disciplinary Warnings"
+        >
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Warnings Issued</p>
-            <p className="text-2xl font-black text-rose-600 mt-1">{totalStrikes}</p>
-            <span className="text-[11px] text-slate-500 font-medium">Smart Village Roster</span>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider group-hover:text-rose-600 transition">Warnings Issued</p>
+            <p className="text-2xl font-black text-rose-600 mt-1">{totalActualWarnings}</p>
+            <span className="text-[11px] text-slate-500 font-medium">
+              {confirmedWarnings} Confirmed{pendingWarnings > 0 ? ` • ${pendingWarnings} Pending` : ''}
+            </span>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl">
+          <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl group-hover:bg-rose-100 group-hover:scale-105 transition">
             <i className="fa-solid fa-triangle-exclamation"></i>
           </div>
         </div>

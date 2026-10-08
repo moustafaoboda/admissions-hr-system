@@ -297,13 +297,13 @@
               </div>
             </div>
 
-            <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+            <div onclick="switchTab('warnings')" class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:border-rose-300 hover:shadow-md transition group" title="Click to view all Disciplinary Warnings">
               <div>
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Warnings Issued</p>
-                <p class="text-2xl font-black text-rose-600 mt-1" id="kpiTotalWarnings">4</p>
-                <span class="text-[11px] text-slate-500 font-medium">Smart Village Roster</span>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider group-hover:text-rose-600 transition">Warnings Issued</p>
+                <p class="text-2xl font-black text-rose-600 mt-1" id="kpiTotalWarnings">0</p>
+                <span class="text-[11px] text-slate-500 font-medium" id="kpiWarningsSubtext">Smart Village Roster</span>
               </div>
-              <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl">
+              <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl group-hover:bg-rose-100 transition">
                 <i class="fa-solid fa-triangle-exclamation"></i>
               </div>
             </div>
@@ -1918,10 +1918,10 @@
     const INITIAL_MEMBERS = [
       { id: "mem-1", name: "Youssef El-Sayed", role: "Operations", position: "Head", college: "Engineering & Tech", studentId: "2023101", phone: "+20 100 111 2233", attendanceCount: 14, officialDays: ["Sunday", "Tuesday", "Thursday"], strikes: 0, score: 95, status: "Active", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80" },
       { id: "mem-2", name: "Malak Nour", role: "PR", position: "Vice Head", college: "Management & Tech", studentId: "2023102", phone: "+20 101 222 3344", attendanceCount: 12, officialDays: ["Saturday", "Monday", "Wednesday"], strikes: 0, score: 92, status: "Active", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
-      { id: "mem-3", name: "Karim Hassan", role: "PR", position: "Head", college: "Computing & IT", studentId: "2023103", phone: "+20 102 333 4455", attendanceCount: 10, officialDays: ["Sunday", "Monday", "Wednesday"], strikes: 1, score: 87, status: "Active", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80" },
+      { id: "mem-3", name: "Karim Hassan", role: "PR", position: "Head", college: "Computing & IT", studentId: "2023103", phone: "+20 102 333 4455", attendanceCount: 10, officialDays: ["Sunday", "Monday", "Wednesday"], strikes: 0, score: 87, status: "Active", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80" },
       { id: "mem-4", name: "Farida Ahmed", role: "Operations", position: "Member", college: "Logistics & Transport", studentId: "2024104", phone: "+20 103 444 5566", attendanceCount: 11, officialDays: ["Sunday", "Tuesday", "Thursday"], strikes: 0, score: 90, status: "Active", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&q=80" },
       { id: "mem-5", name: "Ahmed Sherif", role: "Digital Transformation", position: "Head", college: "Computing & IT", studentId: "2023105", phone: "+20 104 555 6677", attendanceCount: 9, officialDays: ["Saturday", "Tuesday", "Thursday"], strikes: 1, score: 84, status: "Active", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80" },
-      { id: "mem-6", name: "Laila Wael", role: "Innovation", position: "Member", college: "Law", studentId: "2024106", phone: "+20 105 666 7788", attendanceCount: 7, officialDays: ["Monday", "Wednesday"], strikes: 2, score: 74, status: "Active", avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=256&q=80" },
+      { id: "mem-6", name: "Laila Wael", role: "Innovation", position: "Member", college: "Law", studentId: "2024106", phone: "+20 105 666 7788", attendanceCount: 7, officialDays: ["Monday", "Wednesday"], strikes: 1, score: 74, status: "Active", avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=256&q=80" },
       { id: "mem-7", name: "Nour El-Din", role: "HR", position: "Member", college: "Arts & Design", studentId: "2024107", phone: "+20 106 777 8899", attendanceCount: 8, officialDays: ["Saturday", "Sunday", "Tuesday"], strikes: 0, score: 89, status: "Active", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=256&q=80" }
     ];
 
@@ -2081,6 +2081,36 @@
     let recruits = loadStoredState("aastmt_recruits", []);
     let activityLogs = loadStoredState("aastmt_activity_logs", INITIAL_ACTIVITY_LOGS);
 
+    let portalBc = null;
+    if (typeof window !== 'undefined' && window.BroadcastChannel) {
+      portalBc = new BroadcastChannel('aastmt_admissions_realtime');
+      portalBc.onmessage = (event) => {
+        if (!event.data) return;
+        reloadStateFromStorage();
+      };
+    }
+
+    window.addEventListener('storage', (e) => {
+      if (!e.key) return;
+      if (e.key.startsWith('aastmt_')) {
+        reloadStateFromStorage();
+      }
+    });
+
+    function reloadStateFromStorage() {
+      members = loadStoredState("aastmt_members", INITIAL_MEMBERS).filter(m => !isMemberDeleted(m));
+      dischargedMembers = loadStoredState("aastmt_discharged_members", INITIAL_DISCHARGED_MEMBERS).filter(m => !isMemberDeleted(m));
+      starAmbassadors = loadStoredState("aastmt_star_ambassadors", []).filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isStarDeleted(s));
+      attendanceSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS).filter(s => !getDeletedIds("sessions").includes(s.id));
+      warnings = loadStoredState("aastmt_warnings", INITIAL_WARNINGS).filter(w => !getDeletedIds("warnings").includes(w.id));
+      events = loadStoredState("aastmt_events", INITIAL_EVENTS).filter(e => !getDeletedIds("events").includes(e.id));
+      monitoringNotes = loadStoredState("aastmt_monitoring_notes", INITIAL_MONITORING_NOTES).filter(n => !getDeletedIds("notes").includes(n.id));
+      systemUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS).filter(u => !getDeletedIds("users").includes(u.id));
+      recruits = loadStoredState("aastmt_recruits", []);
+      activityLogs = loadStoredState("aastmt_activity_logs", INITIAL_ACTIVITY_LOGS);
+      renderAllViews();
+    }
+
     function saveAllState() {
       try {
         localStorage.setItem("aastmt_members", JSON.stringify(members));
@@ -2093,6 +2123,9 @@
         localStorage.setItem("aastmt_system_users", JSON.stringify(systemUsers));
         localStorage.setItem("aastmt_recruits", JSON.stringify(recruits));
         localStorage.setItem("aastmt_activity_logs", JSON.stringify(activityLogs));
+        if (portalBc) {
+          portalBc.postMessage({ type: 'SYNC_ALL', timestamp: Date.now() });
+        }
       } catch (e) {}
     }
 
@@ -2880,7 +2913,15 @@
       document.getElementById("kpiTotalMembers").textContent = activeM.length;
       const avgRate = activeM.length > 0 ? (activeM.reduce((acc, m) => acc + (m.attendanceCount > 0 ? Math.min(100, Math.round((m.attendanceCount / 12) * 100)) : 100), 0) / activeM.length).toFixed(1) : '100.0';
       document.getElementById("kpiAvgAttendance").textContent = avgRate + "%";
-      document.getElementById("kpiTotalWarnings").textContent = activeM.reduce((acc, m) => acc + m.strikes, 0);
+      const actualWarnings = warnings || [];
+      const confirmedCount = actualWarnings.filter(w => w.status === 'Confirmed Strike').length;
+      const pendingCount = actualWarnings.filter(w => w.status === 'Pending HR Approval').length;
+      const kpiWarnEl = document.getElementById("kpiTotalWarnings");
+      if (kpiWarnEl) kpiWarnEl.textContent = actualWarnings.length;
+      const kpiWarnSub = document.getElementById("kpiWarningsSubtext");
+      if (kpiWarnSub) {
+        kpiWarnSub.textContent = `${confirmedCount} Confirmed${pendingCount > 0 ? ` • ${pendingCount} Pending` : ''}`;
+      }
       const kpiEvt = document.getElementById("kpiEventsCount"); if (kpiEvt) kpiEvt.textContent = events.length;
 
       const roles = ["PR", "HR", "Operations", "Digital Transformation", "Innovation"];
@@ -3056,6 +3097,7 @@
       if (mem) {
         const current = mem.extraDaysCount !== undefined ? mem.extraDaysCount : (mem.extraDays ? mem.extraDays.length : 0);
         mem.extraDaysCount = Math.max(0, current + delta);
+        saveAllState();
         showToast(`Extra days updated for ${mem.name}`);
         renderMembersTable();
       }
@@ -3110,6 +3152,7 @@
           if (!cb.disabled) selected.push(cb.value);
         });
         mem.extraDays = selected;
+        saveAllState();
         showToast(`Extra attendance days saved for ${mem.name}`);
         closeModal("extraDaysModal");
         renderAllViews();
@@ -3193,6 +3236,7 @@
         mem.officialDays = selectedDays;
 
         showToast(`Updated info for ${mem.name}`);
+        saveAllState();
         closeModal("editMemberModal");
         renderAllViews();
       }
@@ -3277,6 +3321,7 @@
           date: new Date().toISOString().split("T")[0]
         });
         mem.status = "Discharged";
+        saveAllState();
         showToast(`${mem.name} moved to Discharged Members list.`);
         closeModal("dischargeModal");
         renderAllViews();
@@ -3287,13 +3332,18 @@
       e.preventDefault();
       const name = document.getElementById("newMemberName").value.trim();
       const avatar = document.getElementById("addMemberAvatarUrl").value.trim() || null;
+      const newId = `mem-${Date.now()}`;
+      const sId = document.getElementById("newMemberStudentId").value.trim() || '2024101';
+      removeDeletedId("members", newId);
+      removeDeletedId("members", sId);
+      removeDeletedId("members", name.toLowerCase().trim());
       members.push({
-        id: `mem-${Date.now()}`,
+        id: newId,
         name,
         role: document.getElementById("newMemberRole").value,
         position: document.getElementById("newMemberPosition").value,
         college: document.getElementById("newMemberCollege").value,
-        studentId: document.getElementById("newMemberStudentId").value.trim() || '2024101',
+        studentId: sId,
         phone: document.getElementById("newMemberPhone").value.trim() || '+20 100 000 0000',
         attendanceCount: 0,
         officialDays: ["Sunday", "Tuesday", "Thursday"],
@@ -3303,6 +3353,7 @@
         status: "Active",
         avatar
       });
+      saveAllState();
       closeModal("addMemberModal");
       document.getElementById("addMemberForm").reset();
       clearAddMemberAvatar();
@@ -3900,6 +3951,14 @@
         return;
       }
       const id = document.getElementById("editWarningTargetId").value;
+      const wrn = warnings.find(w => w.id === id);
+      if (wrn && wrn.status === "Confirmed Strike" && wrn.memberId) {
+        const mem = members.find(m => m.id === wrn.memberId);
+        if (mem) {
+          mem.strikes = Math.max(0, mem.strikes - 1);
+          mem.score = Math.min(100, mem.score + 8);
+        }
+      }
       addDeletedId("warnings", id);
       warnings = warnings.filter(w => w.id !== id);
       saveAllState();
@@ -3929,6 +3988,7 @@
       d.dischargeType = document.getElementById("editDischargedType").value;
       d.date = document.getElementById("editDischargedDate").value;
       d.dischargeReason = document.getElementById("editDischargedReason").value.trim();
+      saveAllState();
       closeModal("editDischargedModal");
       showToast("Discharged record updated.");
       renderAllViews();
@@ -3993,12 +4053,78 @@
       document.getElementById("warningMemberSelect").value = memberId;
       updateWarningMemberPreview();
     }
-    function handleWarningSubmit(e) { e.preventDefault(); if (currentUser.role === "Admission's Dean") { showToast("Dean profile has read-only access.", "warning"); return; } const mem = members.find(m => m.id === document.getElementById("warningMemberSelect").value); if (!mem) return; const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head"; if (isLeadership) { mem.strikes += 1; mem.score = Math.max(50, mem.score - 8); warnings.unshift({ id: `wrn-${Date.now()}`, memberId: mem.id, memberName: mem.name, level: document.getElementById("warningLevelSelect").value, reason: document.getElementById("warningReasonText").value.trim(), reportedBy: `${currentUser.name} (${currentUser.role})`, date: new Date().toISOString().split("T")[0], status: "Confirmed Strike" }); showToast(`Warning recorded for ${mem.name}.`); } else { warnings.unshift({ id: `wrn-${Date.now()}`, memberId: mem.id, memberName: mem.name, level: document.getElementById("warningLevelSelect").value, reason: document.getElementById("warningReasonText").value.trim(), reportedBy: `${currentUser.name} (HR Request)`, date: new Date().toISOString().split("T")[0], status: "Pending HR Approval" }); showToast(`Warning request submitted.`); } closeModal("warningModal"); document.getElementById("warningForm").reset(); renderAllViews(); }
-    function approveWarningRequest(wId) { if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") { showToast("Only HR Leadership can approve warnings.", "warning"); return; } const wrn = warnings.find(w => w.id === wId); if (wrn) { const mem = members.find(m => m.id === wrn.memberId); if (mem) { mem.strikes += 1; mem.score = Math.max(50, mem.score - 8); } wrn.status = "Confirmed Strike"; showToast(`Warning approved.`); renderAllViews(); } }
+    function handleWarningSubmit(e) {
+      e.preventDefault();
+      if (currentUser.role === "Admission's Dean") { showToast("Dean profile has read-only access.", "warning"); return; }
+      const mem = members.find(m => m.id === document.getElementById("warningMemberSelect").value);
+      if (!mem) return;
+      const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
+      const newWrnId = `wrn-${Date.now()}`;
+      removeDeletedId("warnings", newWrnId);
+      if (isLeadership) {
+        mem.strikes += 1;
+        mem.score = Math.max(50, mem.score - 8);
+        warnings.unshift({
+          id: newWrnId,
+          memberId: mem.id,
+          memberName: mem.name,
+          level: document.getElementById("warningLevelSelect").value,
+          reason: document.getElementById("warningReasonText").value.trim(),
+          reportedBy: `${currentUser.name} (${currentUser.role})`,
+          date: new Date().toISOString().split("T")[0],
+          status: "Confirmed Strike"
+        });
+        showToast(`Warning recorded for ${mem.name}.`);
+      } else {
+        warnings.unshift({
+          id: newWrnId,
+          memberId: mem.id,
+          memberName: mem.name,
+          level: document.getElementById("warningLevelSelect").value,
+          reason: document.getElementById("warningReasonText").value.trim(),
+          reportedBy: `${currentUser.name} (HR Request)`,
+          date: new Date().toISOString().split("T")[0],
+          status: "Pending HR Approval"
+        });
+        showToast(`Warning request submitted.`);
+      }
+      saveAllState();
+      closeModal("warningModal");
+      document.getElementById("warningForm").reset();
+      renderAllViews();
+    }
+
+    function approveWarningRequest(wId) {
+      if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") {
+        showToast("Only HR Leadership can approve warnings.", "warning");
+        return;
+      }
+      const wrn = warnings.find(w => w.id === wId);
+      if (wrn) {
+        const mem = members.find(m => m.id === wrn.memberId);
+        if (mem) {
+          mem.strikes += 1;
+          mem.score = Math.max(50, mem.score - 8);
+        }
+        wrn.status = "Confirmed Strike";
+        saveAllState();
+        showToast(`Warning approved.`);
+        renderAllViews();
+      }
+    }
+
     function dismissWarning(wId) {
       if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") {
         showToast("Only HR Leadership can dismiss warnings.", "warning");
         return;
+      }
+      const wrn = warnings.find(w => w.id === wId);
+      if (wrn && wrn.status === "Confirmed Strike" && wrn.memberId) {
+        const mem = members.find(m => m.id === wrn.memberId);
+        if (mem) {
+          mem.strikes = Math.max(0, mem.strikes - 1);
+          mem.score = Math.min(100, mem.score + 8);
+        }
       }
       addDeletedId("warnings", wId);
       warnings = warnings.filter(w => w.id !== wId);

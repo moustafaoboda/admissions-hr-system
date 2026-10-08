@@ -150,7 +150,7 @@ const INITIAL_MEMBERS = [
     attendanceCount: 10,
     officialDays: ["Sunday", "Monday", "Wednesday"],
     extraDays: [],
-    strikes: 1,
+    strikes: 0,
     score: 87,
     status: "Active",
     avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80"
@@ -198,7 +198,7 @@ const INITIAL_MEMBERS = [
     attendanceCount: 7,
     officialDays: ["Monday", "Wednesday"],
     extraDays: [],
-    strikes: 2,
+    strikes: 1,
     score: 74,
     status: "Active",
     avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=256&q=80"
@@ -610,6 +610,9 @@ export function AuthProvider({ children }) {
 
     switch (type) {
       case 'ADD_MEMBER':
+        if (payload.id) removeDeletedId("members", payload.id);
+        if (payload.studentId) removeDeletedId("members", payload.studentId);
+        if (payload.name) removeDeletedId("members", payload.name.toLowerCase().trim());
         setMembers(prev => prev.some(m => m.id === payload.id) ? prev : [...prev, payload]);
         break;
 
@@ -618,6 +621,9 @@ export function AuthProvider({ children }) {
         break;
 
       case 'DELETE_MEMBER':
+        if (payload.id) addDeletedId("members", payload.id);
+        if (payload.studentId) addDeletedId("members", payload.studentId);
+        if (payload.name) addDeletedId("members", payload.name.toLowerCase().trim());
         setMembers(prev => prev.filter(m => m.id !== payload.id && (!payload.studentId || m.studentId !== payload.studentId) && (!payload.name || m.name.toLowerCase().trim() !== String(payload.name).toLowerCase().trim())));
         setStarAmbassadors(prev => prev.filter(s => s.memberId !== payload.id && s.member_id !== payload.id && (!payload.name || s.name.toLowerCase().trim() !== String(payload.name).toLowerCase().trim())));
         break;
@@ -632,6 +638,9 @@ export function AuthProvider({ children }) {
         break;
 
       case 'REINSTATE_MEMBER':
+        if (payload.reinstatedMember?.id) removeDeletedId("members", payload.reinstatedMember.id);
+        if (payload.reinstatedMember?.studentId) removeDeletedId("members", payload.reinstatedMember.studentId);
+        if (payload.reinstatedMember?.name) removeDeletedId("members", payload.reinstatedMember.name.toLowerCase().trim());
         setDischargedMembers(prev => prev.filter(d => d.id !== payload.id));
         setMembers(prev => prev.some(m => m.id === payload.reinstatedMember.id) ? prev : [...prev, payload.reinstatedMember]);
         break;
@@ -712,6 +721,10 @@ export function AuthProvider({ children }) {
         break;
 
       case 'DISMISS_WARNING':
+        addDeletedId('warnings', payload.id);
+        if (payload.wasConfirmed && payload.memberId) {
+          setMembers(prev => prev.map(m => m.id === payload.memberId ? { ...m, strikes: Math.max(0, m.strikes - 1), score: Math.min(100, m.score + 8) } : m));
+        }
         setWarnings(prev => prev.filter(w => w.id !== payload.id));
         break;
 
@@ -853,10 +866,8 @@ export function AuthProvider({ children }) {
         // Database is authoritative source of truth:
         setMembers(activeMems);
         try { localStorage.setItem("aastmt_members", JSON.stringify(activeMems)); } catch (e) {}
-        if (disMems.length > 0 || dbMembers.some(m => m.status === 'Discharged')) {
-          setDischargedMembers(disMems);
-          try { localStorage.setItem("aastmt_discharged_members", JSON.stringify(disMems)); } catch (e) {}
-        }
+        setDischargedMembers(disMems);
+        try { localStorage.setItem("aastmt_discharged_members", JSON.stringify(disMems)); } catch (e) {}
       } else if (!mErr && (!dbMembers || dbMembers.length === 0)) {
         // First-time sync: Seed current local members into Supabase
         const currentMems = loadStoredState("aastmt_members", INITIAL_MEMBERS).filter(m => !isMemberDeleted(m));
@@ -1346,6 +1357,8 @@ export function AuthProvider({ children }) {
     };
 
     removeDeletedId("members", mem.id);
+    if (mem.studentId) removeDeletedId("members", mem.studentId);
+    if (mem.name) removeDeletedId("members", mem.name.toLowerCase().trim());
 
     setMembers(prev => [...prev, mem]);
     broadcastMutation('ADD_MEMBER', mem);
@@ -1402,6 +1415,9 @@ export function AuthProvider({ children }) {
   const updateMemberExtraDays = (id, extraDays) => {
     setMembers(prev => prev.map(m => m.id === id ? { ...m, extraDays } : m));
     broadcastMutation('UPDATE_MEMBER', { id, fields: { extraDays } });
+    if (supabase) {
+      supabase.from('members').update({ extra_days: extraDays }).eq('id', id).catch(() => {});
+    }
     showToast("Extra attendance days updated.");
   };
 
@@ -1416,6 +1432,9 @@ export function AuthProvider({ children }) {
       return m;
     }));
     broadcastMutation('UPDATE_MEMBER', { id, fields: { extraDaysCount: nextCount } });
+    if (supabase) {
+      supabase.from('members').update({ extra_days_count: nextCount }).eq('id', id).catch(() => {});
+    }
     showToast("Extra days counter updated.");
   };
 
@@ -1853,8 +1872,29 @@ export function AuthProvider({ children }) {
     }
     addDeletedId('warnings', warningId);
     const wrn = warnings.find(w => w.id === warningId);
+    const wasConfirmed = wrn && wrn.status === 'Confirmed Strike';
+    const memberId = wrn?.memberId;
+
+    if (wasConfirmed && memberId) {
+      setMembers(prev => prev.map(m => m.id === memberId ? {
+        ...m,
+        strikes: Math.max(0, m.strikes - 1),
+        score: Math.min(100, m.score + 8)
+      } : m));
+
+      if (supabase) {
+        const targetMem = members.find(m => m.id === memberId);
+        if (targetMem) {
+          supabase.from('members').update({
+            strikes: Math.max(0, targetMem.strikes - 1),
+            score: Math.min(100, targetMem.score + 8)
+          }).eq('id', memberId).catch(() => {});
+        }
+      }
+    }
+
     setWarnings(prev => prev.filter(w => w.id !== warningId));
-    broadcastMutation('DISMISS_WARNING', { id: warningId });
+    broadcastMutation('DISMISS_WARNING', { id: warningId, memberId, wasConfirmed });
 
     if (supabase) {
       supabase.from('disciplinary_warnings').delete().eq('id', warningId).catch(e => console.warn(e));
@@ -1916,6 +1956,10 @@ export function AuthProvider({ children }) {
       score: 90,
       status: "Active"
     };
+
+    removeDeletedId("members", mem.id);
+    if (mem.studentId) removeDeletedId("members", mem.studentId);
+    if (mem.name) removeDeletedId("members", mem.name.toLowerCase().trim());
 
     setDischargedMembers(prev => prev.filter(d => d.id !== id));
     setMembers(prev => [...prev, reinstatedMember]);
