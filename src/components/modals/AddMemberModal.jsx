@@ -233,3 +233,4 @@ export default function AddMemberModal() {
       </div>
     </div>
   );
+}
