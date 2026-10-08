@@ -1,7 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { supabase, isSupabaseConfigured, getStoredSupabaseConfig } from '../lib/supabaseClient';
 
 const AuthContext = createContext(null);
+
+// Unique client identifier to prevent processing self-broadcasts
+const CLIENT_ID = 'client_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
 
 const INITIAL_SYSTEM_USERS = [
   { id: "usr-1", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
@@ -21,6 +24,7 @@ const INITIAL_MEMBERS = [
     phone: "+20 100 111 2233",
     attendanceCount: 14,
     officialDays: ["Sunday", "Tuesday", "Thursday"],
+    extraDays: [],
     strikes: 0,
     score: 95,
     status: "Active",
@@ -36,6 +40,7 @@ const INITIAL_MEMBERS = [
     phone: "+20 101 222 3344",
     attendanceCount: 12,
     officialDays: ["Saturday", "Monday", "Wednesday"],
+    extraDays: [],
     strikes: 0,
     score: 92,
     status: "Active",
@@ -51,6 +56,7 @@ const INITIAL_MEMBERS = [
     phone: "+20 102 333 4455",
     attendanceCount: 10,
     officialDays: ["Sunday", "Monday", "Wednesday"],
+    extraDays: [],
     strikes: 1,
     score: 87,
     status: "Active",
@@ -66,6 +72,7 @@ const INITIAL_MEMBERS = [
     phone: "+20 103 444 5566",
     attendanceCount: 11,
     officialDays: ["Sunday", "Tuesday", "Thursday"],
+    extraDays: [],
     strikes: 0,
     score: 90,
     status: "Active",
@@ -81,6 +88,7 @@ const INITIAL_MEMBERS = [
     phone: "+20 104 555 6677",
     attendanceCount: 9,
     officialDays: ["Saturday", "Tuesday", "Thursday"],
+    extraDays: [],
     strikes: 1,
     score: 84,
     status: "Active",
@@ -96,6 +104,7 @@ const INITIAL_MEMBERS = [
     phone: "+20 105 666 7788",
     attendanceCount: 7,
     officialDays: ["Monday", "Wednesday"],
+    extraDays: [],
     strikes: 2,
     score: 74,
     status: "Active",
@@ -111,6 +120,7 @@ const INITIAL_MEMBERS = [
     phone: "+20 106 777 8899",
     attendanceCount: 8,
     officialDays: ["Saturday", "Sunday", "Tuesday"],
+    extraDays: [],
     strikes: 0,
     score: 89,
     status: "Active",
@@ -256,43 +266,53 @@ const INITIAL_WARNINGS = [
     memberId: "mem-3",
     memberName: "Karim Hassan",
     level: "First Verbal Warning",
-    reason: "Failure to wear formal AASTMT admissions pin during parent VIP campus tour.",
-    reportedBy: "Sarah Mostafa (HR)",
-    date: "2026-09-15",
+    reason: "Leaving shift 30 minutes prior to official scheduled handover.",
+    reportedBy: "Sarah Mostafa (HR Request)",
+    date: "2026-09-22",
     status: "Pending HR Approval"
+  },
+  {
+    id: "wrn-3",
+    memberId: "mem-5",
+    memberName: "Ahmed Sherif",
+    level: "First Verbal Warning",
+    reason: "Late arrival for 3 consecutive morning registration briefings without notification.",
+    reportedBy: "Omar Farouk (HR Vice Head)",
+    date: "2026-09-10",
+    status: "Confirmed Strike"
   }
 ];
 
 const INITIAL_EVENTS = [
   {
     id: "evt-1",
-    title: "Orientations",
+    title: "Engineering & Tech Open Orientation",
     type: "Orientations",
     status: "Active",
-    description: "Campus tours & parent welcome briefings in Hall A.",
-    location: "Hall A, Smart Village",
-    date: "2026-10-10",
-    color: "amber"
-  },
-  {
-    id: "evt-2",
-    title: "EDU Gate",
-    type: "EDU Gate",
-    status: "Scheduled",
-    description: "Annual admissions exhibition & university portal drive.",
-    location: "Exhibition Hall & Booth 4",
+    description: "Full-day campus tour, lab presentations and admissions Q&A for prospective engineering applicants.",
+    location: "Main Auditorium, Smart Village",
     date: "2026-10-15",
     color: "blue"
   },
   {
+    id: "evt-2",
+    title: "Fall Semester Midterm Exam Preparations",
+    type: "Exams",
+    status: "Active",
+    description: "Admissions helpdesk shifted to library entrance during exam study week.",
+    location: "Library Concourse",
+    date: "2026-11-02",
+    color: "amber"
+  },
+  {
     id: "evt-3",
-    title: "Meetings",
-    type: "Meetings",
-    status: "Weekly",
-    description: "General assembly & committee sync in Meeting Room 007.",
-    location: "Meeting Room 007",
-    date: "Every Wednesday",
-    color: "emerald"
+    title: "International EDU Gate Education Fair",
+    type: "Exhibitions",
+    status: "Active",
+    description: "Major higher-ed recruitment exhibition booth staffed by Smart Village ambassadors.",
+    location: "Cairo International Convention Centre",
+    date: "2026-11-20",
+    color: "purple"
   }
 ];
 
@@ -343,6 +363,412 @@ export function AuthProvider({ children }) {
   const [recruits, setRecruits] = useState([]);
   const [activityLogs, setActivityLogs] = useState(INITIAL_ACTIVITY_LOGS);
 
+  // Sync Status
+  const [syncStatus, setSyncStatus] = useState({
+    isCloudConnected: Boolean(isSupabaseConfigured),
+    onlinePeers: 1,
+    lastSyncTime: null
+  });
+
+  // Modals state
+  const [activeModal, setActiveModal] = useState(null);
+  const [modalExtraData, setModalExtraData] = useState({});
+
+  // System Branding / Icon State
+  const [systemIcon, setSystemIcon] = useState(() => {
+    try {
+      const saved = localStorage.getItem("aastmt_system_icon");
+      return saved ? JSON.parse(saved) : { type: "icon", value: "fa-anchor", imageUrl: "" };
+    } catch {
+      return { type: "icon", value: "fa-anchor", imageUrl: "" };
+    }
+  });
+
+  const showToast = useCallback((message, type = "success") => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3500);
+  }, []);
+
+  // Broadcast Channels Refs
+  const localBcRef = useRef(null);
+  const supabaseChannelRef = useRef(null);
+
+  // Unified Remote Mutation Handler
+  const handleRemoteMutation = useCallback((type, payload, senderId) => {
+    if (senderId === CLIENT_ID) return; // Ignore echoes
+
+    switch (type) {
+      case 'ADD_MEMBER':
+        setMembers(prev => prev.some(m => m.id === payload.id) ? prev : [...prev, payload]);
+        break;
+
+      case 'UPDATE_MEMBER':
+        setMembers(prev => prev.map(m => m.id === payload.id ? { ...m, ...payload.fields } : m));
+        break;
+
+      case 'DELETE_MEMBER':
+        setMembers(prev => prev.filter(m => m.id !== payload.id));
+        break;
+
+      case 'DISCHARGE_MEMBER':
+        setMembers(prev => prev.filter(m => m.id !== payload.memberId));
+        setDischargedMembers(prev => [payload.record, ...prev.filter(d => d.id !== payload.record.id)]);
+        break;
+
+      case 'UPDATE_DISCHARGED_MEMBER':
+        setDischargedMembers(prev => prev.map(d => d.id === payload.id ? { ...d, ...payload.fields } : d));
+        break;
+
+      case 'REINSTATE_MEMBER':
+        setDischargedMembers(prev => prev.filter(d => d.id !== payload.id));
+        setMembers(prev => prev.some(m => m.id === payload.reinstatedMember.id) ? prev : [...prev, payload.reinstatedMember]);
+        break;
+
+      case 'ADD_STAR':
+        setStarAmbassadors(prev => [payload, ...prev.filter(s => s.id !== payload.id)]);
+        break;
+
+      case 'REMOVE_STAR':
+        setStarAmbassadors(prev => prev.filter(s => s.id !== payload.id));
+        break;
+
+      case 'CREATE_ATTENDANCE_SESSION':
+        setAttendanceSessions(prev => [payload.session, ...prev.filter(s => s.id !== payload.session.id)]);
+        if (payload.updatedMemberIds && payload.updatedMemberIds.length > 0) {
+          setMembers(prev => prev.map(m => payload.updatedMemberIds.includes(m.id) ? { ...m, attendanceCount: m.attendanceCount + 1 } : m));
+        }
+        break;
+
+      case 'UPDATE_ATTENDANCE_SESSION':
+        setAttendanceSessions(prev => prev.map(s => s.id === payload.id ? { ...s, ...payload.data } : s));
+        break;
+
+      case 'DELETE_ATTENDANCE_SESSION':
+        setAttendanceSessions(prev => prev.filter(s => s.id !== payload.id));
+        break;
+
+      case 'SUBMIT_WARNING':
+        setWarnings(prev => [payload.warning, ...prev.filter(w => w.id !== payload.warning.id)]);
+        if (payload.memberId && payload.incrementStrikes) {
+          setMembers(prev => prev.map(m => m.id === payload.memberId ? {
+            ...m,
+            strikes: m.strikes + 1,
+            score: Math.max(50, m.score - 8)
+          } : m));
+        }
+        break;
+
+      case 'APPROVE_WARNING':
+        setWarnings(prev => prev.map(w => w.id === payload.id ? { ...w, status: "Confirmed Strike" } : w));
+        if (payload.memberId) {
+          setMembers(prev => prev.map(m => m.id === payload.memberId ? {
+            ...m,
+            strikes: m.strikes + 1,
+            score: Math.max(50, m.score - 8)
+          } : m));
+        }
+        break;
+
+      case 'DISMISS_WARNING':
+        setWarnings(prev => prev.filter(w => w.id !== payload.id));
+        break;
+
+      case 'UPDATE_WARNING':
+        setWarnings(prev => prev.map(w => w.id === payload.id ? { ...w, ...payload.fields } : w));
+        break;
+
+      case 'ADD_EVENT':
+        setEvents(prev => [...prev.filter(e => e.id !== payload.id), payload]);
+        break;
+
+      case 'UPDATE_EVENT':
+        setEvents(prev => prev.map(e => e.id === payload.id ? { ...e, ...payload.fields } : e));
+        break;
+
+      case 'DELETE_EVENT':
+        setEvents(prev => prev.filter(e => e.id !== payload.id));
+        break;
+
+      case 'ADD_MONITORING_NOTE':
+        setMonitoringNotes(prev => [payload, ...prev.filter(n => n.id !== payload.id)]);
+        break;
+
+      case 'UPDATE_MONITORING_NOTE':
+        setMonitoringNotes(prev => prev.map(n => n.id === payload.id ? { ...n, ...payload.fields } : n));
+        break;
+
+      case 'DELETE_MONITORING_NOTE':
+        setMonitoringNotes(prev => prev.filter(n => n.id !== payload.id));
+        break;
+
+      case 'ADD_SYSTEM_USER':
+        setSystemUsers(prev => [...prev.filter(u => u.id !== payload.id), payload]);
+        break;
+
+      case 'UPDATE_SYSTEM_USER':
+        setSystemUsers(prev => prev.map(u => u.id === payload.id ? { ...u, ...payload.fields } : u));
+        break;
+
+      case 'DELETE_SYSTEM_USER':
+        setSystemUsers(prev => prev.filter(u => u.id !== payload.id));
+        break;
+
+      case 'UPDATE_SYSTEM_ICON':
+        setSystemIcon(payload);
+        try { localStorage.setItem("aastmt_system_icon", JSON.stringify(payload)); } catch(e) {}
+        break;
+
+      case 'ADD_ACTIVITY_LOG':
+        setActivityLogs(prev => [payload, ...prev.filter(a => a.id !== payload.id)]);
+        break;
+
+      case 'TOGGLE_STAR_ACTIVITY_LOG':
+        setActivityLogs(prev => prev.map(a => a.id === payload.id ? { ...a, isStarred: payload.isStarred } : a));
+        break;
+
+      case 'UPDATE_ACTIVITY_LOG':
+        setActivityLogs(prev => prev.map(a => a.id === payload.id ? { ...a, ...payload.fields } : a));
+        break;
+
+      case 'DELETE_ACTIVITY_LOG':
+        setActivityLogs(prev => prev.filter(a => a.id !== payload.id));
+        break;
+
+      default:
+        break;
+    }
+  }, []);
+
+  // Broadcast function (Multi-layer: Local BroadcastChannel + Supabase Realtime)
+  const broadcastMutation = useCallback((type, payload) => {
+    const message = { type, payload, senderId: CLIENT_ID, timestamp: Date.now() };
+
+    // 1. Broadcast locally across browser tabs
+    if (localBcRef.current) {
+      try {
+        localBcRef.current.postMessage(message);
+      } catch (err) {
+        console.warn('Local broadcast error:', err);
+      }
+    }
+
+    // 2. Broadcast via Supabase Realtime channel across all internet-connected devices
+    if (supabaseChannelRef.current) {
+      try {
+        supabaseChannelRef.current.send({
+          type: 'broadcast',
+          event: 'MUTATION',
+          payload: message
+        });
+      } catch (err) {
+        console.warn('Supabase broadcast error:', err);
+      }
+    }
+  }, []);
+
+  // Fetch initial/latest data from Supabase Cloud Database
+  const refreshDataFromCloud = useCallback(async () => {
+    if (!supabase) return;
+
+    try {
+      // 1. Members
+      const { data: dbMembers, error: mErr } = await supabase.from('members').select('*');
+      if (!mErr && dbMembers && dbMembers.length > 0) {
+        const activeMems = [];
+        const disMems = [];
+        dbMembers.forEach(row => {
+          const formatted = {
+            id: row.id,
+            name: row.name,
+            role: row.role,
+            position: row.position,
+            college: row.college,
+            studentId: row.student_id,
+            phone: row.phone,
+            attendanceCount: row.attendance_count || 0,
+            officialDays: row.official_days || ["Sunday", "Tuesday", "Thursday"],
+            extraDays: row.extra_days || [],
+            strikes: row.strikes || 0,
+            score: row.score || 90,
+            status: row.status,
+            dischargeType: row.discharge_type,
+            dischargeReason: row.discharge_reason,
+            avatar: row.avatar || null
+          };
+          if (row.status === 'Discharged') {
+            disMems.push(formatted);
+          } else {
+            activeMems.push(formatted);
+          }
+        });
+        setMembers(activeMems);
+        if (disMems.length > 0) setDischargedMembers(disMems);
+      }
+
+      // 2. System Users
+      const { data: dbUsers, error: uErr } = await supabase.from('system_users').select('*');
+      if (!uErr && dbUsers && dbUsers.length > 0) {
+        setSystemUsers(dbUsers.map(u => ({
+          id: u.id,
+          name: u.name,
+          username: u.username,
+          password: u.password,
+          role: u.role,
+          avatar: u.avatar || null
+        })));
+      }
+
+      // 3. Star Ambassadors
+      const { data: dbStars, error: sErr } = await supabase.from('star_ambassadors').select('*');
+      if (!sErr && dbStars && dbStars.length > 0) {
+        setStarAmbassadors(dbStars.map(s => ({
+          id: s.id,
+          memberId: s.member_id,
+          name: s.name || '',
+          role: s.role || '',
+          college: s.college || '',
+          awardTitle: s.award_title,
+          citation: s.citation
+        })));
+      }
+
+      // 4. Attendance Sessions
+      const { data: dbSessions, error: aErr } = await supabase.from('attendance_sessions').select('*');
+      if (!aErr && dbSessions && dbSessions.length > 0) {
+        setAttendanceSessions(dbSessions.map(s => ({
+          id: s.id,
+          title: s.title,
+          date: s.date,
+          dayName: s.day_name,
+          type: s.session_type,
+          presentCount: s.present_count,
+          totalCount: s.total_count,
+          rollCall: s.roll_call || []
+        })));
+      }
+
+      // 5. Warnings
+      const { data: dbWarnings, error: wErr } = await supabase.from('disciplinary_warnings').select('*');
+      if (!wErr && dbWarnings && dbWarnings.length > 0) {
+        setWarnings(dbWarnings.map(w => ({
+          id: w.id,
+          memberId: w.member_id,
+          memberName: w.member_name || '',
+          level: w.level,
+          reason: w.reason,
+          reportedBy: w.reported_by,
+          date: w.date,
+          status: w.status
+        })));
+      }
+
+      // 6. Monitoring Notes
+      const { data: dbNotes, error: nErr } = await supabase.from('monitoring_notes').select('*');
+      if (!nErr && dbNotes && dbNotes.length > 0) {
+        setMonitoringNotes(dbNotes.map(n => ({
+          id: n.id,
+          memberId: n.member_id,
+          memberName: n.member_name,
+          memberRole: n.member_role,
+          memberCollege: n.member_college,
+          authorName: n.author_name,
+          authorRole: n.author_role,
+          category: n.category,
+          note: n.note,
+          date: n.date,
+          time: n.time
+        })));
+      }
+
+      // 7. Events
+      const { data: dbEvents, error: eErr } = await supabase.from('events').select('*');
+      if (!eErr && dbEvents && dbEvents.length > 0) {
+        setEvents(dbEvents.map(e => ({
+          id: e.id,
+          title: e.title,
+          type: e.type,
+          status: e.status,
+          description: e.description,
+          location: e.location,
+          date: e.date,
+          color: e.color
+        })));
+      }
+
+      // 8. System Settings (Branding Icon)
+      const { data: dbSettings, error: stErr } = await supabase.from('system_settings').select('*');
+      if (!stErr && dbSettings && dbSettings.length > 0) {
+        const iconSetting = dbSettings.find(s => s.key === 'system_icon');
+        if (iconSetting && iconSetting.value) {
+          setSystemIcon(iconSetting.value);
+          try { localStorage.setItem("aastmt_system_icon", JSON.stringify(iconSetting.value)); } catch(e) {}
+        }
+      }
+
+      setSyncStatus(prev => ({ ...prev, lastSyncTime: Date.now() }));
+    } catch (err) {
+      console.warn('Initial Supabase data load error:', err);
+    }
+  }, []);
+
+  // Initialize Realtime Listeners
+  useEffect(() => {
+    // 1. Multi-Tab Local Broadcast Channel
+    if (typeof window !== 'undefined' && window.BroadcastChannel) {
+      const bc = new BroadcastChannel('aastmt_admissions_realtime');
+      localBcRef.current = bc;
+      bc.onmessage = (event) => {
+        if (event.data && event.data.type) {
+          handleRemoteMutation(event.data.type, event.data.payload, event.data.senderId);
+        }
+      };
+    }
+
+    // 2. Supabase Realtime Channel
+    if (supabase) {
+      const channel = supabase.channel('admissions_realtime_broadcast', {
+        config: {
+          broadcast: { self: false },
+          presence: { key: CLIENT_ID }
+        }
+      });
+      supabaseChannelRef.current = channel;
+
+      channel
+        .on('broadcast', { event: 'MUTATION' }, (payload) => {
+          if (payload && payload.payload) {
+            handleRemoteMutation(payload.payload.type, payload.payload.payload, payload.payload.senderId);
+          }
+        })
+        .on('presence', { event: 'sync' }, () => {
+          const presenceState = channel.presenceState();
+          const peerCount = Object.keys(presenceState).length;
+          setSyncStatus(prev => ({ ...prev, isCloudConnected: true, onlinePeers: Math.max(1, peerCount) }));
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            channel.track({ onlineAt: new Date().toISOString() });
+            setSyncStatus(prev => ({ ...prev, isCloudConnected: true }));
+          }
+        });
+
+      // Load initial state from Cloud DB
+      refreshDataFromCloud();
+    }
+
+    return () => {
+      if (localBcRef.current) {
+        localBcRef.current.close();
+      }
+      if (supabaseChannelRef.current && supabase) {
+        supabase.removeChannel(supabaseChannelRef.current);
+      }
+    };
+  }, [handleRemoteMutation, refreshDataFromCloud]);
+
   // Auto purge unstarred activity logs older than 7 days
   useEffect(() => {
     const now = Date.now();
@@ -365,58 +791,74 @@ export function AuthProvider({ children }) {
       details: details || ""
     };
     setActivityLogs(prev => [newEntry, ...prev]);
+    broadcastMutation('ADD_ACTIVITY_LOG', newEntry);
+
+    if (supabase) {
+      supabase.from('activity_logs').insert([{
+        id: newEntry.id,
+        action: newEntry.action,
+        category: newEntry.category,
+        user_name: newEntry.user,
+        role: newEntry.role,
+        timestamp: newEntry.timestamp,
+        date: newEntry.date,
+        time: newEntry.time,
+        is_starred: false,
+        details: newEntry.details
+      }]).catch(err => console.warn('Supabase activity log error:', err));
+    }
   };
 
   const toggleStarActivityLog = (id) => {
+    let nextStarred = false;
     setActivityLogs(prev => prev.map(log => {
       if (log.id === id) {
-        const nextStarred = !log.isStarred;
+        nextStarred = !log.isStarred;
         showToast(nextStarred ? "Activity starred (retained permanently)." : "Activity unstarred (will auto-delete after 7 days).");
         return { ...log, isStarred: nextStarred };
       }
       return log;
     }));
+    broadcastMutation('TOGGLE_STAR_ACTIVITY_LOG', { id, isStarred: nextStarred });
+
+    if (supabase) {
+      supabase.from('activity_logs').update({ is_starred: nextStarred }).eq('id', id).catch(e => console.warn(e));
+    }
   };
 
   const updateActivityLog = (id, updatedFields) => {
     setActivityLogs(prev => prev.map(log => log.id === id ? { ...log, ...updatedFields } : log));
+    broadcastMutation('UPDATE_ACTIVITY_LOG', { id, fields: updatedFields });
     showToast("Activity log entry updated.");
+
+    if (supabase) {
+      supabase.from('activity_logs').update(updatedFields).eq('id', id).catch(e => console.warn(e));
+    }
   };
 
   const deleteActivityLog = (id) => {
     setActivityLogs(prev => prev.filter(log => log.id !== id));
+    broadcastMutation('DELETE_ACTIVITY_LOG', { id });
     showToast("Activity log entry removed.");
-  };
 
-  // Modals state
-  const [activeModal, setActiveModal] = useState(null);
-  const [modalExtraData, setModalExtraData] = useState({});
-
-  const showToast = (message, type = "success") => {
-    const id = Date.now() + Math.random();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3500);
-  };
-
-  // System Branding / Icon State
-  const [systemIcon, setSystemIcon] = useState(() => {
-    try {
-      const saved = localStorage.getItem("aastmt_system_icon");
-      return saved ? JSON.parse(saved) : { type: "icon", value: "fa-anchor", imageUrl: "" };
-    } catch {
-      return { type: "icon", value: "fa-anchor", imageUrl: "" };
+    if (supabase) {
+      supabase.from('activity_logs').delete().eq('id', id).catch(e => console.warn(e));
     }
-  });
+  };
 
   const updateSystemIcon = (newIconConfig) => {
     setSystemIcon(newIconConfig);
     try {
       localStorage.setItem("aastmt_system_icon", JSON.stringify(newIconConfig));
     } catch (err) {}
+    broadcastMutation('UPDATE_SYSTEM_ICON', newIconConfig);
+
+    if (supabase) {
+      supabase.from('system_settings').upsert({ key: 'system_icon', value: newIconConfig }).catch(e => console.warn(e));
+    }
+
     logActivity("Updated system branding icon/logo", "System");
-    showToast("System icon & branding updated successfully.");
+    showToast("System icon & branding updated successfully across all devices.");
   };
 
   const login = (username, password) => {
@@ -481,40 +923,90 @@ export function AuthProvider({ children }) {
       status: "Active",
       avatar: newMem.avatar || null
     };
+
     setMembers(prev => [...prev, mem]);
+    broadcastMutation('ADD_MEMBER', mem);
+
+    if (supabase) {
+      supabase.from('members').insert([{
+        id: mem.id,
+        name: mem.name,
+        role: mem.role,
+        position: mem.position,
+        college: mem.college,
+        student_id: mem.studentId,
+        phone: mem.phone,
+        attendance_count: mem.attendanceCount,
+        official_days: mem.officialDays,
+        strikes: mem.strikes,
+        score: mem.score,
+        status: mem.status,
+        avatar: mem.avatar
+      }]).catch(err => console.warn('Supabase add member error:', err));
+    }
+
     logActivity(`Added new team member: ${mem.name}`, "Members", `${mem.role} - ${mem.college}`);
-    showToast(`Ambassador ${mem.name} registered in Smart Village team.`);
+    showToast(`Ambassador ${mem.name} registered and synced live.`);
   };
 
   const editMemberInfo = (id, updatedFields) => {
     const target = members.find(m => m.id === id);
     setMembers(prev => prev.map(m => m.id === id ? { ...m, ...updatedFields } : m));
+    broadcastMutation('UPDATE_MEMBER', { id, fields: updatedFields });
+
+    if (supabase) {
+      const dbFields = {};
+      if (updatedFields.name !== undefined) dbFields.name = updatedFields.name;
+      if (updatedFields.role !== undefined) dbFields.role = updatedFields.role;
+      if (updatedFields.position !== undefined) dbFields.position = updatedFields.position;
+      if (updatedFields.college !== undefined) dbFields.college = updatedFields.college;
+      if (updatedFields.studentId !== undefined) dbFields.student_id = updatedFields.studentId;
+      if (updatedFields.phone !== undefined) dbFields.phone = updatedFields.phone;
+      if (updatedFields.officialDays !== undefined) dbFields.official_days = updatedFields.officialDays;
+      if (updatedFields.avatar !== undefined) dbFields.avatar = updatedFields.avatar;
+      if (updatedFields.score !== undefined) dbFields.score = updatedFields.score;
+      if (updatedFields.strikes !== undefined) dbFields.strikes = updatedFields.strikes;
+
+      if (Object.keys(dbFields).length > 0) {
+        supabase.from('members').update(dbFields).eq('id', id).catch(err => console.warn('Supabase update member error:', err));
+      }
+    }
+
     logActivity(`Updated info for: ${target ? target.name : 'member'}`, "Members");
-    showToast("Member information updated successfully.");
+    showToast("Member information updated & synced across all devices.");
   };
 
   const updateMemberExtraDays = (id, extraDays) => {
     setMembers(prev => prev.map(m => m.id === id ? { ...m, extraDays } : m));
+    broadcastMutation('UPDATE_MEMBER', { id, fields: { extraDays } });
     showToast("Extra attendance days updated.");
   };
 
   const updateExtraDaysCount = (id, delta) => {
+    let nextCount = 0;
     setMembers(prev => prev.map(m => {
       if (m.id === id) {
         const current = m.extraDaysCount !== undefined ? m.extraDaysCount : (m.extraDays ? m.extraDays.length : 0);
-        const newCount = Math.max(0, current + delta);
-        return { ...m, extraDaysCount: newCount };
+        nextCount = Math.max(0, current + delta);
+        return { ...m, extraDaysCount: nextCount };
       }
       return m;
     }));
+    broadcastMutation('UPDATE_MEMBER', { id, fields: { extraDaysCount: nextCount } });
     showToast("Extra days counter updated.");
   };
 
   const deleteMember = (id) => {
     const mem = members.find(m => m.id === id);
     setMembers(prev => prev.filter(m => m.id !== id));
+    broadcastMutation('DELETE_MEMBER', { id });
+
+    if (supabase) {
+      supabase.from('members').delete().eq('id', id).catch(err => console.warn('Supabase delete member error:', err));
+    }
+
     logActivity(`Deleted team member: ${mem?.name || 'Member'}`, "Members");
-    showToast(`Member ${mem?.name || ''} deleted.`);
+    showToast(`Member ${mem?.name || ''} deleted across all devices.`);
   };
 
   const dischargeMember = (id, dischargeType, reason) => {
@@ -531,20 +1023,38 @@ export function AuthProvider({ children }) {
       phone: mem.phone,
       dischargeType: dischargeType || "Voluntary Left",
       dischargeReason: reason || "Left team",
-      date: new Date().toISOString().split("T")[0]
+      date: new Date().toISOString().split("T")[0],
+      avatar: mem.avatar || null
     };
 
     setMembers(prev => prev.filter(m => m.id !== id));
     setDischargedMembers(prev => [dischargedRecord, ...prev]);
+    broadcastMutation('DISCHARGE_MEMBER', { memberId: id, record: dischargedRecord });
+
+    if (supabase) {
+      supabase.from('members').update({
+        status: 'Discharged',
+        discharge_type: dischargedRecord.dischargeType,
+        discharge_reason: dischargedRecord.dischargeReason
+      }).eq('id', id).catch(err => console.warn('Supabase discharge member error:', err));
+    }
+
     logActivity(`Discharged member: ${mem.name}`, "Members", `${dischargeType} - Reason: ${reason}`);
     showToast(`${mem.name} moved to Discharged Members list.`);
   };
 
   const updateMemberPerformance = (id, newScore) => {
+    const scoreVal = Math.max(0, Math.min(100, Number(newScore)));
     const mem = members.find(m => m.id === id);
-    setMembers(prev => prev.map(m => m.id === id ? { ...m, score: Math.max(0, Math.min(100, Number(newScore))) } : m));
+    setMembers(prev => prev.map(m => m.id === id ? { ...m, score: scoreVal } : m));
+    broadcastMutation('UPDATE_MEMBER', { id, fields: { score: scoreVal } });
+
+    if (supabase) {
+      supabase.from('members').update({ score: scoreVal }).eq('id', id).catch(err => console.warn('Supabase update score error:', err));
+    }
+
     logActivity(`Updated performance score for: ${mem ? mem.name : 'member'} to ${newScore}%`, "Members");
-    showToast("Performance score updated.");
+    showToast("Performance score updated & synced.");
   };
 
   const addStarAmbassador = async (memberId, awardTitle, citation) => {
@@ -562,34 +1072,73 @@ export function AuthProvider({ children }) {
     };
 
     setStarAmbassadors(prev => [star, ...prev]);
+    broadcastMutation('ADD_STAR', star);
+
+    if (supabase) {
+      supabase.from('star_ambassadors').insert([{
+        id: star.id,
+        member_id: star.memberId,
+        award_title: star.awardTitle,
+        citation: star.citation
+      }]).catch(err => console.warn('Supabase add star error:', err));
+    }
+
     logActivity(`Granted star ambassador recognition to ${mem.name}`, "Members", awardTitle);
     showToast(`Star Ambassador recognition granted to ${mem.name}!`);
   };
 
   const removeStarAmbassador = async (starId) => {
     setStarAmbassadors(prev => prev.filter(s => s.id !== starId));
+    broadcastMutation('REMOVE_STAR', { id: starId });
+
+    if (supabase) {
+      supabase.from('star_ambassadors').delete().eq('id', starId).catch(err => console.warn('Supabase remove star error:', err));
+    }
+
     logActivity("Removed star recognition", "Members");
-    showToast("Star recognition removed.");
+    showToast("Star recognition removed & synced.");
   };
 
   const deleteAttendanceSession = async (sessionId) => {
     const s = attendanceSessions.find(x => x.id === sessionId);
     setAttendanceSessions(prev => prev.filter(x => x.id !== sessionId));
+    broadcastMutation('DELETE_ATTENDANCE_SESSION', { id: sessionId });
+
+    if (supabase) {
+      supabase.from('attendance_sessions').delete().eq('id', sessionId).catch(err => console.warn('Supabase delete session error:', err));
+    }
+
     logActivity(`Deleted attendance session: ${s ? s.title : sessionId}`, "Attendance");
-    showToast("Attendance session deleted.");
+    showToast("Attendance session deleted & synced.");
   };
 
   const updateAttendanceSession = async (sessionId, updatedData) => {
+    let finalSession = null;
     setAttendanceSessions(prev => prev.map(s => {
       if (s.id === sessionId) {
         const presentCount = updatedData.rollCall ? updatedData.rollCall.filter(r => r.isPresent).length : s.presentCount;
         const totalCount = updatedData.rollCall ? updatedData.rollCall.length : s.totalCount;
-        return { ...s, ...updatedData, presentCount, totalCount };
+        finalSession = { ...s, ...updatedData, presentCount, totalCount };
+        return finalSession;
       }
       return s;
     }));
+    broadcastMutation('UPDATE_ATTENDANCE_SESSION', { id: sessionId, data: updatedData });
+
+    if (supabase && finalSession) {
+      supabase.from('attendance_sessions').update({
+        title: finalSession.title,
+        date: finalSession.date,
+        day_name: finalSession.dayName,
+        session_type: finalSession.type,
+        present_count: finalSession.presentCount,
+        total_count: finalSession.totalCount,
+        roll_call: finalSession.rollCall
+      }).eq('id', sessionId).catch(err => console.warn('Supabase update session error:', err));
+    }
+
     logActivity(`Updated attendance session: ${updatedData.title || sessionId}`, "Attendance");
-    showToast("Attendance session details updated.");
+    showToast("Attendance session details updated & synced.");
   };
 
   const createAttendanceSession = async (title, date, sessionType, rollCallRecords) => {
@@ -598,11 +1147,11 @@ export function AuthProvider({ children }) {
     const dayName = daysOfWeek[d.getDay()] || "Sunday";
 
     const presentCount = rollCallRecords.filter(r => r.isPresent).length;
+    const presentMemberIds = rollCallRecords.filter(r => r.isPresent).map(r => r.memberId);
 
     // Increment attendance count for present members
     setMembers(prev => prev.map(m => {
-      const rec = rollCallRecords.find(r => r.memberId === m.id);
-      if (rec && rec.isPresent) {
+      if (presentMemberIds.includes(m.id)) {
         return { ...m, attendanceCount: m.attendanceCount + 1 };
       }
       return m;
@@ -620,8 +1169,31 @@ export function AuthProvider({ children }) {
     };
 
     setAttendanceSessions(prev => [session, ...prev]);
+    broadcastMutation('CREATE_ATTENDANCE_SESSION', { session, updatedMemberIds: presentMemberIds });
+
+    if (supabase) {
+      supabase.from('attendance_sessions').insert([{
+        id: session.id,
+        title: session.title,
+        date: session.date,
+        day_name: session.dayName,
+        session_type: session.type,
+        present_count: session.presentCount,
+        total_count: session.totalCount,
+        roll_call: session.rollCall
+      }]).catch(err => console.warn('Supabase insert session error:', err));
+
+      // Update members attendance count in DB
+      presentMemberIds.forEach(memId => {
+        const memObj = members.find(m => m.id === memId);
+        if (memObj) {
+          supabase.from('members').update({ attendance_count: memObj.attendanceCount + 1 }).eq('id', memId).catch(e => console.warn(e));
+        }
+      });
+    }
+
     logActivity(`Created attendance roll call: ${title}`, "Attendance", `${dayName}, ${date} (${presentCount}/${rollCallRecords.length} present)`);
-    showToast(`Attendance for ${dayName} (${sessionType}) recorded successfully.`);
+    showToast(`Attendance recorded & synced across all screens.`);
   };
 
   const submitWarning = async (memberId, level, reason) => {
@@ -653,6 +1225,25 @@ export function AuthProvider({ children }) {
       };
 
       setWarnings(prev => [wrn, ...prev]);
+      broadcastMutation('SUBMIT_WARNING', { warning: wrn, memberId: mem.id, incrementStrikes: true });
+
+      if (supabase) {
+        supabase.from('disciplinary_warnings').insert([{
+          id: wrn.id,
+          member_id: wrn.memberId,
+          level: wrn.level,
+          reason: wrn.reason,
+          reported_by: wrn.reportedBy,
+          date: wrn.date,
+          status: wrn.status
+        }]).catch(e => console.warn(e));
+
+        supabase.from('members').update({
+          strikes: mem.strikes + 1,
+          score: Math.max(50, mem.score - 8)
+        }).eq('id', mem.id).catch(e => console.warn(e));
+      }
+
       logActivity(`Issued warning to: ${mem.name}`, "Warnings", `${level} - ${reason}`);
       showToast(`Warning recorded for ${mem.name}.`);
     } else {
@@ -668,6 +1259,20 @@ export function AuthProvider({ children }) {
       };
 
       setWarnings(prev => [wrn, ...prev]);
+      broadcastMutation('SUBMIT_WARNING', { warning: wrn, memberId: mem.id, incrementStrikes: false });
+
+      if (supabase) {
+        supabase.from('disciplinary_warnings').insert([{
+          id: wrn.id,
+          member_id: wrn.memberId,
+          level: wrn.level,
+          reason: wrn.reason,
+          reported_by: wrn.reportedBy,
+          date: wrn.date,
+          status: wrn.status
+        }]).catch(e => console.warn(e));
+      }
+
       logActivity(`Submitted warning request for: ${mem.name}`, "Warnings", `${level} - ${reason}`);
       showToast(`Warning request submitted for ${mem.name}.`);
     }
@@ -688,6 +1293,19 @@ export function AuthProvider({ children }) {
     } : m));
 
     setWarnings(prev => prev.map(w => w.id === warningId ? { ...w, status: "Confirmed Strike" } : w));
+    broadcastMutation('APPROVE_WARNING', { id: warningId, memberId: wrn.memberId });
+
+    if (supabase) {
+      supabase.from('disciplinary_warnings').update({ status: 'Confirmed Strike' }).eq('id', warningId).catch(e => console.warn(e));
+      const targetMem = members.find(m => m.id === wrn.memberId);
+      if (targetMem) {
+        supabase.from('members').update({
+          strikes: targetMem.strikes + 1,
+          score: Math.max(50, targetMem.score - 8)
+        }).eq('id', wrn.memberId).catch(e => console.warn(e));
+      }
+    }
+
     logActivity(`Approved warning request for: ${wrn.memberName}`, "Warnings");
     showToast(`Warning approved for ${wrn.memberName}.`);
   };
@@ -699,8 +1317,14 @@ export function AuthProvider({ children }) {
     }
     const wrn = warnings.find(w => w.id === warningId);
     setWarnings(prev => prev.filter(w => w.id !== warningId));
+    broadcastMutation('DISMISS_WARNING', { id: warningId });
+
+    if (supabase) {
+      supabase.from('disciplinary_warnings').delete().eq('id', warningId).catch(e => console.warn(e));
+    }
+
     logActivity(`Dismissed warning for: ${wrn ? wrn.memberName : warningId}`, "Warnings");
-    showToast("Warning record dismissed.");
+    showToast("Warning record dismissed & synced.");
   };
 
   const updateWarning = async (id, updatedFields) => {
@@ -709,38 +1333,65 @@ export function AuthProvider({ children }) {
       return;
     }
     setWarnings(prev => prev.map(w => w.id === id ? { ...w, ...updatedFields } : w));
+    broadcastMutation('UPDATE_WARNING', { id, fields: updatedFields });
+
+    if (supabase) {
+      supabase.from('disciplinary_warnings').update(updatedFields).eq('id', id).catch(e => console.warn(e));
+    }
+
     logActivity(`Updated warning details #${id}`, "Warnings");
     showToast("Warning details updated successfully.");
   };
 
   const updateDischargedMember = async (id, updatedFields) => {
     setDischargedMembers(prev => prev.map(d => d.id === id ? { ...d, ...updatedFields } : d));
+    broadcastMutation('UPDATE_DISCHARGED_MEMBER', { id, fields: updatedFields });
+
+    if (supabase) {
+      const dbFields = {};
+      if (updatedFields.name) dbFields.name = updatedFields.name;
+      if (updatedFields.role) dbFields.role = updatedFields.role;
+      if (updatedFields.dischargeType) dbFields.discharge_type = updatedFields.dischargeType;
+      if (updatedFields.dischargeReason) dbFields.discharge_reason = updatedFields.dischargeReason;
+      supabase.from('members').update(dbFields).eq('id', id).catch(e => console.warn(e));
+    }
+
     logActivity(`Updated discharged record #${id}`, "Members");
-    showToast("Discharged member record updated.");
+    showToast("Discharged member record updated & synced.");
   };
 
   const reinstateMember = async (id) => {
     const mem = dischargedMembers.find(d => d.id === id);
     if (!mem) return;
+
+    const reinstatedMember = {
+      id: mem.id,
+      name: mem.name,
+      role: mem.role || 'Operations',
+      position: 'Member',
+      college: mem.college || 'Computing & IT',
+      studentId: mem.studentId || '2024101',
+      phone: mem.phone || '+20 100 000 0000',
+      attendanceCount: 0,
+      officialDays: ["Sunday", "Tuesday", "Thursday"],
+      extraDays: [],
+      strikes: 0,
+      score: 90,
+      status: "Active"
+    };
+
     setDischargedMembers(prev => prev.filter(d => d.id !== id));
-    setMembers(prev => [
-      ...prev,
-      {
-        id: mem.id,
-        name: mem.name,
-        role: mem.role || 'Operations',
-        position: 'Member',
-        college: mem.college || 'Computing & IT',
-        studentId: mem.studentId || '2024101',
-        phone: mem.phone || '+20 100 000 0000',
-        attendanceCount: 0,
-        officialDays: ["Sunday", "Tuesday", "Thursday"],
-        extraDays: [],
-        strikes: 0,
-        score: 90,
-        status: "Active"
-      }
-    ]);
+    setMembers(prev => [...prev, reinstatedMember]);
+    broadcastMutation('REINSTATE_MEMBER', { id, reinstatedMember });
+
+    if (supabase) {
+      supabase.from('members').update({
+        status: 'Active',
+        discharge_type: null,
+        discharge_reason: null
+      }).eq('id', id).catch(e => console.warn(e));
+    }
+
     logActivity(`Reinstated member back to active team: ${mem.name}`, "Members");
     showToast(`${mem.name} reinstated back to active team.`);
   };
@@ -761,8 +1412,14 @@ export function AuthProvider({ children }) {
       color: newEvent.color || 'blue'
     };
     setEvents(prev => [...prev, evt]);
+    broadcastMutation('ADD_EVENT', evt);
+
+    if (supabase) {
+      supabase.from('events').insert([evt]).catch(e => console.warn(e));
+    }
+
     logActivity(`Created event: ${evt.title}`, "Events", `${evt.type} on ${evt.date}`);
-    showToast(`Event "${evt.title}" created successfully.`);
+    showToast(`Event "${evt.title}" created & synced.`);
   };
 
   const updateEvent = async (id, updatedFields) => {
@@ -771,6 +1428,12 @@ export function AuthProvider({ children }) {
       return;
     }
     setEvents(prev => prev.map(e => e.id === id ? { ...e, ...updatedFields } : e));
+    broadcastMutation('UPDATE_EVENT', { id, fields: updatedFields });
+
+    if (supabase) {
+      supabase.from('events').update(updatedFields).eq('id', id).catch(e => console.warn(e));
+    }
+
     logActivity(`Updated event: ${updatedFields.title || id}`, "Events");
     showToast("Event updated successfully.");
   };
@@ -782,6 +1445,12 @@ export function AuthProvider({ children }) {
     }
     const evt = events.find(e => e.id === id);
     setEvents(prev => prev.filter(e => e.id !== id));
+    broadcastMutation('DELETE_EVENT', { id });
+
+    if (supabase) {
+      supabase.from('events').delete().eq('id', id).catch(e => console.warn(e));
+    }
+
     logActivity(`Deleted event: ${evt ? evt.title : id}`, "Events");
     showToast("Event removed from logs.");
   };
@@ -801,12 +1470,32 @@ export function AuthProvider({ children }) {
       date: new Date().toISOString().split('T')[0],
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
+
     setMonitoringNotes(prev => [newNote, ...prev]);
+    broadcastMutation('ADD_MONITORING_NOTE', newNote);
+
+    if (supabase) {
+      supabase.from('monitoring_notes').insert([{
+        id: newNote.id,
+        member_id: newNote.memberId,
+        member_name: newNote.memberName,
+        member_role: newNote.memberRole,
+        member_college: newNote.memberCollege,
+        author_name: newNote.authorName,
+        author_role: newNote.authorRole,
+        category: newNote.category,
+        note: newNote.note,
+        date: newNote.date,
+        time: newNote.time
+      }]).catch(e => console.warn(e));
+    }
+
     logActivity(`Logged monitoring note for: ${mem ? mem.name : 'member'}`, "Monitoring", `Category: ${category}`);
-    showToast(`Monitoring note logged for ${mem ? mem.name : 'member'}`);
+    showToast(`Monitoring note logged & synced.`);
   };
 
   const updateMonitoringNote = async (id, updatedFields) => {
+    let finalNote = null;
     setMonitoringNotes(prev => prev.map(n => {
       if (n.id === id) {
         let memberDetails = {};
@@ -820,18 +1509,38 @@ export function AuthProvider({ children }) {
             };
           }
         }
-        return { ...n, ...updatedFields, ...memberDetails };
+        finalNote = { ...n, ...updatedFields, ...memberDetails };
+        return finalNote;
       }
       return n;
     }));
+    broadcastMutation('UPDATE_MONITORING_NOTE', { id, fields: updatedFields });
+
+    if (supabase && finalNote) {
+      supabase.from('monitoring_notes').update({
+        category: finalNote.category,
+        note: finalNote.note,
+        member_id: finalNote.memberId,
+        member_name: finalNote.memberName,
+        member_role: finalNote.memberRole,
+        member_college: finalNote.memberCollege
+      }).eq('id', id).catch(e => console.warn(e));
+    }
+
     logActivity(`Updated monitoring note #${id}`, "Monitoring");
-    showToast("Monitoring note updated.");
+    showToast("Monitoring note updated & synced.");
   };
 
   const deleteMonitoringNote = async (id) => {
     setMonitoringNotes(prev => prev.filter(n => n.id !== id));
+    broadcastMutation('DELETE_MONITORING_NOTE', { id });
+
+    if (supabase) {
+      supabase.from('monitoring_notes').delete().eq('id', id).catch(e => console.warn(e));
+    }
+
     logActivity(`Deleted monitoring note #${id}`, "Monitoring");
-    showToast("Monitoring note deleted.");
+    showToast("Monitoring note deleted & synced.");
   };
 
   const scheduleInterview = async (applicantId, date, time) => {
@@ -906,20 +1615,38 @@ export function AuthProvider({ children }) {
     }
     const newUser = { id: `usr-${Date.now()}`, name, username, password, role };
     setSystemUsers(prev => [...prev, newUser]);
+    broadcastMutation('ADD_SYSTEM_USER', newUser);
+
+    if (supabase) {
+      supabase.from('system_users').insert([newUser]).catch(e => console.warn(e));
+    }
+
     showToast(`New user ${name} (${role}) added to credentials database.`);
   };
 
   const updateSystemUser = async (id, updated) => {
     setSystemUsers(prev => prev.map(u => u.id === id ? { ...u, ...updated } : u));
+    broadcastMutation('UPDATE_SYSTEM_USER', { id, fields: updated });
+
+    if (supabase) {
+      supabase.from('system_users').update(updated).eq('id', id).catch(e => console.warn(e));
+    }
+
     if (currentUser && currentUser.username === updated.username) {
       setCurrentUser(prev => ({ ...prev, name: updated.name, role: updated.role }));
     }
-    showToast(`Credentials updated for ${updated.name}.`);
+    showToast(`Credentials updated & synced for ${updated.name}.`);
   };
 
   const deleteSystemUser = async (id) => {
     setSystemUsers(prev => prev.filter(u => u.id !== id));
-    showToast("User login removed.");
+    broadcastMutation('DELETE_SYSTEM_USER', { id });
+
+    if (supabase) {
+      supabase.from('system_users').delete().eq('id', id).catch(e => console.warn(e));
+    }
+
+    showToast("User login removed across all systems.");
   };
 
   const updateProfile = async (name, username, oldPassword, newPassword, avatar = undefined) => {
@@ -946,8 +1673,15 @@ export function AuthProvider({ children }) {
       avatar: finalAvatar
     }));
 
-    setSystemUsers(prev => prev.map(u => u.username === currentUser.username ? { ...u, name, username, password: newPassword || u.password, avatar: finalAvatar } : u));
-    showToast("Profile updated successfully.");
+    const updatedObj = { name, username, password: newPassword || userRecord.password, avatar: finalAvatar };
+    setSystemUsers(prev => prev.map(u => u.username === currentUser.username ? { ...u, ...updatedObj } : u));
+    broadcastMutation('UPDATE_SYSTEM_USER', { id: userRecord.id, fields: updatedObj });
+
+    if (supabase) {
+      supabase.from('system_users').update(updatedObj).eq('id', userRecord.id).catch(e => console.warn(e));
+    }
+
+    showToast("Profile updated & synced successfully across all devices.");
     return true;
   };
 
@@ -963,6 +1697,8 @@ export function AuthProvider({ children }) {
         switchTab,
         toasts,
         showToast,
+        syncStatus,
+        refreshDataFromCloud,
         systemUsers,
         members,
         dischargedMembers,

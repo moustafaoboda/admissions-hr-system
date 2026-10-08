@@ -24,6 +24,7 @@ import EditDischargedModal from './components/modals/EditDischargedModal';
 import EditMonitoringNoteModal from './components/modals/EditMonitoringNoteModal';
 import EditActivityModal from './components/modals/EditActivityModal';
 import SystemIconModal from './components/modals/SystemIconModal';
+import CloudSyncModal from './components/modals/CloudSyncModal';
 
 // Tabs
 import DashboardTab from './components/tabs/DashboardTab';
@@ -94,6 +95,7 @@ export default function App() {
       <EditMonitoringNoteModal />
       <EditActivityModal />
       <SystemIconModal />
+      <CloudSyncModal />
     </div>
   );
 }
