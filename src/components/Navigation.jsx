@@ -7,6 +7,7 @@ export default function Navigation() {
   if (!currentUser) return null;
 
   const isHRMember = currentUser.role === "HR";
+  const isDean = currentUser.role === "Admission's Dean";
   const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
 
   return (
@@ -44,17 +45,19 @@ export default function Navigation() {
           </button>
         )}
 
-        <button
-          onClick={() => switchTab('monitoring')}
-          className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'monitoring' ? 'active' : ''
-          }`}
-        >
-          <i className="fa-solid fa-clipboard-check text-[#c59b27]"></i>
-          <span>Monitoring</span>
-        </button>
+        {!isDean && (
+          <button
+            onClick={() => switchTab('monitoring')}
+            className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'monitoring' ? 'active' : ''
+            }`}
+          >
+            <i className="fa-solid fa-clipboard-check text-[#c59b27]"></i>
+            <span>Monitoring</span>
+          </button>
+        )}
 
-        {!isHRMember && (
+        {!isHRMember && !isDean && (
           <button
             onClick={() => switchTab('copilot')}
             className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${

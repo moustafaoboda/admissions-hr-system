@@ -401,6 +401,9 @@ export function AuthProvider({ children }) {
         role: user.role
       };
       setCurrentUser(userObj);
+      if (userObj.role === "Admission's Dean" || userObj.role === "HR") {
+        setActiveTab("dashboard");
+      }
       setActiveModal(null);
       showToast(`Welcome back, ${userObj.name} (${userObj.role})`);
       return true;
@@ -419,6 +422,10 @@ export function AuthProvider({ children }) {
   const switchTab = (tabId) => {
     if (currentUser?.role === "HR" && !["dashboard", "directory", "monitoring"].includes(tabId)) {
       showToast("HR Members have access to Dashboard, Team Members, and Monitoring only.", "warning");
+      return;
+    }
+    if (currentUser?.role === "Admission's Dean" && !["dashboard", "directory", "attendance"].includes(tabId)) {
+      showToast("Dean access is limited to Dashboard, Team Members, and Attendance only.", "warning");
       return;
     }
     if (currentUser?.role === "Admission's Dean" && tabId === "activityLog") {
@@ -589,6 +596,10 @@ export function AuthProvider({ children }) {
   };
 
   const submitWarning = async (memberId, level, reason) => {
+    if (currentUser?.role === "Admission's Dean") {
+      showToast("Dean profile has read-only access.", "warning");
+      return;
+    }
     const mem = members.find(m => m.id === memberId);
     if (!mem) return;
 
@@ -634,6 +645,10 @@ export function AuthProvider({ children }) {
   };
 
   const approveWarningRequest = async (warningId) => {
+    if (currentUser?.role !== "HR Head" && currentUser?.role !== "HR Vice Head") {
+      showToast("Only HR Leadership can approve warnings.", "warning");
+      return;
+    }
     const wrn = warnings.find(w => w.id === warningId);
     if (!wrn) return;
 
@@ -649,6 +664,10 @@ export function AuthProvider({ children }) {
   };
 
   const dismissWarning = async (warningId) => {
+    if (currentUser?.role !== "HR Head" && currentUser?.role !== "HR Vice Head") {
+      showToast("Only HR Leadership can remove warnings.", "warning");
+      return;
+    }
     const wrn = warnings.find(w => w.id === warningId);
     setWarnings(prev => prev.filter(w => w.id !== warningId));
     logActivity(`Dismissed warning for: ${wrn ? wrn.memberName : warningId}`, "Warnings");
@@ -656,6 +675,10 @@ export function AuthProvider({ children }) {
   };
 
   const updateWarning = async (id, updatedFields) => {
+    if (currentUser?.role !== "HR Head" && currentUser?.role !== "HR Vice Head") {
+      showToast("Only HR Leadership can edit warnings.", "warning");
+      return;
+    }
     setWarnings(prev => prev.map(w => w.id === id ? { ...w, ...updatedFields } : w));
     logActivity(`Updated warning details #${id}`, "Warnings");
     showToast("Warning details updated successfully.");
@@ -694,6 +717,10 @@ export function AuthProvider({ children }) {
   };
 
   const addEvent = async (newEvent) => {
+    if (currentUser?.role !== "HR Head" && currentUser?.role !== "HR Vice Head") {
+      showToast("Only HR Leadership can create events.", "warning");
+      return;
+    }
     const evt = {
       id: `evt-${Date.now()}`,
       title: newEvent.title,
@@ -710,12 +737,20 @@ export function AuthProvider({ children }) {
   };
 
   const updateEvent = async (id, updatedFields) => {
+    if (currentUser?.role !== "HR Head" && currentUser?.role !== "HR Vice Head") {
+      showToast("Only HR Leadership can edit events.", "warning");
+      return;
+    }
     setEvents(prev => prev.map(e => e.id === id ? { ...e, ...updatedFields } : e));
     logActivity(`Updated event: ${updatedFields.title || id}`, "Events");
     showToast("Event updated successfully.");
   };
 
   const deleteEvent = async (id) => {
+    if (currentUser?.role !== "HR Head" && currentUser?.role !== "HR Vice Head") {
+      showToast("Only HR Leadership can remove events.", "warning");
+      return;
+    }
     const evt = events.find(e => e.id === id);
     setEvents(prev => prev.filter(e => e.id !== id));
     logActivity(`Deleted event: ${evt ? evt.title : id}`, "Events");

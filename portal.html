@@ -875,7 +875,7 @@
         <div class="text-xs font-semibold text-slate-600">
           Total Warnings: <span id="warningsListModalCount" class="font-extrabold text-[#002244]">0</span>
         </div>
-        <button onclick="openModal('warningModal')" class="px-3 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center gap-1.5 transition shadow-sm">
+        <button id="warningsListModalIssueBtn" onclick="openModal('warningModal')" class="px-3 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center gap-1.5 transition shadow-sm">
           <i class="fa-solid fa-plus text-xs"></i>
           <span>Issue Warning</span>
         </button>
@@ -2380,10 +2380,13 @@
       const tabActivityLog = document.getElementById("tabBtn-activityLog");
 
       if (tabDirectory) tabDirectory.style.display = "flex";
-      if (tabMonitoring) tabMonitoring.style.display = "flex";
+      if (tabMonitoring) tabMonitoring.style.display = (isHRMember || isHeadOrVice) && !isDean ? "flex" : "none";
       if (tabAttendance) tabAttendance.style.display = isHRMember ? "none" : "flex";
-      if (tabCopilot) tabCopilot.style.display = isHRMember ? "none" : "flex";
+      if (tabCopilot) tabCopilot.style.display = (isHRMember || isDean) ? "none" : "flex";
       if (tabActivityLog) tabActivityLog.style.display = isHeadOrVice ? "flex" : "none";
+
+      const warnModalIssueBtn = document.getElementById("warningsListModalIssueBtn");
+      if (warnModalIssueBtn) warnModalIssueBtn.style.display = isHeadOrVice ? "inline-flex" : "none";
 
       const noteAuthorEl = document.getElementById("monitoringAuthorNamePreview");
       if (noteAuthorEl) noteAuthorEl.textContent = currentUser.name;
@@ -2399,12 +2402,28 @@
         }
       }
 
+      if (isDean) {
+        const currentActive = document.querySelector(".tab-content.active");
+        if (currentActive && ["tab-monitoring", "tab-copilot", "tab-activityLog"].includes(currentActive.id)) {
+          switchTab("dashboard");
+        }
+      } else if (isHRMember) {
+        const currentActive = document.querySelector(".tab-content.active");
+        if (currentActive && ["tab-attendance", "tab-copilot", "tab-activityLog"].includes(currentActive.id)) {
+          switchTab("dashboard");
+        }
+      }
+
       renderAllViews();
     }
 
     function switchTab(tabId) {
       if (currentUser.role === "HR" && !["dashboard", "directory", "monitoring"].includes(tabId)) {
         showToast("HR Members have access to Dashboard, Team Members, and Monitoring only.", "warning");
+        return;
+      }
+      if (currentUser.role === "Admission's Dean" && !["dashboard", "directory", "attendance"].includes(tabId)) {
+        showToast("Dean access is limited to Dashboard, Team Members, and Attendance only.", "warning");
         return;
       }
       if (currentUser.role === "Admission's Dean" && tabId === "activityLog") {
@@ -2549,10 +2568,10 @@
             <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${m.college}</td>
             <td class="py-3 px-4 font-mono text-slate-700 whitespace-nowrap">${m.studentId || '2024000'}</td>
             <td class="py-3 px-4 font-medium text-slate-700 whitespace-nowrap">${m.phone || '-'}</td>
-            <td class="py-3 px-4 text-center whitespace-nowrap">${isHeadOrVice ? `<span class="bg-blue-50 border border-blue-200 text-blue-800 font-extrabold px-2.5 py-0.5 rounded-lg">${m.attendanceCount} Sessions</span>` : `<span class="text-slate-400 italic text-[11px] font-medium"><i class="fa-solid fa-lock text-[10px] mr-1"></i>Restricted</span>`}</td>
-            <td class="py-3 px-4 text-center whitespace-nowrap">${isHeadOrVice ? `<span class="font-bold ${rate >= 90 ? 'text-emerald-700' : 'text-blue-700'}">${rate}%</span>` : `<span class="text-slate-400 italic text-[11px] font-medium"><i class="fa-solid fa-lock text-[10px] mr-1"></i>Restricted</span>`}</td>
+            <td class="py-3 px-4 text-center whitespace-nowrap">${(isHeadOrVice || isDean) ? `<span class="bg-blue-50 border border-blue-200 text-blue-800 font-extrabold px-2.5 py-0.5 rounded-lg">${m.attendanceCount} Sessions</span>` : `<span class="text-slate-400 italic text-[11px] font-medium"><i class="fa-solid fa-lock text-[10px] mr-1"></i>Restricted</span>`}</td>
+            <td class="py-3 px-4 text-center whitespace-nowrap">${(isHeadOrVice || isDean) ? `<span class="font-bold ${rate >= 90 ? 'text-emerald-700' : 'text-blue-700'}">${rate}%</span>` : `<span class="text-slate-400 italic text-[11px] font-medium"><i class="fa-solid fa-lock text-[10px] mr-1"></i>Restricted</span>`}</td>
             <td class="py-3 px-4 whitespace-nowrap"><div class="flex items-center flex-wrap gap-1">${daysBadges} ${extraDaysCtrl}</div></td>
-            <td class="py-3 px-4 text-center whitespace-nowrap">${isHeadOrVice ? `<span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'}">${m.strikes}</span>` : `<span class="text-slate-400 italic text-[11px] font-medium"><i class="fa-solid fa-lock text-[10px] mr-1"></i>Restricted</span>`}</td>
+            <td class="py-3 px-4 text-center whitespace-nowrap">${(isHeadOrVice || isDean) ? `<span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'}">${m.strikes}</span>` : `<span class="text-slate-400 italic text-[11px] font-medium"><i class="fa-solid fa-lock text-[10px] mr-1"></i>Restricted</span>`}</td>
             <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-slate-700">${m.score}/100</td>
             <td class="py-3 px-4 text-right whitespace-nowrap space-x-1">
               ${!isDean ? `
@@ -3123,7 +3142,7 @@
             <div class="flex items-center gap-2">
               ${isHeadOrVice && w.status === 'Pending HR Approval' ? `<button onclick="approveWarningRequest('${w.id}')" class="px-2 py-1 bg-emerald-600 text-white font-bold text-[10px] rounded">Approve</button>` : ''}
               ${isHeadOrVice ? `<button onclick="openEditWarningModal('${w.id}')" class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 font-bold text-[10px] rounded flex items-center gap-1"><i class="fa-solid fa-pen-to-square text-[10px]"></i><span>Edit</span></button>` : ''}
-              <button onclick="dismissWarning('${w.id}')" class="px-2 py-1 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-700 font-bold text-[10px] rounded flex items-center gap-1"><i class="fa-solid fa-trash-can text-[10px]"></i><span>Remove</span></button>
+              ${isHeadOrVice ? `<button onclick="dismissWarning('${w.id}')" class="px-2 py-1 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-700 font-bold text-[10px] rounded flex items-center gap-1"><i class="fa-solid fa-trash-can text-[10px]"></i><span>Remove</span></button>` : ''}
             </div>
           </div>
         </div>
@@ -3135,6 +3154,7 @@
       if (!container) return;
       const kpiEl = document.getElementById("kpiEventsCount");
       if (kpiEl) kpiEl.textContent = events.length;
+      const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
 
       if (events.length === 0) {
         container.innerHTML = `<div class="p-6 text-center text-slate-400">No events logged. Click "Add Event" to create one.</div>`;
@@ -3168,9 +3188,11 @@
               </span>
               <div class="flex items-center gap-1.5">
                 <span class="${badgeClasses} px-2 py-0.5 rounded text-[10px]">${evt.status}</span>
+                ${isHeadOrVice ? `
                 <button onclick="openEditEventModal('${evt.id}')" class="p-1 bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 text-[10px] shadow-sm transition" title="Edit Event">
                   <i class="fa-solid fa-pen-to-square"></i>
                 </button>
+                ` : ''}
               </div>
             </div>
             <p class="text-[11px] text-slate-600 mt-1">${evt.description || 'No description added.'}</p>
@@ -3211,6 +3233,10 @@
     }
 
     function openEditEventModal(id) {
+      if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") {
+        showToast("Only HR Leadership can edit events.", "warning");
+        return;
+      }
       const evt = events.find(e => e.id === id);
       if (!evt) return;
       document.getElementById("editEventTargetId").value = evt.id;
@@ -3227,6 +3253,10 @@
 
     function handleUpdateEvent(e) {
       e.preventDefault();
+      if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") {
+        showToast("Only HR Leadership can edit events.", "warning");
+        return;
+      }
       const id = document.getElementById("editEventTargetId").value;
       const evt = events.find(e => e.id === id);
       if (!evt) return;
@@ -3245,6 +3275,10 @@
     }
 
     function deleteCurrentEvent() {
+      if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") {
+        showToast("Only HR Leadership can remove events.", "warning");
+        return;
+      }
       const id = document.getElementById("editEventTargetId").value;
       const evt = events.find(e => e.id === id);
       if (evt && confirm(`Delete event "${evt.title}"?`)) {
@@ -3256,6 +3290,10 @@
     }
 
     function openEditWarningModal(id) {
+      if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") {
+        showToast("Only HR Leadership can edit warnings.", "warning");
+        return;
+      }
       const wrn = warnings.find(w => w.id === id);
       if (!wrn) return;
       document.getElementById("editWarningTargetId").value = wrn.id;
@@ -3269,6 +3307,10 @@
 
     function handleUpdateWarning(e) {
       e.preventDefault();
+      if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") {
+        showToast("Only HR Leadership can edit warnings.", "warning");
+        return;
+      }
       const id = document.getElementById("editWarningTargetId").value;
       const wrn = warnings.find(w => w.id === id);
       if (!wrn) return;
@@ -3282,6 +3324,10 @@
     }
 
     function deleteCurrentWarning() {
+      if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") {
+        showToast("Only HR Leadership can dismiss warnings.", "warning");
+        return;
+      }
       const id = document.getElementById("editWarningTargetId").value;
       if (confirm("Dismiss this warning record?")) {
         warnings = warnings.filter(w => w.id !== id);
@@ -3344,9 +3390,9 @@
 
     function openWarningModal(mode = "issue") { const sel = document.getElementById("warningMemberSelect"); const activeM = members.filter(m => m.status !== "Discharged"); sel.innerHTML = activeM.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join(""); openModal("warningModal"); }
     function quickIssueWarningForMember(memberId) { openWarningModal(); document.getElementById("warningMemberSelect").value = memberId; }
-    function handleWarningSubmit(e) { e.preventDefault(); const mem = members.find(m => m.id === document.getElementById("warningMemberSelect").value); if (!mem) return; const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head"; if (isLeadership) { mem.strikes += 1; mem.score = Math.max(50, mem.score - 8); warnings.unshift({ id: `wrn-${Date.now()}`, memberId: mem.id, memberName: mem.name, level: document.getElementById("warningLevelSelect").value, reason: document.getElementById("warningReasonText").value.trim(), reportedBy: `${currentUser.name} (${currentUser.role})`, date: new Date().toISOString().split("T")[0], status: "Confirmed Strike" }); showToast(`Warning recorded for ${mem.name}.`); } else { warnings.unshift({ id: `wrn-${Date.now()}`, memberId: mem.id, memberName: mem.name, level: document.getElementById("warningLevelSelect").value, reason: document.getElementById("warningReasonText").value.trim(), reportedBy: `${currentUser.name} (HR Request)`, date: new Date().toISOString().split("T")[0], status: "Pending HR Approval" }); showToast(`Warning request submitted.`); } closeModal("warningModal"); document.getElementById("warningForm").reset(); renderAllViews(); }
-    function approveWarningRequest(wId) { const wrn = warnings.find(w => w.id === wId); if (wrn) { const mem = members.find(m => m.id === wrn.memberId); if (mem) { mem.strikes += 1; mem.score = Math.max(50, mem.score - 8); } wrn.status = "Confirmed Strike"; showToast(`Warning approved.`); renderAllViews(); } }
-    function dismissWarning(wId) { warnings = warnings.filter(w => w.id !== wId); showToast("Warning dismissed."); renderAllViews(); }
+    function handleWarningSubmit(e) { e.preventDefault(); if (currentUser.role === "Admission's Dean") { showToast("Dean profile has read-only access.", "warning"); return; } const mem = members.find(m => m.id === document.getElementById("warningMemberSelect").value); if (!mem) return; const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head"; if (isLeadership) { mem.strikes += 1; mem.score = Math.max(50, mem.score - 8); warnings.unshift({ id: `wrn-${Date.now()}`, memberId: mem.id, memberName: mem.name, level: document.getElementById("warningLevelSelect").value, reason: document.getElementById("warningReasonText").value.trim(), reportedBy: `${currentUser.name} (${currentUser.role})`, date: new Date().toISOString().split("T")[0], status: "Confirmed Strike" }); showToast(`Warning recorded for ${mem.name}.`); } else { warnings.unshift({ id: `wrn-${Date.now()}`, memberId: mem.id, memberName: mem.name, level: document.getElementById("warningLevelSelect").value, reason: document.getElementById("warningReasonText").value.trim(), reportedBy: `${currentUser.name} (HR Request)`, date: new Date().toISOString().split("T")[0], status: "Pending HR Approval" }); showToast(`Warning request submitted.`); } closeModal("warningModal"); document.getElementById("warningForm").reset(); renderAllViews(); }
+    function approveWarningRequest(wId) { if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") { showToast("Only HR Leadership can approve warnings.", "warning"); return; } const wrn = warnings.find(w => w.id === wId); if (wrn) { const mem = members.find(m => m.id === wrn.memberId); if (mem) { mem.strikes += 1; mem.score = Math.max(50, mem.score - 8); } wrn.status = "Confirmed Strike"; showToast(`Warning approved.`); renderAllViews(); } }
+    function dismissWarning(wId) { if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") { showToast("Only HR Leadership can dismiss warnings.", "warning"); return; } warnings = warnings.filter(w => w.id !== wId); showToast("Warning dismissed."); renderAllViews(); }
 
     function openAddStarModal() { const activeM = members.filter(m => m.status !== "Discharged"); document.getElementById("starMemberSelect").innerHTML = activeM.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join(""); openModal("addStarModal"); }
     function handleSaveStarAmbassador(e) { e.preventDefault(); const mem = members.find(m => m.id === document.getElementById("starMemberSelect").value); if (!mem) return; starAmbassadors.unshift({ id: `star-${Date.now()}`, memberId: mem.id, name: mem.name, role: mem.role, college: mem.college, awardTitle: document.getElementById("starAwardTitle").value.trim(), citation: document.getElementById("starCitation").value.trim() }); closeModal("addStarModal"); document.getElementById("addStarForm").reset(); showToast(`Star Ambassador granted.`); renderStarAmbassadors(); }

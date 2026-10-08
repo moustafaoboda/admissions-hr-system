@@ -18,6 +18,7 @@ export default function WarningsListModal() {
 
   const isViceHead = currentUser?.role === "HR Vice Head";
   const isHeadOrVice = currentUser?.role === "HR Head" || isViceHead;
+  const isDean = currentUser?.role === "Admission's Dean";
 
   const confirmedWarnings = warnings.filter(w => w.status === 'Confirmed Strike');
   const pendingRequests = warnings.filter(w => w.status === 'Pending HR Approval');
@@ -71,13 +72,15 @@ export default function WarningsListModal() {
             </button>
           </div>
 
-          <button
-            onClick={handleOpenIssueWarning}
-            className="px-3 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center gap-1.5 transition shadow-sm"
-          >
-            <i className="fa-solid fa-plus text-xs"></i>
-            <span>{isHeadOrVice ? 'Issue Warning' : 'Submit Warning Request'}</span>
-          </button>
+          {!isDean && (
+            <button
+              onClick={handleOpenIssueWarning}
+              className="px-3 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center gap-1.5 transition shadow-sm"
+            >
+              <i className="fa-solid fa-plus text-xs"></i>
+              <span>{isHeadOrVice ? 'Issue Warning' : 'Submit Warning Request'}</span>
+            </button>
+          )}
         </div>
 
         {/* Warnings List Content */}
