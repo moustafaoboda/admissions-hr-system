@@ -210,10 +210,8 @@ export default function AttendanceTab() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (window.confirm(`Delete attendance session "${session.title}"?`)) {
-                              deleteAttendanceSession(session.id);
-                              if (selectedSessionId === session.id) setSelectedSessionId(null);
-                            }
+                            deleteAttendanceSession(session.id);
+                            if (selectedSessionId === session.id) setSelectedSessionId(null);
                           }}
                           className="text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded"
                           title="Delete Session"

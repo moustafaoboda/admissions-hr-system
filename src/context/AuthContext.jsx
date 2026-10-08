@@ -636,6 +636,13 @@ export function AuthProvider({ children }) {
         setMembers(prev => prev.some(m => m.id === payload.reinstatedMember.id) ? prev : [...prev, payload.reinstatedMember]);
         break;
 
+      case 'DELETE_DISCHARGED_MEMBER':
+        if (payload.id) addDeletedId("members", payload.id);
+        if (payload.studentId) addDeletedId("members", payload.studentId);
+        if (payload.name) addDeletedId("members", payload.name.toLowerCase().trim());
+        setDischargedMembers(prev => prev.filter(d => d.id !== payload.id && (!payload.name || d.name.toLowerCase().trim() !== String(payload.name).toLowerCase().trim())));
+        break;
+
       case 'ADD_STAR':
         if (payload.id) removeDeletedId('stars', payload.id);
         if (payload.memberId) removeDeletedId('stars', payload.memberId);
@@ -1926,6 +1933,24 @@ export function AuthProvider({ children }) {
     showToast(`${mem.name} reinstated back to active team.`);
   };
 
+  const deleteDischargedMember = (id) => {
+    const mem = dischargedMembers.find(d => d.id === id);
+    if (id) addDeletedId("members", id);
+    if (mem?.studentId) addDeletedId("members", mem.studentId);
+    if (mem?.name) addDeletedId("members", mem.name.toLowerCase().trim());
+
+    setDischargedMembers(prev => prev.filter(d => d.id !== id));
+    broadcastMutation('DELETE_DISCHARGED_MEMBER', { id, studentId: mem?.studentId, name: mem?.name });
+
+    if (supabase) {
+      supabase.from('members').delete().eq('id', id).catch(err => console.warn('Supabase delete discharged member error:', err));
+      if (mem?.studentId) supabase.from('members').delete().eq('student_id', mem.studentId).catch(() => {});
+    }
+
+    logActivity(`Permanently deleted discharged record: ${mem?.name || 'Member'}`, "Members");
+    showToast(`Discharged record for ${mem?.name || ''} permanently deleted.`);
+  };
+
   const addEvent = async (newEvent) => {
     if (currentUser?.role !== "HR Head" && currentUser?.role !== "HR Vice Head") {
       showToast("Only HR Leadership can create events.", "warning");
@@ -2267,6 +2292,7 @@ export function AuthProvider({ children }) {
         updateMemberPerformance,
         updateDischargedMember,
         reinstateMember,
+        deleteDischargedMember,
         addStarAmbassador,
         removeStarAmbassador,
         createAttendanceSession,

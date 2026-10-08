@@ -9,7 +9,8 @@ export default function EditDischargedModal() {
     setActiveModal,
     dischargedMembers,
     updateDischargedMember,
-    reinstateMember
+    reinstateMember,
+    deleteDischargedMember
   } = useAuth();
 
   const [name, setName] = useState('');
@@ -44,10 +45,13 @@ export default function EditDischargedModal() {
   };
 
   const handleReinstate = () => {
-    if (window.confirm(`Reinstate ${name} back to the active team directory?`)) {
-      reinstateMember(dischargedId);
-      setActiveModal(null);
-    }
+    reinstateMember(dischargedId);
+    setActiveModal(null);
+  };
+
+  const handleDeleteDischarged = () => {
+    deleteDischargedMember(dischargedId);
+    setActiveModal(null);
   };
 
   return (
@@ -115,14 +119,26 @@ export default function EditDischargedModal() {
           </div>
 
           <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={handleReinstate}
-              className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg font-bold transition flex items-center gap-1.5 border border-emerald-300"
-            >
-              <i className="fa-solid fa-user-plus text-emerald-600"></i>
-              <span>Reinstate to Active</span>
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleReinstate}
+                className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg font-bold transition flex items-center gap-1.5 border border-emerald-300"
+                title="Reinstate to Active Directory"
+              >
+                <i className="fa-solid fa-user-plus text-emerald-600"></i>
+                <span>Reinstate</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteDischarged}
+                className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg font-bold transition flex items-center gap-1.5 border border-rose-300"
+                title="Permanently Delete Discharged Record"
+              >
+                <i className="fa-solid fa-trash-can text-rose-600"></i>
+                <span>Delete</span>
+              </button>
+            </div>
 
             <div className="flex gap-2">
               <button

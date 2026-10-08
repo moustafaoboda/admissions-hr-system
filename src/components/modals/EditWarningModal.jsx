@@ -43,10 +43,8 @@ export default function EditWarningModal() {
   };
 
   const handleDelete = () => {
-    if (window.confirm(`Delete warning record for ${memberName}?`)) {
-      dismissWarning(warningId);
-      setActiveModal('warningsListModal');
-    }
+    dismissWarning(warningId);
+    setActiveModal('warningsListModal');
   };
 
   return (

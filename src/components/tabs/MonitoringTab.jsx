@@ -57,9 +57,7 @@ export default function MonitoringTab() {
   };
 
   const handleDeleteNote = (noteId) => {
-    if (window.confirm("Permanently delete this monitoring note?")) {
-      deleteMonitoringNote(noteId);
-    }
+    deleteMonitoringNote(noteId);
   };
 
   // Filtered Notes
@@ -330,11 +328,7 @@ export default function MonitoringTab() {
                               <span className="hidden sm:inline">Edit</span>
                             </button>
                             <button
-                              onClick={() => {
-                                if (window.confirm("Delete this monitoring note permanently?")) {
-                                  deleteMonitoringNote(n.id);
-                                }
-                              }}
+                              onClick={() => deleteMonitoringNote(n.id)}
                               className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded font-bold text-[11px] inline-flex items-center gap-1 transition"
                               title="Remove Note"
                             >

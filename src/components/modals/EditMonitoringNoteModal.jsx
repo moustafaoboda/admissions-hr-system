@@ -45,10 +45,8 @@ export default function EditMonitoringNoteModal() {
   };
 
   const handleDelete = () => {
-    if (window.confirm("Permanently delete this monitoring note?")) {
-      deleteMonitoringNote(noteId);
-      setActiveModal(null);
-    }
+    deleteMonitoringNote(noteId);
+    setActiveModal(null);
   };
 
   return (

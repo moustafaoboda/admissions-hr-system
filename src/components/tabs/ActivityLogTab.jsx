@@ -227,11 +227,7 @@ export default function ActivityLogTab() {
                   <span>Edit</span>
                 </button>
                 <button
-                  onClick={() => {
-                    if (window.confirm("Delete this activity log entry?")) {
-                      deleteActivityLog(log.id);
-                    }
-                  }}
+                  onClick={() => deleteActivityLog(log.id)}
                   className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded font-bold text-xs inline-flex items-center gap-1 transition"
                   title="Remove Activity Log"
                 >

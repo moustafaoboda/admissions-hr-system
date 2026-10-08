@@ -10,6 +10,7 @@ export default function DirectoryTab() {
     updateMemberPerformance,
     updateExtraDaysCount,
     deleteMember,
+    deleteDischargedMember,
     setActiveModal,
     setModalExtraData,
     switchTab,
@@ -382,16 +383,23 @@ export default function DirectoryTab() {
                       <td className="py-2 px-3 text-slate-500">{d.date}</td>
                       <td className="py-2 px-3 text-slate-600 max-w-xs truncate" title={d.dischargeReason}>{d.dischargeReason}</td>
                       {isHeadOrVice && (
-                        <td className="py-2 px-3 text-right space-x-1">
+                        <td className="py-2 px-3 text-right space-x-1 whitespace-nowrap">
                           <button
                             onClick={() => {
                               setModalExtraData({ dischargedId: d.id });
                               setActiveModal('editDischarged');
                             }}
-                            className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[10px]"
+                            className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[10px] transition"
                             title="Edit Record / Reinstate"
                           >
                             <i className="fa-solid fa-pen-to-square"></i>
+                          </button>
+                          <button
+                            onClick={() => deleteDischargedMember(d.id)}
+                            className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded font-bold text-[10px] transition"
+                            title="Permanently Delete Discharged Record"
+                          >
+                            <i className="fa-solid fa-trash-can"></i>
                           </button>
                         </td>
                       )}

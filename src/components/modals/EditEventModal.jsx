@@ -49,10 +49,8 @@ export default function EditEventModal() {
   };
 
   const handleDelete = () => {
-    if (window.confirm(`Are you sure you want to delete event "${title}"?`)) {
-      deleteEvent(eventId);
-      setActiveModal(null);
-    }
+    deleteEvent(eventId);
+    setActiveModal(null);
   };
 
   return (

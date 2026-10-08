@@ -94,9 +94,7 @@ export default function CloudSyncModal() {
   };
 
   const handleDisconnect = () => {
-    if (window.confirm('Are you sure you want to disconnect from this Supabase database? System will revert to local offline mode.')) {
-      clearSupabaseConfig();
-    }
+    clearSupabaseConfig();
   };
 
   const handleFixUrl = () => {

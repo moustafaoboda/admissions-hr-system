@@ -43,10 +43,8 @@ export default function EditActivityModal() {
   };
 
   const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete this activity log entry?")) {
-      deleteActivityLog(targetLog.id);
-      setActiveModal(null);
-    }
+    deleteActivityLog(targetLog.id);
+    setActiveModal(null);
   };
 
   return (

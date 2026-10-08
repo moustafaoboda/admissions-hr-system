@@ -1674,7 +1674,10 @@
           <textarea id="editDischargedReason" rows="3" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg"></textarea>
         </div>
         <div class="flex items-center justify-between pt-3 border-t border-slate-100">
-          <button type="button" onclick="reinstateCurrentDischargedMember()" class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg font-bold flex items-center gap-1.5"><i class="fa-solid fa-user-plus text-emerald-600"></i><span>Reinstate to Active</span></button>
+          <div class="flex gap-2">
+            <button type="button" onclick="reinstateCurrentDischargedMember()" class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg font-bold flex items-center gap-1.5"><i class="fa-solid fa-user-plus text-emerald-600"></i><span>Reinstate</span></button>
+            <button type="button" onclick="deleteCurrentDischargedMember()" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-lg font-bold flex items-center gap-1.5"><i class="fa-solid fa-trash-can text-rose-600"></i><span>Delete</span></button>
+          </div>
           <div class="flex gap-2">
             <button type="button" onclick="closeModal('editDischargedModal')" class="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold">Cancel</button>
             <button type="submit" class="px-4 py-2 bg-[#002244] text-[#c59b27] font-bold rounded-lg shadow">Save Log</button>
@@ -2157,12 +2160,10 @@
 
     function deleteCurrentActivityLog() {
       const id = document.getElementById("editActivityTargetId").value;
-      if (confirm("Delete this activity log entry?")) {
-        activityLogs = activityLogs.filter(a => a.id !== id);
-        closeModal("editActivityModal");
-        showToast("Activity log entry deleted.");
-        renderActivityLogs();
-      }
+      activityLogs = activityLogs.filter(a => a.id !== id);
+      closeModal("editActivityModal");
+      showToast("Activity log entry deleted.");
+      renderActivityLogs();
     }
 
     function getMemberAvatarMarkup(memberOrIdOrName, sizeClass = "w-8 h-8 text-xs", extraClasses = "") {
@@ -2206,11 +2207,9 @@
     }
 
     function deleteActivityLog(id) {
-      if (confirm("Delete this activity log entry?")) {
-        activityLogs = activityLogs.filter(a => a.id !== id);
-        showToast("Activity log entry deleted.");
-        renderActivityLogs();
-      }
+      activityLogs = activityLogs.filter(a => a.id !== id);
+      showToast("Activity log entry deleted.");
+      renderActivityLogs();
     }
 
     function renderActivityLogs() {
@@ -2679,24 +2678,20 @@
 
     function deleteCurrentMonitoringNote() {
       const id = document.getElementById("editNoteTargetId").value;
-      if (confirm("Delete this monitoring note permanently?")) {
-        addDeletedId("notes", id);
-        monitoringNotes = monitoringNotes.filter(n => n.id !== id);
-        saveAllState();
-        closeModal("editMonitoringNoteModal");
-        showToast("Monitoring note deleted.");
-        renderMonitoringNotes();
-      }
+      addDeletedId("notes", id);
+      monitoringNotes = monitoringNotes.filter(n => n.id !== id);
+      saveAllState();
+      closeModal("editMonitoringNoteModal");
+      showToast("Monitoring note deleted.");
+      renderMonitoringNotes();
     }
 
     function deleteMonitoringNote(id) {
-      if (confirm("Delete this monitoring note permanently?")) {
-        addDeletedId("notes", id);
-        monitoringNotes = monitoringNotes.filter(n => n.id !== id);
-        saveAllState();
-        showToast("Monitoring note deleted.");
-        renderMonitoringNotes();
-      }
+      addDeletedId("notes", id);
+      monitoringNotes = monitoringNotes.filter(n => n.id !== id);
+      saveAllState();
+      showToast("Monitoring note deleted.");
+      renderMonitoringNotes();
     }
 
     function showToast(message, type = "success") {
@@ -3140,7 +3135,10 @@
           <td class="py-2.5 px-3 text-slate-600 italic max-w-xs truncate">${d.dischargeReason}</td>
           <td class="py-2.5 px-3 text-slate-500 font-mono whitespace-nowrap">${d.date}</td>
           <td class="py-2.5 px-3 text-right whitespace-nowrap">
-            ${isLeadership ? `<button onclick="openEditDischargedModal('${d.id}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[10px] inline-flex items-center gap-1 transition"><i class="fa-solid fa-pen-to-square text-[10px]"></i><span>Edit Record</span></button>` : '-'}
+            ${isLeadership ? `
+              <button onclick="openEditDischargedModal('${d.id}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[10px] inline-flex items-center gap-1 transition"><i class="fa-solid fa-pen-to-square text-[10px]"></i><span>Edit</span></button>
+              <button onclick="deleteDischargedMember('${d.id}')" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded font-bold text-[10px] inline-flex items-center gap-1 transition ml-1"><i class="fa-solid fa-trash-can text-[10px]"></i><span>Delete</span></button>
+            ` : '-'}
           </td>
         </tr>
       `).join("");
@@ -3436,15 +3434,13 @@
     function deleteAttendanceSession(sId) {
       const s = attendanceSessions.find(x => x.id === sId);
       if (!s) return;
-      if (confirm(`Delete attendance session "${s.title}"?`)) {
-        addDeletedId("sessions", sId);
-        attendanceSessions = attendanceSessions.filter(x => x.id !== sId);
-        saveAllState();
-        logActivity(`Deleted attendance session: ${s.title}`, "Attendance", `${s.dayName}, ${s.date}`);
-        showToast("Attendance session deleted.");
-        document.getElementById("attendanceInspectorBox")?.classList.add("hidden");
-        renderAllViews();
-      }
+      addDeletedId("sessions", sId);
+      attendanceSessions = attendanceSessions.filter(x => x.id !== sId);
+      saveAllState();
+      logActivity(`Deleted attendance session: ${s.title}`, "Attendance", `${s.dayName}, ${s.date}`);
+      showToast("Attendance session deleted.");
+      document.getElementById("attendanceInspectorBox")?.classList.add("hidden");
+      renderAllViews();
     }
 
     let currentEditingSessionId = null;
@@ -3851,7 +3847,7 @@
       }
       const id = document.getElementById("editEventTargetId").value;
       const evt = events.find(e => e.id === id);
-      if (evt && confirm(`Delete event "${evt.title}"?`)) {
+      if (evt) {
         addDeletedId("events", id);
         events = events.filter(e => e.id !== id);
         saveAllState();
@@ -3904,14 +3900,12 @@
         return;
       }
       const id = document.getElementById("editWarningTargetId").value;
-      if (confirm("Dismiss this warning record?")) {
-        addDeletedId("warnings", id);
-        warnings = warnings.filter(w => w.id !== id);
-        saveAllState();
-        closeModal("editWarningModal");
-        showToast("Warning dismissed.");
-        renderAllViews();
-      }
+      addDeletedId("warnings", id);
+      warnings = warnings.filter(w => w.id !== id);
+      saveAllState();
+      closeModal("editWarningModal");
+      showToast("Warning dismissed.");
+      renderAllViews();
     }
 
     function openEditDischargedModal(id) {
@@ -3944,27 +3938,47 @@
       const id = document.getElementById("editDischargedTargetId").value;
       const d = dischargedMembers.find(m => m.id === id);
       if (!d) return;
-      if (confirm(`Reinstate ${d.name} back to active team?`)) {
-        dischargedMembers = dischargedMembers.filter(m => m.id !== id);
-        members.push({
-          id: d.id,
-          name: d.name,
-          role: d.role,
-          position: "Member",
-          college: d.college,
-          studentId: d.studentId || "2024101",
-          phone: d.phone || "+20 100 000 0000",
-          attendanceCount: 0,
-          officialDays: ["Sunday", "Tuesday", "Thursday"],
-          extraDays: [],
-          strikes: 0,
-          score: 90,
-          status: "Active"
-        });
-        closeModal("editDischargedModal");
-        showToast(`${d.name} reinstated to active team!`);
-        renderAllViews();
+      dischargedMembers = dischargedMembers.filter(m => m.id !== id);
+      members.push({
+        id: d.id,
+        name: d.name,
+        role: d.role,
+        position: "Member",
+        college: d.college,
+        studentId: d.studentId || "2024101",
+        phone: d.phone || "+20 100 000 0000",
+        attendanceCount: 0,
+        officialDays: ["Sunday", "Tuesday", "Thursday"],
+        extraDays: [],
+        strikes: 0,
+        score: 90,
+        status: "Active"
+      });
+      saveAllState();
+      closeModal("editDischargedModal");
+      showToast(`${d.name} reinstated to active team!`);
+      renderAllViews();
+    }
+
+    function deleteCurrentDischargedMember() {
+      const id = document.getElementById("editDischargedTargetId").value;
+      deleteDischargedMember(id);
+      closeModal("editDischargedModal");
+    }
+
+    function deleteDischargedMember(id) {
+      if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") {
+        showToast("Only HR Leadership can delete discharged records.", "warning");
+        return;
       }
+      const d = dischargedMembers.find(m => m.id === id);
+      const name = d ? d.name : "Member";
+      addDeletedId("members", id);
+      dischargedMembers = dischargedMembers.filter(m => m.id !== id);
+      members = members.filter(m => m.id !== id);
+      saveAllState();
+      showToast(`${name} permanently deleted.`);
+      renderAllViews();
     }
 
     function openWarningModal(mode = "issue") {
