@@ -164,7 +164,7 @@ export default function DashboardTab() {
                 <div key={star.id} className="bg-gradient-to-br from-amber-50/60 via-white to-amber-50/20 border border-amber-300 rounded-xl p-4 shadow-sm relative group">
                   {isHeadOrVice && (
                     <button
-                      onClick={() => removeStarAmbassador(star.id)}
+                      onClick={() => removeStarAmbassador(star.id, star.memberId, star.name)}
                       title="Remove Star Recognition"
                       className="absolute top-3 right-3 text-slate-400 hover:text-rose-600 transition"
                     >

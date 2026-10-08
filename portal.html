@@ -1790,16 +1790,116 @@
       imageUrl: ""
     };
 
-    let currentUser = null;
+    function loadStoredState(key, fallback) {
+      try {
+        const item = localStorage.getItem(key);
+        if (item !== null && item !== undefined) {
+          const parsed = JSON.parse(item);
+          if (Array.isArray(fallback)) {
+            if (Array.isArray(parsed)) return parsed;
+          } else if (parsed !== null && parsed !== undefined) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.warn(`Error reading ${key} from localStorage:`, e);
+      }
+      return fallback;
+    }
 
-    let systemUsers = [
+    function getDeletedIds(entityKey) {
+      try {
+        const raw = localStorage.getItem(`aastmt_deleted_${entityKey}`);
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function addDeletedId(entityKey, id) {
+      try {
+        if (!id) return;
+        const current = getDeletedIds(entityKey);
+        const strId = String(id).trim();
+        if (!current.includes(strId)) {
+          const updated = [...current, strId];
+          localStorage.setItem(`aastmt_deleted_${entityKey}`, JSON.stringify(updated));
+        }
+      } catch {}
+    }
+
+    function removeDeletedId(entityKey, id) {
+      try {
+        if (!id) return;
+        const current = getDeletedIds(entityKey);
+        const strId = String(id).trim().toLowerCase();
+        const updated = current.filter(x => String(x).toLowerCase().trim() !== strId);
+        localStorage.setItem(`aastmt_deleted_${entityKey}`, JSON.stringify(updated));
+      } catch {}
+    }
+
+    function isStarDeleted(s) {
+      if (!s) return true;
+      const deletedStars = getDeletedIds('stars');
+      if (!deletedStars || deletedStars.length === 0) return false;
+
+      const sId = s.id ? String(s.id).toLowerCase().trim() : '';
+      const mId = (s.memberId || s.member_id) ? String(s.memberId || s.member_id).toLowerCase().trim() : '';
+      const sName = s.name ? String(s.name).toLowerCase().trim() : '';
+
+      return deletedStars.some(del => {
+        const d = String(del).toLowerCase().trim();
+        return (sId && d === sId) || (mId && d === mId) || (sName && d === sName);
+      });
+    }
+
+    function isMemberDeleted(m) {
+      if (!m) return true;
+      const deletedMemIds = getDeletedIds('members');
+      if (!deletedMemIds || deletedMemIds.length === 0) return false;
+
+      const mId = m.id ? String(m.id).toLowerCase().trim() : '';
+      const sId = (m.studentId || m.student_id) ? String(m.studentId || m.student_id).toLowerCase().trim() : '';
+      const mName = m.name ? String(m.name).toLowerCase().trim() : '';
+
+      return deletedMemIds.some(del => {
+        const d = String(del).toLowerCase().trim();
+        return (mId && d === mId) || (sId && d === sId) || (mName && d === mName);
+      });
+    }
+
+    const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+    function getStoredCurrentUser() {
+      try {
+        const saved = localStorage.getItem("aastmt_current_user");
+        const loginTimeStr = localStorage.getItem("aastmt_login_timestamp");
+        if (saved) {
+          if (loginTimeStr) {
+            const loginTime = Number(loginTimeStr);
+            if (Date.now() - loginTime < ONE_WEEK_MS) {
+              return JSON.parse(saved);
+            } else {
+              localStorage.removeItem("aastmt_current_user");
+              localStorage.removeItem("aastmt_login_timestamp");
+              return null;
+            }
+          }
+          localStorage.setItem("aastmt_login_timestamp", Date.now().toString());
+          return JSON.parse(saved);
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    const INITIAL_SYSTEM_USERS = [
       { id: "usr-1", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
       { id: "usr-2", name: "Tarek Hegazy", username: "tarek.hegazy", password: "123", role: "HR Head", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" },
       { id: "usr-3", name: "Sarah Mostafa", username: "sarah.hr", password: "123", role: "HR", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80" },
       { id: "usr-4", name: "Prof. Dr. Admissions Dean", username: "dean", password: "123", role: "Admission's Dean", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80" }
     ];
 
-    let members = [
+    const INITIAL_MEMBERS = [
       { id: "mem-1", name: "Youssef El-Sayed", role: "Operations", position: "Head", college: "Engineering & Tech", studentId: "2023101", phone: "+20 100 111 2233", attendanceCount: 14, officialDays: ["Sunday", "Tuesday", "Thursday"], strikes: 0, score: 95, status: "Active", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80" },
       { id: "mem-2", name: "Malak Nour", role: "PR", position: "Vice Head", college: "Management & Tech", studentId: "2023102", phone: "+20 101 222 3344", attendanceCount: 12, officialDays: ["Saturday", "Monday", "Wednesday"], strikes: 0, score: 92, status: "Active", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
       { id: "mem-3", name: "Karim Hassan", role: "PR", position: "Head", college: "Computing & IT", studentId: "2023103", phone: "+20 102 333 4455", attendanceCount: 10, officialDays: ["Sunday", "Monday", "Wednesday"], strikes: 1, score: 87, status: "Active", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80" },
@@ -1809,16 +1909,16 @@
       { id: "mem-7", name: "Nour El-Din", role: "HR", position: "Member", college: "Arts & Design", studentId: "2024107", phone: "+20 106 777 8899", attendanceCount: 8, officialDays: ["Saturday", "Sunday", "Tuesday"], strikes: 0, score: 89, status: "Active", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=256&q=80" }
     ];
 
-    let dischargedMembers = [
+    const INITIAL_DISCHARGED_MEMBERS = [
       { id: "dis-1", name: "Hassan Mahmoud", role: "PR", position: "Member", college: "Management & Tech", studentId: "2022099", phone: "+20 109 888 7766", dischargeType: "Voluntary Left", dischargeReason: "Graduated and relocated to Alexandria.", date: "2026-08-30", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" }
     ];
 
-    let starAmbassadors = [
+    const INITIAL_STAR_AMBASSADORS = [
       { id: "star-1", memberId: "mem-1", name: "Youssef El-Sayed", role: "Operations", college: "Engineering & Tech", awardTitle: "Lead Admissions Ambassador of the Month", citation: "Spearheaded orientation tours for 120+ prospective parents with zero scheduling conflicts." },
       { id: "star-2", memberId: "mem-4", name: "Farida Ahmed", role: "Operations", college: "Logistics & Transport", awardTitle: "Operations Champion", citation: "Volunteered for 3 non-scheduled weekend open day shifts at the Smart Village registration booth." }
     ];
 
-    let attendanceSessions = [
+    const INITIAL_ATTENDANCE_SESSIONS = [
       {
         id: "att-1",
         title: "Registration Hall Shift",
@@ -1864,18 +1964,18 @@
       }
     ];
 
-    let warnings = [
+    const INITIAL_WARNINGS = [
       { id: "wrn-1", memberId: "mem-6", memberName: "Laila Wael", level: "Official Written Strike", reason: "Unexcused absence from assigned registration desk during peak admission hours.", reportedBy: "Omar Farouk (HR Vice Head)", date: "2026-09-18", status: "Confirmed Strike" },
       { id: "wrn-2", memberId: "mem-3", memberName: "Karim Hassan", level: "First Verbal Warning", reason: "Failure to wear formal AASTMT admissions pin during parent VIP campus tour.", reportedBy: "Sarah Mostafa (HR)", date: "2026-09-15", status: "Pending HR Approval" }
     ];
 
-    let events = [
+    const INITIAL_EVENTS = [
       { id: "evt-1", title: "Orientations", type: "Orientations", status: "Active", description: "Campus tours & parent welcome briefings in Hall A.", location: "Hall A, Smart Village", date: "2026-10-10", color: "amber" },
       { id: "evt-2", title: "EDU Gate", type: "EDU Gate", status: "Scheduled", description: "Annual admissions exhibition & university portal drive.", location: "Exhibition Hall & Booth 4", date: "2026-10-15", color: "blue" },
       { id: "evt-3", title: "Meetings", type: "Meetings", status: "Weekly", description: "General assembly & committee sync in Meeting Room 007.", location: "Meeting Room 007", date: "Every Wednesday", color: "emerald" }
     ];
 
-    let monitoringNotes = [
+    const INITIAL_MONITORING_NOTES = [
       {
         id: "note-1",
         memberId: "mem-1",
@@ -1904,7 +2004,7 @@
       }
     ];
 
-    let activityLogs = [
+    const INITIAL_ACTIVITY_LOGS = [
       {
         id: "act-1",
         action: "Recorded field monitoring observation for Youssef El-Sayed",
@@ -1954,6 +2054,34 @@
         details: "Award: Operations Champion"
       }
     ];
+
+    let currentUser = getStoredCurrentUser();
+
+    let systemUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS).filter(u => !getDeletedIds("users").includes(u.id));
+    let members = loadStoredState("aastmt_members", INITIAL_MEMBERS).filter(m => !isMemberDeleted(m));
+    let dischargedMembers = loadStoredState("aastmt_discharged_members", INITIAL_DISCHARGED_MEMBERS).filter(m => !isMemberDeleted(m));
+    let starAmbassadors = loadStoredState("aastmt_star_ambassadors", INITIAL_STAR_AMBASSADORS).filter(s => !isStarDeleted(s));
+    let attendanceSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS).filter(s => !getDeletedIds("sessions").includes(s.id));
+    let warnings = loadStoredState("aastmt_warnings", INITIAL_WARNINGS).filter(w => !getDeletedIds("warnings").includes(w.id));
+    let events = loadStoredState("aastmt_events", INITIAL_EVENTS).filter(e => !getDeletedIds("events").includes(e.id));
+    let monitoringNotes = loadStoredState("aastmt_monitoring_notes", INITIAL_MONITORING_NOTES).filter(n => !getDeletedIds("notes").includes(n.id));
+    let recruits = loadStoredState("aastmt_recruits", []);
+    let activityLogs = loadStoredState("aastmt_activity_logs", INITIAL_ACTIVITY_LOGS);
+
+    function saveAllState() {
+      try {
+        localStorage.setItem("aastmt_members", JSON.stringify(members));
+        localStorage.setItem("aastmt_discharged_members", JSON.stringify(dischargedMembers));
+        localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(starAmbassadors));
+        localStorage.setItem("aastmt_attendance_sessions", JSON.stringify(attendanceSessions));
+        localStorage.setItem("aastmt_warnings", JSON.stringify(warnings));
+        localStorage.setItem("aastmt_events", JSON.stringify(events));
+        localStorage.setItem("aastmt_monitoring_notes", JSON.stringify(monitoringNotes));
+        localStorage.setItem("aastmt_system_users", JSON.stringify(systemUsers));
+        localStorage.setItem("aastmt_recruits", JSON.stringify(recruits));
+        localStorage.setItem("aastmt_activity_logs", JSON.stringify(activityLogs));
+      } catch (e) {}
+    }
 
     function logActivity(action, category, details = "") {
       const now = new Date();
@@ -2077,6 +2205,7 @@
 
     function renderActivityLogs() {
       cleanExpiredActivityLogs();
+      saveAllState();
       const search = (document.getElementById("activitySearchInput")?.value || "").toLowerCase().trim();
       const catFilter = document.getElementById("activityCategoryFilter")?.value || "";
       const starredOnly = document.getElementById("activityStarredOnlyFilter")?.checked || false;
@@ -2353,6 +2482,7 @@
     }
 
     function renderMonitoringNotes() {
+      saveAllState();
       const search = (document.getElementById("monitoringSearchInput")?.value || "").toLowerCase().trim();
       const memberFilter = document.getElementById("monitoringMemberFilter")?.value || "";
       const catFilter = document.getElementById("monitoringCategoryFilter")?.value || "";
@@ -2540,7 +2670,9 @@
     function deleteCurrentMonitoringNote() {
       const id = document.getElementById("editNoteTargetId").value;
       if (confirm("Delete this monitoring note permanently?")) {
+        addDeletedId("notes", id);
         monitoringNotes = monitoringNotes.filter(n => n.id !== id);
+        saveAllState();
         closeModal("editMonitoringNoteModal");
         showToast("Monitoring note deleted.");
         renderMonitoringNotes();
@@ -2549,7 +2681,9 @@
 
     function deleteMonitoringNote(id) {
       if (confirm("Delete this monitoring note permanently?")) {
+        addDeletedId("notes", id);
         monitoringNotes = monitoringNotes.filter(n => n.id !== id);
+        saveAllState();
         showToast("Monitoring note deleted.");
         renderMonitoringNotes();
       }
@@ -2579,15 +2713,24 @@
       const user = systemUsers.find(u => u.username.toLowerCase() === usernameInput);
       if (user && (user.password === passwordInput || passwordInput === "123" || passwordInput === "123456")) {
         currentUser = { name: user.name, username: user.username, role: user.role, avatar: user.avatar || null };
+        try {
+          localStorage.setItem("aastmt_current_user", JSON.stringify(currentUser));
+          localStorage.setItem("aastmt_login_timestamp", Date.now().toString());
+        } catch(err) {}
         document.getElementById("loginScreen").classList.add("hidden");
         document.getElementById("systemAppContainer").classList.remove("hidden");
         applyUserRoleUI();
+        renderAllViews();
         showToast(`Welcome back, ${currentUser.name} (${currentUser.role})`);
       } else { showToast("Invalid credentials. Try demo accounts or password: 123", "danger"); }
     }
 
     function handleLogout() {
       currentUser = null;
+      try {
+        localStorage.removeItem("aastmt_current_user");
+        localStorage.removeItem("aastmt_login_timestamp");
+      } catch(err) {}
       document.getElementById("systemAppContainer").classList.add("hidden");
       document.getElementById("loginScreen").classList.remove("hidden");
       document.getElementById("loginUsername").value = "";
@@ -2756,6 +2899,7 @@
     }
 
     function renderStarAmbassadors() {
+      saveAllState();
       const container = document.getElementById("starAmbassadorsContainer");
       const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
       if (starAmbassadors.length === 0) { container.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400 text-xs">No star ambassadors selected.</div>`; return; }
@@ -2783,6 +2927,7 @@
     }
 
     function renderMembersTable(filter = "") {
+      saveAllState();
       const tbody = document.getElementById("membersTableBody");
       const thead = document.getElementById("membersTableHead");
       if (!tbody) return;
@@ -2913,7 +3058,12 @@
 
     function deleteMember(mId) {
       const mem = members.find(m => m.id === mId);
+      if (mId) addDeletedId("members", mId);
+      if (mem && mem.studentId) addDeletedId("members", mem.studentId);
+      if (mem && mem.name) addDeletedId("members", mem.name.toLowerCase().trim());
+      removeStarAmbassador(null, mId, mem ? mem.name : '');
       members = members.filter(m => m.id !== mId);
+      saveAllState();
       showToast(`Member ${mem ? mem.name : ''} deleted.`);
       renderAllViews();
     }
@@ -3190,6 +3340,7 @@
     }
 
     function renderAttendanceSessions() {
+      saveAllState();
       const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
       const grid = document.getElementById("attendanceSessionsGrid");
       if (!grid) return;
@@ -3276,7 +3427,9 @@
       const s = attendanceSessions.find(x => x.id === sId);
       if (!s) return;
       if (confirm(`Delete attendance session "${s.title}"?`)) {
+        addDeletedId("sessions", sId);
         attendanceSessions = attendanceSessions.filter(x => x.id !== sId);
+        saveAllState();
         logActivity(`Deleted attendance session: ${s.title}`, "Attendance", `${s.dayName}, ${s.date}`);
         showToast("Attendance session deleted.");
         document.getElementById("attendanceInspectorBox")?.classList.add("hidden");
@@ -3508,6 +3661,7 @@
     }
 
     function renderSideWarnings() {
+      saveAllState();
       const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
       const confirmedOnly = warnings.filter(w => w.status !== "Pending HR Approval");
       const badge = document.getElementById("sideWarningCountBadge");
@@ -3555,6 +3709,7 @@
     }
 
     function renderDashboardEvents() {
+      saveAllState();
       const container = document.getElementById("dashboardEventsList");
       if (!container) return;
       const kpiEl = document.getElementById("kpiEventsCount");
@@ -3687,7 +3842,9 @@
       const id = document.getElementById("editEventTargetId").value;
       const evt = events.find(e => e.id === id);
       if (evt && confirm(`Delete event "${evt.title}"?`)) {
+        addDeletedId("events", id);
         events = events.filter(e => e.id !== id);
+        saveAllState();
         closeModal("editEventModal");
         showToast("Event removed from logs.");
         renderAllViews();
@@ -3725,6 +3882,7 @@
       wrn.status = document.getElementById("editWarningStatus").value;
       wrn.date = document.getElementById("editWarningDate").value;
       wrn.reason = document.getElementById("editWarningReason").value.trim();
+      saveAllState();
       closeModal("editWarningModal");
       showToast("Warning details updated.");
       renderAllViews();
@@ -3737,7 +3895,9 @@
       }
       const id = document.getElementById("editWarningTargetId").value;
       if (confirm("Dismiss this warning record?")) {
+        addDeletedId("warnings", id);
         warnings = warnings.filter(w => w.id !== id);
+        saveAllState();
         closeModal("editWarningModal");
         showToast("Warning dismissed.");
         renderAllViews();
@@ -3811,7 +3971,17 @@
     }
     function handleWarningSubmit(e) { e.preventDefault(); if (currentUser.role === "Admission's Dean") { showToast("Dean profile has read-only access.", "warning"); return; } const mem = members.find(m => m.id === document.getElementById("warningMemberSelect").value); if (!mem) return; const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head"; if (isLeadership) { mem.strikes += 1; mem.score = Math.max(50, mem.score - 8); warnings.unshift({ id: `wrn-${Date.now()}`, memberId: mem.id, memberName: mem.name, level: document.getElementById("warningLevelSelect").value, reason: document.getElementById("warningReasonText").value.trim(), reportedBy: `${currentUser.name} (${currentUser.role})`, date: new Date().toISOString().split("T")[0], status: "Confirmed Strike" }); showToast(`Warning recorded for ${mem.name}.`); } else { warnings.unshift({ id: `wrn-${Date.now()}`, memberId: mem.id, memberName: mem.name, level: document.getElementById("warningLevelSelect").value, reason: document.getElementById("warningReasonText").value.trim(), reportedBy: `${currentUser.name} (HR Request)`, date: new Date().toISOString().split("T")[0], status: "Pending HR Approval" }); showToast(`Warning request submitted.`); } closeModal("warningModal"); document.getElementById("warningForm").reset(); renderAllViews(); }
     function approveWarningRequest(wId) { if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") { showToast("Only HR Leadership can approve warnings.", "warning"); return; } const wrn = warnings.find(w => w.id === wId); if (wrn) { const mem = members.find(m => m.id === wrn.memberId); if (mem) { mem.strikes += 1; mem.score = Math.max(50, mem.score - 8); } wrn.status = "Confirmed Strike"; showToast(`Warning approved.`); renderAllViews(); } }
-    function dismissWarning(wId) { if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") { showToast("Only HR Leadership can dismiss warnings.", "warning"); return; } warnings = warnings.filter(w => w.id !== wId); showToast("Warning dismissed."); renderAllViews(); }
+    function dismissWarning(wId) {
+      if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") {
+        showToast("Only HR Leadership can dismiss warnings.", "warning");
+        return;
+      }
+      addDeletedId("warnings", wId);
+      warnings = warnings.filter(w => w.id !== wId);
+      saveAllState();
+      showToast("Warning dismissed.");
+      renderAllViews();
+    }
 
     function openAddStarModal() {
       const activeM = members.filter(m => m.status !== "Discharged");
@@ -3819,8 +3989,49 @@
       updateStarMemberPreview();
       openModal("addStarModal");
     }
-    function handleSaveStarAmbassador(e) { e.preventDefault(); const mem = members.find(m => m.id === document.getElementById("starMemberSelect").value); if (!mem) return; starAmbassadors.unshift({ id: `star-${Date.now()}`, memberId: mem.id, name: mem.name, role: mem.role, college: mem.college, awardTitle: document.getElementById("starAwardTitle").value.trim(), citation: document.getElementById("starCitation").value.trim() }); closeModal("addStarModal"); document.getElementById("addStarForm").reset(); showToast(`Star Ambassador granted.`); renderStarAmbassadors(); }
-    function removeStarAmbassador(sId) { starAmbassadors = starAmbassadors.filter(s => s.id !== sId); showToast("Star recognition removed."); renderStarAmbassadors(); }
+    function handleSaveStarAmbassador(e) {
+      e.preventDefault();
+      const mem = members.find(m => m.id === document.getElementById("starMemberSelect").value);
+      if (!mem) return;
+      const starId = `star-${Date.now()}`;
+      removeDeletedId('stars', starId);
+      removeDeletedId('stars', mem.id);
+      removeDeletedId('stars', mem.name.toLowerCase().trim());
+      starAmbassadors = [
+        { id: starId, memberId: mem.id, name: mem.name, role: mem.role, college: mem.college, awardTitle: document.getElementById("starAwardTitle").value.trim(), citation: document.getElementById("starCitation").value.trim() },
+        ...starAmbassadors.filter(s => s.id !== starId && s.memberId !== mem.id)
+      ];
+      saveAllState();
+      closeModal("addStarModal");
+      document.getElementById("addStarForm").reset();
+      showToast(`Star Ambassador granted.`);
+      renderStarAmbassadors();
+    }
+    function removeStarAmbassador(sId, mId, sName) {
+      const target = starAmbassadors.find(s =>
+        (sId && s.id === sId) ||
+        (mId && (s.memberId === mId || s.member_id === mId)) ||
+        (sName && s.name && s.name.toLowerCase().trim() === String(sName).toLowerCase().trim())
+      );
+      const targetId = sId || target?.id;
+      const targetMemberId = mId || target?.memberId || target?.member_id;
+      const targetName = (sName || target?.name || '').toLowerCase().trim();
+
+      if (targetId) addDeletedId('stars', targetId);
+      if (targetMemberId) addDeletedId('stars', targetMemberId);
+      if (targetName) addDeletedId('stars', targetName);
+
+      starAmbassadors = starAmbassadors.filter(s => {
+        if (targetId && s.id === targetId) return false;
+        const sm = s.memberId || s.member_id;
+        if (targetMemberId && sm === targetMemberId) return false;
+        if (targetName && s.name && s.name.toLowerCase().trim() === targetName) return false;
+        return true;
+      });
+      saveAllState();
+      showToast("Star recognition removed.");
+      renderStarAmbassadors();
+    }
 
     function openSystemUsersModal() { if (currentUser.role !== "HR Vice Head") { showToast("Restricted access.", "danger"); return; } renderSystemUsersTable(); openModal("systemUsersModal"); }
     function renderSystemUsersTable() {
@@ -3839,9 +4050,9 @@
         </tr>
       `).join("");
     }
-    function saveUserCredentials(uId) { const u = systemUsers.find(x => x.id === uId); if (u) { u.name = document.getElementById(`usr-name-${uId}`).value.trim(); u.username = document.getElementById(`usr-uname-${uId}`).value.trim(); u.role = document.getElementById(`usr-role-${uId}`).value; u.password = document.getElementById(`usr-pwd-${uId}`).value.trim(); if (u.username === currentUser.username) { currentUser.name = u.name; currentUser.role = u.role; applyUserRoleUI(); } showToast(`Updated credentials.`); renderSystemUsersTable(); } }
-    function handleAddNewUser(e) { e.preventDefault(); systemUsers.push({ id: `usr-${Date.now()}`, name: document.getElementById("newUserName").value.trim(), username: document.getElementById("newUserUsername").value.trim(), password: document.getElementById("newUserPassword").value.trim(), role: document.getElementById("newUserRole").value }); document.getElementById("addNewUserForm").reset(); showToast(`Added user.`); renderSystemUsersTable(); }
-    function deleteSystemUser(uId) { systemUsers = systemUsers.filter(u => u.id !== uId); showToast("User login removed."); renderSystemUsersTable(); }
+    function saveUserCredentials(uId) { const u = systemUsers.find(x => x.id === uId); if (u) { u.name = document.getElementById(`usr-name-${uId}`).value.trim(); u.username = document.getElementById(`usr-uname-${uId}`).value.trim(); u.role = document.getElementById(`usr-role-${uId}`).value; u.password = document.getElementById(`usr-pwd-${uId}`).value.trim(); if (u.username === currentUser.username) { currentUser.name = u.name; currentUser.role = u.role; applyUserRoleUI(); } saveAllState(); showToast(`Updated credentials.`); renderSystemUsersTable(); } }
+    function handleAddNewUser(e) { e.preventDefault(); const newU = { id: `usr-${Date.now()}`, name: document.getElementById("newUserName").value.trim(), username: document.getElementById("newUserUsername").value.trim(), password: document.getElementById("newUserPassword").value.trim(), role: document.getElementById("newUserRole").value }; removeDeletedId('users', newU.id); systemUsers.push(newU); saveAllState(); document.getElementById("addNewUserForm").reset(); showToast(`Added user.`); renderSystemUsersTable(); }
+    function deleteSystemUser(uId) { addDeletedId('users', uId); systemUsers = systemUsers.filter(u => u.id !== uId); saveAllState(); showToast("User login removed."); renderSystemUsersTable(); }
     function updateProfileModalAvatarPreview(avatarUrl) {
       const prev = document.getElementById("profileModalAvatarPreview");
       if (!prev) return;
@@ -4091,6 +4302,7 @@
     function copyAiOutput() { const text = document.getElementById("aiOutputText").textContent; const temp = document.createElement("textarea"); temp.value = text; document.body.appendChild(temp); temp.select(); document.execCommand("copy"); temp.remove(); showToast("Copied to clipboard!"); }
 
     function renderAllViews() {
+      saveAllState();
       renderDashboard();
       renderDashboardEvents();
       renderMembersTable();
@@ -4103,15 +4315,29 @@
     }
 
     window.onload = function() {
+      currentUser = getStoredCurrentUser();
       if (currentUser) {
         document.getElementById("loginScreen").classList.add("hidden");
         document.getElementById("systemAppContainer").classList.remove("hidden");
         applyUserRoleUI();
+        renderAllViews();
       } else {
         document.getElementById("systemAppContainer").classList.add("hidden");
         document.getElementById("loginScreen").classList.remove("hidden");
       }
     };
+
+    // Auto-logout after 1 week (7 days)
+    setInterval(function() {
+      const loginTimeStr = localStorage.getItem("aastmt_login_timestamp");
+      if (loginTimeStr && currentUser) {
+        const loginTime = Number(loginTimeStr);
+        if (Date.now() - loginTime >= ONE_WEEK_MS) {
+          handleLogout();
+          showToast("Your session has expired after 1 week. Please sign in again.", "warning");
+        }
+      }
+    }, 60 * 1000);
   </script>
 </body>
 </html>
