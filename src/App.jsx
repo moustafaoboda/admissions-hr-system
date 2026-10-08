@@ -42,7 +42,7 @@ export default function App() {
 
   if (!currentUser) {
     return (
-      <div className="bg-pattern min-h-screen flex flex-col justify-center items-center">
+      <div className="bg-[#001428] bg-pattern min-h-screen flex flex-col justify-center items-center">
         <Toast />
         <LoginModal />
       </div>

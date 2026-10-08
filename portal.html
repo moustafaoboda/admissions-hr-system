@@ -84,7 +84,7 @@
   <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- LOGIN SCREEN -->
-  <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
+  <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#001428] bg-pattern min-h-screen">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
       <div class="bg-gradient-to-r from-[#00162e] via-[#002244] to-[#0d3868] p-6 text-center text-white relative">
         <div id="loginBrandIconContainer" class="w-16 h-16 mx-auto mb-3 bg-white/10 rounded-full flex items-center justify-center border-2 border-[#c59b27] shadow-lg overflow-hidden">
@@ -115,17 +115,14 @@
           <i class="fa-solid fa-arrow-right-to-bracket text-[#c59b27]"></i>
           <span>Sign In to Portal</span>
         </button>
-
-        <div class="pt-3 border-t border-slate-100">
-          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">Quick Profile Access</div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="loginQuickUsersList"></div>
-        </div>
       </form>
     </div>
   </div>
 
-  <!-- HEADER -->
-  <header class="bg-[#002244] text-white shadow-lg border-b-2 border-[#c59b27] sticky top-0 z-40">
+  <!-- SYSTEM WRAPPER (HIDDEN DURING LOGIN) -->
+  <div id="systemAppContainer" class="hidden flex flex-col min-h-screen flex-grow">
+    <!-- HEADER -->
+    <header class="bg-[#002244] text-white shadow-lg border-b-2 border-[#c59b27] sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16 sm:h-20">
         <div class="flex items-center gap-3">
@@ -774,6 +771,7 @@
 
     </div>
   </main>
+  </div>
 
   <!-- MODALS -->
   <!-- WARNING REQUESTS POPUP MODAL -->
@@ -1792,12 +1790,7 @@
       imageUrl: ""
     };
 
-    let currentUser = { 
-      name: "Omar Farouk", 
-      username: "omar.farouk", 
-      role: "HR Vice Head",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80"
-    };
+    let currentUser = null;
 
     let systemUsers = [
       { id: "usr-1", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
@@ -2587,39 +2580,23 @@
       if (user && (user.password === passwordInput || passwordInput === "123" || passwordInput === "123456")) {
         currentUser = { name: user.name, username: user.username, role: user.role, avatar: user.avatar || null };
         document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("systemAppContainer").classList.remove("hidden");
         applyUserRoleUI();
         showToast(`Welcome back, ${currentUser.name} (${currentUser.role})`);
       } else { showToast("Invalid credentials. Try demo accounts or password: 123", "danger"); }
     }
 
-    function quickFillLogin(username) {
-      document.getElementById("loginUsername").value = username;
-      document.getElementById("loginPassword").value = "123";
-      document.getElementById("loginForm").dispatchEvent(new Event("submit"));
-    }
-
     function handleLogout() {
+      currentUser = null;
+      document.getElementById("systemAppContainer").classList.add("hidden");
       document.getElementById("loginScreen").classList.remove("hidden");
       document.getElementById("loginUsername").value = "";
       document.getElementById("loginPassword").value = "";
       showToast("Logged out successfully.");
     }
 
-    function renderLoginQuickUsers() {
-      const container = document.getElementById("loginQuickUsersList");
-      if (!container) return;
-      container.innerHTML = systemUsers.map(u => `
-        <button type="button" onclick="quickFillLogin('${u.username}')" class="p-2 bg-slate-50 hover:bg-amber-50/50 border border-slate-200 hover:border-[#c59b27] rounded-xl flex flex-col items-center text-center transition group cursor-pointer shadow-2xs">
-          <div class="w-10 h-10 rounded-full overflow-hidden border border-[#c59b27] bg-[#c59b27] text-[#002244] flex-shrink-0 flex items-center justify-center font-bold text-xs shadow-xs mb-1.5 group-hover:scale-105 transition">
-            ${u.avatar ? `<img src="${u.avatar}" class="w-full h-full object-cover rounded-full block" alt="${u.name}">` : (u.name || "HR").slice(0, 2).toUpperCase()}
-          </div>
-          <div class="font-bold text-[10px] text-[#002244] leading-tight truncate w-full">${u.name}</div>
-          <div class="text-[9px] text-[#c59b27] font-semibold mt-0.5 truncate w-full">${u.role}</div>
-        </button>
-      `).join("");
-    }
-
     function applyUserRoleUI() {
+      if (!currentUser) return;
       document.getElementById("sideUserName").textContent = currentUser.name;
       document.getElementById("sideUserRole").textContent = currentUser.role;
       const initials = (currentUser.name || "HR").split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() || "HR";
@@ -2632,7 +2609,6 @@
         }
       }
       renderSystemIcon();
-      renderLoginQuickUsers();
 
       const isViceHead = currentUser.role === "HR Vice Head";
       const isHeadOrVice = currentUser.role === "HR Head" || isViceHead;
@@ -4126,7 +4102,16 @@
       renderActivityLogs();
     }
 
-    window.onload = function() { applyUserRoleUI(); };
+    window.onload = function() {
+      if (currentUser) {
+        document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("systemAppContainer").classList.remove("hidden");
+        applyUserRoleUI();
+      } else {
+        document.getElementById("systemAppContainer").classList.add("hidden");
+        document.getElementById("loginScreen").classList.remove("hidden");
+      }
+    };
   </script>
 </body>
 </html>
