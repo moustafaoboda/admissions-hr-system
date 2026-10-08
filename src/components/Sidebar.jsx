@@ -30,8 +30,12 @@ export default function Sidebar() {
       {/* User Profile Card */}
       <div className="bg-gradient-to-br from-[#002244] to-[#00162e] text-white rounded-2xl p-4 border-2 border-[#c59b27] shadow-md relative overflow-hidden">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-[#c59b27] text-[#002244] font-black flex items-center justify-center text-base border-2 border-white shadow">
-            {initials || 'HR'}
+          <div className="w-12 h-12 rounded-full bg-[#c59b27] text-[#002244] font-black flex items-center justify-center text-base border-2 border-white shadow overflow-hidden flex-shrink-0">
+            {currentUser.avatar ? (
+              <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
+            ) : (
+              initials || 'HR'
+            )}
           </div>
           <div className="flex-grow">
             <div className="font-extrabold text-sm text-white leading-tight">{currentUser.name}</div>

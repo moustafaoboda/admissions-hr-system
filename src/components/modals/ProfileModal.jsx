@@ -8,15 +8,28 @@ export default function ProfileModal() {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [avatar, setAvatar] = useState('');
 
   useEffect(() => {
     if (currentUser) {
       setName(currentUser.name || '');
       setUsername(currentUser.username || '');
+      setAvatar(currentUser.avatar || '');
     }
   }, [currentUser, activeModal]);
 
   if (activeModal !== 'profile' || !currentUser) return null;
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAvatar(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +44,7 @@ export default function ProfileModal() {
       }
     }
 
-    const success = await updateProfile(name, username, oldPassword, newPassword);
+    const success = await updateProfile(name, username, oldPassword, newPassword, avatar);
     if (success) {
       setOldPassword('');
       setNewPassword('');
@@ -39,6 +52,8 @@ export default function ProfileModal() {
       setActiveModal(null);
     }
   };
+
+  const initials = (name || currentUser.name || 'HR').split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
@@ -53,7 +68,46 @@ export default function ProfileModal() {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-3 text-xs">
+        <form onSubmit={handleSubmit} className="p-5 space-y-3.5 text-xs">
+          {/* Profile Picture Upload & Preview */}
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Profile Picture</label>
+            <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+              <div className="w-12 h-12 rounded-full bg-[#c59b27] text-[#002244] font-black flex items-center justify-center text-sm border-2 border-white shadow overflow-hidden flex-shrink-0">
+                {avatar ? (
+                  <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  initials
+                )}
+              </div>
+              <div className="flex-grow space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <label className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-bold text-xs cursor-pointer transition flex items-center gap-1 shadow-xs">
+                    <i className="fa-solid fa-upload text-[10px]"></i>
+                    <span>Upload Picture</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                  </label>
+                  {avatar && (
+                    <button
+                      type="button"
+                      onClick={() => setAvatar('')}
+                      className="px-2 py-1 bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 rounded font-semibold text-xs transition"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="url"
+                  placeholder="Or paste image URL (https://...)"
+                  value={avatar}
+                  onChange={(e) => setAvatar(e.target.value)}
+                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block font-bold text-slate-700 mb-1">Display Name</label>
             <input

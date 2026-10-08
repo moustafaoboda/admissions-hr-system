@@ -12,6 +12,7 @@ export default function EditMemberModal() {
   const [phone, setPhone] = useState('');
   const [score, setScore] = useState(90);
   const [officialDays, setOfficialDays] = useState([]);
+  const [avatar, setAvatar] = useState('');
 
   const daysList = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
 
@@ -27,6 +28,7 @@ export default function EditMemberModal() {
         setPhone(mem.phone || '');
         setScore(mem.score ?? 90);
         setOfficialDays(mem.officialDays || ["Sunday", "Tuesday", "Thursday"]);
+        setAvatar(mem.avatar || '');
       }
     }
   }, [modalExtraData, members]);
@@ -37,6 +39,17 @@ export default function EditMemberModal() {
     setOfficialDays(prev =>
       prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
     );
+  };
+
+  const handleAvatarFile = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAvatar(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -51,7 +64,8 @@ export default function EditMemberModal() {
       studentId,
       phone,
       score: Number(score),
-      officialDays
+      officialDays,
+      avatar: avatar.trim() || null
     });
 
     setActiveModal(null);
@@ -70,7 +84,46 @@ export default function EditMemberModal() {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-3 text-xs">
+        <form onSubmit={handleSubmit} className="p-5 space-y-3 text-xs max-h-[85vh] overflow-y-auto">
+          {/* Member Profile Picture */}
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Profile Picture</label>
+            <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+              <div className="w-12 h-12 rounded-full bg-[#002244] text-[#c59b27] font-black flex items-center justify-center text-sm border-2 border-white shadow overflow-hidden flex-shrink-0">
+                {avatar ? (
+                  <img src={avatar} alt="Member Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <i className="fa-solid fa-user text-slate-300 text-base"></i>
+                )}
+              </div>
+              <div className="flex-grow space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <label className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-bold text-xs cursor-pointer transition flex items-center gap-1 shadow-xs">
+                    <i className="fa-solid fa-upload text-[10px]"></i>
+                    <span>Upload Photo</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarFile} />
+                  </label>
+                  {avatar && (
+                    <button
+                      type="button"
+                      onClick={() => setAvatar('')}
+                      className="px-2 py-1 bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 rounded font-semibold text-xs transition"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="url"
+                  placeholder="Or paste photo URL (https://...)"
+                  value={avatar}
+                  onChange={(e) => setAvatar(e.target.value)}
+                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block font-bold text-slate-700 mb-1">Full Name</label>
             <input

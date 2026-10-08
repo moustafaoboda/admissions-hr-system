@@ -4,10 +4,10 @@ import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 const AuthContext = createContext(null);
 
 const INITIAL_SYSTEM_USERS = [
-  { id: "usr-1", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head" },
-  { id: "usr-2", name: "Tarek Hegazy", username: "tarek.hegazy", password: "123", role: "HR Head" },
-  { id: "usr-3", name: "Sarah Mostafa", username: "sarah.hr", password: "123", role: "HR" },
-  { id: "usr-4", name: "Prof. Dr. Admissions Dean", username: "dean", password: "123", role: "Admission's Dean" }
+  { id: "usr-1", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
+  { id: "usr-2", name: "Tarek Hegazy", username: "tarek.hegazy", password: "123", role: "HR Head", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" },
+  { id: "usr-3", name: "Sarah Mostafa", username: "sarah.hr", password: "123", role: "HR", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80" },
+  { id: "usr-4", name: "Prof. Dr. Admissions Dean", username: "dean", password: "123", role: "Admission's Dean", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80" }
 ];
 
 const INITIAL_MEMBERS = [
@@ -23,7 +23,8 @@ const INITIAL_MEMBERS = [
     officialDays: ["Sunday", "Tuesday", "Thursday"],
     strikes: 0,
     score: 95,
-    status: "Active"
+    status: "Active",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80"
   },
   {
     id: "mem-2",
@@ -37,7 +38,8 @@ const INITIAL_MEMBERS = [
     officialDays: ["Saturday", "Monday", "Wednesday"],
     strikes: 0,
     score: 92,
-    status: "Active"
+    status: "Active",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80"
   },
   {
     id: "mem-3",
@@ -51,7 +53,8 @@ const INITIAL_MEMBERS = [
     officialDays: ["Sunday", "Monday", "Wednesday"],
     strikes: 1,
     score: 87,
-    status: "Active"
+    status: "Active",
+    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80"
   },
   {
     id: "mem-4",
@@ -65,7 +68,8 @@ const INITIAL_MEMBERS = [
     officialDays: ["Sunday", "Tuesday", "Thursday"],
     strikes: 0,
     score: 90,
-    status: "Active"
+    status: "Active",
+    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&q=80"
   },
   {
     id: "mem-5",
@@ -79,7 +83,8 @@ const INITIAL_MEMBERS = [
     officialDays: ["Saturday", "Tuesday", "Thursday"],
     strikes: 1,
     score: 84,
-    status: "Active"
+    status: "Active",
+    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80"
   },
   {
     id: "mem-6",
@@ -93,7 +98,8 @@ const INITIAL_MEMBERS = [
     officialDays: ["Monday", "Wednesday"],
     strikes: 2,
     score: 74,
-    status: "Active"
+    status: "Active",
+    avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=256&q=80"
   },
   {
     id: "mem-7",
@@ -107,7 +113,8 @@ const INITIAL_MEMBERS = [
     officialDays: ["Saturday", "Sunday", "Tuesday"],
     strikes: 0,
     score: 89,
-    status: "Active"
+    status: "Active",
+    avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=256&q=80"
   }
 ];
 
@@ -392,13 +399,33 @@ export function AuthProvider({ children }) {
     }, 3500);
   };
 
+  // System Branding / Icon State
+  const [systemIcon, setSystemIcon] = useState(() => {
+    try {
+      const saved = localStorage.getItem("aastmt_system_icon");
+      return saved ? JSON.parse(saved) : { type: "icon", value: "fa-anchor", imageUrl: "" };
+    } catch {
+      return { type: "icon", value: "fa-anchor", imageUrl: "" };
+    }
+  });
+
+  const updateSystemIcon = (newIconConfig) => {
+    setSystemIcon(newIconConfig);
+    try {
+      localStorage.setItem("aastmt_system_icon", JSON.stringify(newIconConfig));
+    } catch (err) {}
+    logActivity("Updated system branding icon/logo", "System");
+    showToast("System icon & branding updated successfully.");
+  };
+
   const login = (username, password) => {
     const user = systemUsers.find(u => u.username.toLowerCase() === username.trim().toLowerCase());
     if (user && (user.password === password || password === "123" || password === "123456")) {
       const userObj = {
         name: user.name,
         username: user.username,
-        role: user.role
+        role: user.role,
+        avatar: user.avatar || null
       };
       setCurrentUser(userObj);
       if (userObj.role === "Admission's Dean" || userObj.role === "HR") {
@@ -450,7 +477,8 @@ export function AuthProvider({ children }) {
       extraDays: newMem.extraDays || [],
       strikes: 0,
       score: newMem.score || 90,
-      status: "Active"
+      status: "Active",
+      avatar: newMem.avatar || null
     };
     setMembers(prev => [...prev, mem]);
     logActivity(`Added new team member: ${mem.name}`, "Members", `${mem.role} - ${mem.college}`);
@@ -893,7 +921,7 @@ export function AuthProvider({ children }) {
     showToast("User login removed.");
   };
 
-  const updateProfile = async (name, username, oldPassword, newPassword) => {
+  const updateProfile = async (name, username, oldPassword, newPassword, avatar = undefined) => {
     const userRecord = systemUsers.find(u => u.username === currentUser.username);
 
     if (newPassword || oldPassword) {
@@ -906,14 +934,18 @@ export function AuthProvider({ children }) {
 
     userRecord.name = name;
     userRecord.username = username;
+    const finalAvatar = avatar !== undefined ? avatar : (userRecord.avatar || null);
+    userRecord.avatar = finalAvatar;
 
-    setCurrentUser({
+    setCurrentUser(prev => ({
+      ...prev,
       name,
       username,
-      role: userRecord.role
-    });
+      role: userRecord.role,
+      avatar: finalAvatar
+    }));
 
-    setSystemUsers(prev => prev.map(u => u.username === currentUser.username ? { ...u, name, username, password: newPassword || u.password } : u));
+    setSystemUsers(prev => prev.map(u => u.username === currentUser.username ? { ...u, name, username, password: newPassword || u.password, avatar: finalAvatar } : u));
     showToast("Profile updated successfully.");
     return true;
   };
@@ -922,6 +954,8 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         currentUser,
+        systemIcon,
+        updateSystemIcon,
         login,
         logout,
         activeTab,

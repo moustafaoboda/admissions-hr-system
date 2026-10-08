@@ -87,7 +87,7 @@
   <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
       <div class="bg-gradient-to-r from-[#00162e] via-[#002244] to-[#0d3868] p-6 text-center text-white relative">
-        <div class="w-16 h-16 mx-auto mb-3 bg-white/10 rounded-full flex items-center justify-center border-2 border-[#c59b27] shadow-lg">
+        <div id="loginBrandIconContainer" class="w-16 h-16 mx-auto mb-3 bg-white/10 rounded-full flex items-center justify-center border-2 border-[#c59b27] shadow-lg overflow-hidden">
           <i class="fa-solid fa-anchor text-2xl text-[#c59b27]"></i>
         </div>
         <h2 class="text-xl font-bold brand-font tracking-wide">AASTMT ADMISSIONS</h2>
@@ -124,8 +124,13 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16 sm:h-20">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 flex items-center justify-center border border-[#c59b27] shadow-md">
-            <i class="fa-solid fa-anchor text-[#c59b27] text-lg sm:text-xl"></i>
+          <div class="relative group">
+            <div id="headerBrandIconContainer" onclick="openSystemIconModal()" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 flex items-center justify-center border border-[#c59b27] shadow-md overflow-hidden cursor-pointer hover:border-[#dfb743] hover:scale-105 transition" title="Click to Change System Icon">
+              <i class="fa-solid fa-anchor text-[#c59b27] text-lg sm:text-xl"></i>
+            </div>
+            <button type="button" onclick="openSystemIconModal()" class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#c59b27] hover:bg-[#dfb743] text-[#002244] text-[9px] font-black flex items-center justify-center shadow hover:scale-110 transition" title="Change System Icon">
+              <i class="fa-solid fa-pen"></i>
+            </button>
           </div>
           <div>
             <div class="flex items-center gap-2">
@@ -137,6 +142,10 @@
         </div>
 
         <div class="flex items-center gap-2 sm:gap-3">
+          <button type="button" onclick="openSystemIconModal()" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-[#dfb743] border border-[#c59b27]/40 px-2.5 py-1.5 rounded-lg text-xs font-bold transition shadow-xs" title="Customize System Icon & Logo">
+            <i class="fa-solid fa-icons text-xs"></i>
+            <span class="hidden md:inline">System Icon</span>
+          </button>
           <button id="systemUsersBtn" onclick="openSystemUsersModal()" class="hidden items-center gap-1.5 bg-[#c59b27] hover:bg-[#dfb743] text-[#002244] px-3 py-1.5 rounded-lg text-xs font-extrabold shadow transition transform hover:-translate-y-0.5">
             <i class="fa-solid fa-key text-xs"></i>
             <span class="hidden md:inline">Users & Passwords</span>
@@ -1085,6 +1094,25 @@
       <form id="editMemberForm" onsubmit="handleSaveEditMember(event)" class="p-5 space-y-3 text-xs">
         <input type="hidden" id="editMemberTargetId">
         <div>
+          <label class="block font-bold text-slate-700 mb-1">Profile Picture</label>
+          <div class="flex items-center gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <div id="editMemberAvatarPreview" class="w-12 h-12 rounded-full bg-[#002244] text-[#c59b27] font-black flex items-center justify-center text-sm border-2 border-white shadow overflow-hidden flex-shrink-0">
+              <i class="fa-solid fa-user text-slate-300 text-base"></i>
+            </div>
+            <div class="flex-grow space-y-1.5">
+              <div class="flex items-center gap-2">
+                <label for="editMemberAvatarFile" class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-bold text-xs cursor-pointer transition flex items-center gap-1 shadow-xs">
+                  <i class="fa-solid fa-upload text-[10px]"></i>
+                  <span>Upload Photo</span>
+                </label>
+                <input type="file" id="editMemberAvatarFile" accept="image/*" class="hidden" onchange="handleEditMemberAvatarFile(this)">
+                <button type="button" onclick="clearEditMemberAvatar()" class="px-2 py-1 bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 rounded font-semibold text-xs transition">Remove</button>
+              </div>
+              <input type="url" id="editMemberAvatarUrl" placeholder="Or paste photo URL (https://...)" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs" oninput="handleEditMemberAvatarUrlChange(this.value)">
+            </div>
+          </div>
+        </div>
+        <div>
           <label class="block font-bold text-slate-700 mb-1">Full Name</label>
           <input type="text" id="editMemberName" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-semibold">
         </div>
@@ -1268,6 +1296,25 @@
       </div>
       <form id="profileForm" onsubmit="handleProfileUpdate(event)" class="p-5 space-y-3 text-xs">
         <div>
+          <label class="block font-bold text-slate-700 mb-1">Profile Picture</label>
+          <div class="flex items-center gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <div id="profileModalAvatarPreview" class="w-12 h-12 rounded-full bg-[#c59b27] text-[#002244] font-black flex items-center justify-center text-sm border-2 border-white shadow overflow-hidden flex-shrink-0">
+              OF
+            </div>
+            <div class="flex-grow space-y-1.5">
+              <div class="flex items-center gap-2">
+                <label for="editProfileAvatarFile" class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-bold text-xs cursor-pointer transition flex items-center gap-1 shadow-xs">
+                  <i class="fa-solid fa-upload text-[10px]"></i>
+                  <span>Upload Picture</span>
+                </label>
+                <input type="file" id="editProfileAvatarFile" accept="image/*" class="hidden" onchange="handleProfileAvatarFile(this)">
+                <button type="button" onclick="clearProfileAvatar()" class="px-2 py-1 bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 rounded font-semibold text-xs transition">Remove</button>
+              </div>
+              <input type="url" id="editProfileAvatarUrl" placeholder="Or paste image URL (https://...)" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs" oninput="handleProfileAvatarUrlChange(this.value)">
+            </div>
+          </div>
+        </div>
+        <div>
           <label class="block font-bold text-slate-700 mb-1">Display Name</label>
           <input type="text" id="editProfileName" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
         </div>
@@ -1301,6 +1348,71 @@
     </div>
   </div>
 
+  <!-- CHANGE SYSTEM ICON & LOGO MODAL -->
+  <div id="systemIconModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 flex flex-col max-h-[85vh]">
+      <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27] flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-[#c59b27] flex items-center justify-center text-sm border border-amber-400/30">
+            <i class="fa-solid fa-icons"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm sm:text-base">System Icon & Branding</h3>
+            <p class="text-[10px] text-slate-300">Customize the Admissions HR Suite system logo & crest</p>
+          </div>
+        </div>
+        <button onclick="closeModal('systemIconModal')" class="text-slate-400 hover:text-white transition p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 text-xs overflow-y-auto custom-scrollbar flex-grow">
+        <!-- Live Preview Box -->
+        <div class="bg-gradient-to-r from-[#00162e] via-[#002244] to-[#0d3868] p-4 rounded-xl text-white flex items-center gap-4 border border-[#c59b27]/40 shadow-sm">
+          <div id="systemIconModalPreview" class="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center border-2 border-[#c59b27] shadow-lg overflow-hidden flex-shrink-0">
+            <i class="fa-solid fa-anchor text-[#c59b27] text-2xl"></i>
+          </div>
+          <div>
+            <span class="text-[10px] font-extrabold uppercase text-[#c59b27] tracking-wider">Live System Crest Preview</span>
+            <div class="font-bold text-sm text-white">Admissions HR Suite</div>
+            <p class="text-[11px] text-slate-300">Displays on the top navigation bar, login screen, and system header.</p>
+          </div>
+        </div>
+
+        <!-- Option 1: Preset Icons -->
+        <div>
+          <label class="block font-bold text-slate-700 uppercase tracking-wider mb-2">Select from Preset System Icons</label>
+          <div class="grid grid-cols-4 sm:grid-cols-6 gap-2" id="presetIconsGrid"></div>
+        </div>
+
+        <!-- Option 2: Upload Custom Logo Image or Paste URL -->
+        <div class="pt-3 border-t border-slate-200 space-y-2">
+          <label class="block font-bold text-slate-700 uppercase tracking-wider">Or Custom Image / Logo Upload</label>
+          <div class="flex items-center gap-2">
+            <label for="customSystemIconFile" class="px-3 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] border border-[#c59b27] rounded-lg font-bold text-xs cursor-pointer transition flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Upload Image File</span>
+            </label>
+            <input type="file" id="customSystemIconFile" accept="image/*" class="hidden" onchange="handleSystemIconFileUpload(this)">
+            <button type="button" onclick="resetSystemIconToDefault()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition text-xs flex items-center gap-1">
+              <i class="fa-solid fa-rotate-left"></i>
+              <span>Reset to Anchor</span>
+            </button>
+          </div>
+          <div>
+            <label class="block text-slate-500 text-[11px] mb-1">Custom Logo Image URL</label>
+            <input type="url" id="customSystemIconUrl" placeholder="https://example.com/logo.png" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs" oninput="handleSystemIconUrlInput(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2 flex-shrink-0">
+        <button type="button" onclick="closeModal('systemIconModal')" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-lg transition">Cancel</button>
+        <button type="button" onclick="saveSystemIconChanges()" class="px-4 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] border border-[#c59b27] font-bold text-xs rounded-lg transition shadow-sm">Save System Icon</button>
+      </div>
+    </div>
+  </div>
+
   <div id="addMemberModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
       <div class="bg-[#002244] p-4 text-white flex items-center justify-between border-b-2 border-[#c59b27]">
@@ -1313,6 +1425,25 @@
         </button>
       </div>
       <form id="addMemberForm" onsubmit="handleCreateMember(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Profile Picture</label>
+          <div class="flex items-center gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <div id="addMemberAvatarPreview" class="w-12 h-12 rounded-full bg-[#002244] text-[#c59b27] font-black flex items-center justify-center text-sm border-2 border-white shadow overflow-hidden flex-shrink-0">
+              <i class="fa-solid fa-user text-slate-300 text-base"></i>
+            </div>
+            <div class="flex-grow space-y-1.5">
+              <div class="flex items-center gap-2">
+                <label for="addMemberAvatarFile" class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-bold text-xs cursor-pointer transition flex items-center gap-1 shadow-xs">
+                  <i class="fa-solid fa-upload text-[10px]"></i>
+                  <span>Upload Photo</span>
+                </label>
+                <input type="file" id="addMemberAvatarFile" accept="image/*" class="hidden" onchange="handleAddMemberAvatarFile(this)">
+                <button type="button" onclick="clearAddMemberAvatar()" class="px-2 py-1 bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 rounded font-semibold text-xs transition">Clear</button>
+              </div>
+              <input type="url" id="addMemberAvatarUrl" placeholder="Or paste photo URL (https://...)" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs" oninput="handleAddMemberAvatarUrlChange(this.value)">
+            </div>
+          </div>
+        </div>
         <div>
           <label class="block font-bold text-slate-700 mb-1">Full Student Name</label>
           <input type="text" id="newMemberName" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
@@ -1645,22 +1776,34 @@
   </div>
 
   <script>
-    let currentUser = { name: "Omar Farouk", username: "omar.farouk", role: "HR Vice Head" };
+    let systemIcon = JSON.parse(localStorage.getItem("aastmt_system_icon") || 'null') || {
+      type: "icon",
+      value: "fa-anchor",
+      imageUrl: ""
+    };
+
+    let currentUser = { 
+      name: "Omar Farouk", 
+      username: "omar.farouk", 
+      role: "HR Vice Head",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80"
+    };
+
     let systemUsers = [
-      { id: "usr-1", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head" },
-      { id: "usr-2", name: "Tarek Hegazy", username: "tarek.hegazy", password: "123", role: "HR Head" },
-      { id: "usr-3", name: "Sarah Mostafa", username: "sarah.hr", password: "123", role: "HR" },
-      { id: "usr-4", name: "Prof. Dr. Admissions Dean", username: "dean", password: "123", role: "Admission's Dean" }
+      { id: "usr-1", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
+      { id: "usr-2", name: "Tarek Hegazy", username: "tarek.hegazy", password: "123", role: "HR Head", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" },
+      { id: "usr-3", name: "Sarah Mostafa", username: "sarah.hr", password: "123", role: "HR", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80" },
+      { id: "usr-4", name: "Prof. Dr. Admissions Dean", username: "dean", password: "123", role: "Admission's Dean", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80" }
     ];
 
     let members = [
-      { id: "mem-1", name: "Youssef El-Sayed", role: "Operations", position: "Head", college: "Engineering & Tech", studentId: "2023101", phone: "+20 100 111 2233", attendanceCount: 14, officialDays: ["Sunday", "Tuesday", "Thursday"], strikes: 0, score: 95, status: "Active" },
-      { id: "mem-2", name: "Malak Nour", role: "PR", position: "Vice Head", college: "Management & Tech", studentId: "2023102", phone: "+20 101 222 3344", attendanceCount: 12, officialDays: ["Saturday", "Monday", "Wednesday"], strikes: 0, score: 92, status: "Active" },
-      { id: "mem-3", name: "Karim Hassan", role: "PR", position: "Head", college: "Computing & IT", studentId: "2023103", phone: "+20 102 333 4455", attendanceCount: 10, officialDays: ["Sunday", "Monday", "Wednesday"], strikes: 1, score: 87, status: "Active" },
-      { id: "mem-4", name: "Farida Ahmed", role: "Operations", position: "Member", college: "Logistics & Transport", studentId: "2024104", phone: "+20 103 444 5566", attendanceCount: 11, officialDays: ["Sunday", "Tuesday", "Thursday"], strikes: 0, score: 90, status: "Active" },
-      { id: "mem-5", name: "Ahmed Sherif", role: "Digital Transformation", position: "Head", college: "Computing & IT", studentId: "2023105", phone: "+20 104 555 6677", attendanceCount: 9, officialDays: ["Saturday", "Tuesday", "Thursday"], strikes: 1, score: 84, status: "Active" },
-      { id: "mem-6", name: "Laila Wael", role: "Innovation", position: "Member", college: "Law", studentId: "2024106", phone: "+20 105 666 7788", attendanceCount: 7, officialDays: ["Monday", "Wednesday"], strikes: 2, score: 74, status: "Active" },
-      { id: "mem-7", name: "Nour El-Din", role: "HR", position: "Member", college: "Arts & Design", studentId: "2024107", phone: "+20 106 777 8899", attendanceCount: 8, officialDays: ["Saturday", "Sunday", "Tuesday"], strikes: 0, score: 89, status: "Active" }
+      { id: "mem-1", name: "Youssef El-Sayed", role: "Operations", position: "Head", college: "Engineering & Tech", studentId: "2023101", phone: "+20 100 111 2233", attendanceCount: 14, officialDays: ["Sunday", "Tuesday", "Thursday"], strikes: 0, score: 95, status: "Active", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80" },
+      { id: "mem-2", name: "Malak Nour", role: "PR", position: "Vice Head", college: "Management & Tech", studentId: "2023102", phone: "+20 101 222 3344", attendanceCount: 12, officialDays: ["Saturday", "Monday", "Wednesday"], strikes: 0, score: 92, status: "Active", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
+      { id: "mem-3", name: "Karim Hassan", role: "PR", position: "Head", college: "Computing & IT", studentId: "2023103", phone: "+20 102 333 4455", attendanceCount: 10, officialDays: ["Sunday", "Monday", "Wednesday"], strikes: 1, score: 87, status: "Active", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80" },
+      { id: "mem-4", name: "Farida Ahmed", role: "Operations", position: "Member", college: "Logistics & Transport", studentId: "2024104", phone: "+20 103 444 5566", attendanceCount: 11, officialDays: ["Sunday", "Tuesday", "Thursday"], strikes: 0, score: 90, status: "Active", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&q=80" },
+      { id: "mem-5", name: "Ahmed Sherif", role: "Digital Transformation", position: "Head", college: "Computing & IT", studentId: "2023105", phone: "+20 104 555 6677", attendanceCount: 9, officialDays: ["Saturday", "Tuesday", "Thursday"], strikes: 1, score: 84, status: "Active", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80" },
+      { id: "mem-6", name: "Laila Wael", role: "Innovation", position: "Member", college: "Law", studentId: "2024106", phone: "+20 105 666 7788", attendanceCount: 7, officialDays: ["Monday", "Wednesday"], strikes: 2, score: 74, status: "Active", avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=256&q=80" },
+      { id: "mem-7", name: "Nour El-Din", role: "HR", position: "Member", college: "Arts & Design", studentId: "2024107", phone: "+20 106 777 8899", attendanceCount: 8, officialDays: ["Saturday", "Sunday", "Tuesday"], strikes: 0, score: 89, status: "Active", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=256&q=80" }
     ];
 
     let dischargedMembers = [
@@ -2314,7 +2457,7 @@
       const passwordInput = document.getElementById("loginPassword").value.trim();
       const user = systemUsers.find(u => u.username.toLowerCase() === usernameInput);
       if (user && (user.password === passwordInput || passwordInput === "123" || passwordInput === "123456")) {
-        currentUser = { name: user.name, username: user.username, role: user.role };
+        currentUser = { name: user.name, username: user.username, role: user.role, avatar: user.avatar || null };
         document.getElementById("loginScreen").classList.add("hidden");
         applyUserRoleUI();
         showToast(`Welcome back, ${currentUser.name} (${currentUser.role})`);
@@ -2337,8 +2480,16 @@
     function applyUserRoleUI() {
       document.getElementById("sideUserName").textContent = currentUser.name;
       document.getElementById("sideUserRole").textContent = currentUser.role;
-      const initials = currentUser.name.split(" ").map(n => n[0]).slice(0, 2).join("");
-      document.getElementById("sideUserAvatar").textContent = initials || "HR";
+      const initials = (currentUser.name || "HR").split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() || "HR";
+      const sideAvatarEl = document.getElementById("sideUserAvatar");
+      if (sideAvatarEl) {
+        if (currentUser.avatar) {
+          sideAvatarEl.innerHTML = `<img src="${currentUser.avatar}" alt="${currentUser.name}" class="w-full h-full object-cover">`;
+        } else {
+          sideAvatarEl.textContent = initials;
+        }
+      }
+      renderSystemIcon();
 
       const isViceHead = currentUser.role === "HR Vice Head";
       const isHeadOrVice = currentUser.role === "HR Head" || isViceHead;
@@ -2468,19 +2619,24 @@
       const container = document.getElementById("starAmbassadorsContainer");
       const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
       if (starAmbassadors.length === 0) { container.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400 text-xs">No star ambassadors selected.</div>`; return; }
-      container.innerHTML = starAmbassadors.map(star => `
-        <div class="bg-gradient-to-br from-amber-50/60 via-white to-amber-50/20 border border-amber-300 rounded-xl p-4 shadow-sm relative group">
-          ${isHeadOrVice ? `<button onclick="removeStarAmbassador('${star.id}')" class="absolute top-3 right-3 text-slate-400 hover:text-rose-600 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>` : ''}
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-[#002244] text-[#c59b27] flex items-center justify-center font-bold text-sm border-2 border-[#c59b27]"><i class="fa-solid fa-crown text-xs"></i></div>
-            <div><div class="font-bold text-sm text-[#002244]">${star.name}</div><div class="text-[10px] text-amber-700 font-extrabold uppercase tracking-wide">${star.awardTitle}</div></div>
+      container.innerHTML = starAmbassadors.map(star => {
+        const mem = members.find(m => m.id === star.memberId);
+        return `
+          <div class="bg-gradient-to-br from-amber-50/60 via-white to-amber-50/20 border border-amber-300 rounded-xl p-4 shadow-sm relative group">
+            ${isHeadOrVice ? `<button onclick="removeStarAmbassador('${star.id}')" class="absolute top-3 right-3 text-slate-400 hover:text-rose-600 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>` : ''}
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-full bg-[#002244] text-[#c59b27] flex items-center justify-center font-bold text-sm border-2 border-[#c59b27] shadow-sm overflow-hidden flex-shrink-0">
+                ${mem && mem.avatar ? `<img src="${mem.avatar}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-crown text-xs"></i>`}
+              </div>
+              <div><div class="font-bold text-sm text-[#002244]">${star.name}</div><div class="text-[10px] text-amber-700 font-extrabold uppercase tracking-wide">${star.awardTitle}</div></div>
+            </div>
+            <p class="text-xs text-slate-600 mt-2.5 italic">"${star.citation}"</p>
+            <div class="mt-3 pt-2.5 border-t border-amber-200/60 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+              <span><i class="fa-solid fa-layer-group text-slate-400"></i> ${star.role}</span><span class="text-slate-700 font-semibold">${star.college}</span>
+            </div>
           </div>
-          <p class="text-xs text-slate-600 mt-2.5 italic">"${star.citation}"</p>
-          <div class="mt-3 pt-2.5 border-t border-amber-200/60 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-            <span><i class="fa-solid fa-layer-group text-slate-400"></i> ${star.role}</span><span class="text-slate-700 font-semibold">${star.college}</span>
-          </div>
-        </div>
-      `).join("");
+        `;
+      }).join("");
     }
 
     function renderMembersTable(filter = "") {
@@ -2544,10 +2700,23 @@
           </div>
         ` : (extraCount > 0 ? `<span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded">+${extraCount} Extra</span>` : '');
 
+        const memInitials = (m.name || "MB").split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() || "MB";
+        const memberAvatarMarkup = `
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex-shrink-0 flex items-center justify-center font-bold text-xs text-[#002244] shadow-xs">
+              ${m.avatar ? `<img src="${m.avatar}" class="w-full h-full object-cover" alt="${m.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span>${memInitials}</span>'">` : `<span>${memInitials}</span>`}
+            </div>
+            <div>
+              <div class="font-bold text-slate-800 text-sm leading-snug">${m.name}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${m.studentId || '2024000'}</div>
+            </div>
+          </div>
+        `;
+
         if (isHRMember) {
           return `
             <tr class="hover:bg-slate-50 transition">
-              <td class="py-3 px-4 font-bold text-slate-800 text-sm whitespace-nowrap">${m.name}</td>
+              <td class="py-3 px-4 whitespace-nowrap">${memberAvatarMarkup}</td>
               <td class="py-3 px-4 whitespace-nowrap"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800">${m.role}</span><span class="text-[10px] text-slate-500 ml-1">(${m.position})</span></td>
               <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${m.college}</td>
               <td class="py-3 px-4 whitespace-nowrap"><div class="flex items-center flex-wrap gap-1">${daysBadges}</div></td>
@@ -2563,7 +2732,7 @@
 
         return `
           <tr class="hover:bg-slate-50 transition">
-            <td class="py-3 px-4 font-bold text-slate-800 text-sm whitespace-nowrap">${m.name}</td>
+            <td class="py-3 px-4 whitespace-nowrap">${memberAvatarMarkup}</td>
             <td class="py-3 px-4 whitespace-nowrap"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800">${m.role}</span><span class="text-[10px] text-slate-500 ml-1">(${m.position})</span></td>
             <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${m.college}</td>
             <td class="py-3 px-4 font-mono text-slate-700 whitespace-nowrap">${m.studentId || '2024000'}</td>
@@ -2681,6 +2850,16 @@
       document.getElementById("editMemberStudentId").value = mem.studentId || "2024101";
       document.getElementById("editMemberPhone").value = mem.phone || "+20 100 000 0000";
       document.getElementById("editMemberScore").value = mem.score || 90;
+      document.getElementById("editMemberAvatarUrl").value = mem.avatar || "";
+
+      const editAvatarPrev = document.getElementById("editMemberAvatarPreview");
+      if (editAvatarPrev) {
+        if (mem.avatar) {
+          editAvatarPrev.innerHTML = `<img src="${mem.avatar}" class="w-full h-full object-cover">`;
+        } else {
+          editAvatarPrev.innerHTML = `<i class="fa-solid fa-user text-slate-300 text-base"></i>`;
+        }
+      }
 
       const checkedDays = mem.officialDays || ["Sunday", "Tuesday", "Thursday"];
       document.querySelectorAll('input[name="editWorkingDays"]').forEach(cb => {
@@ -2701,6 +2880,7 @@
         mem.studentId = document.getElementById("editMemberStudentId").value.trim();
         mem.phone = document.getElementById("editMemberPhone").value.trim();
         mem.score = parseInt(document.getElementById("editMemberScore").value) || 90;
+        mem.avatar = document.getElementById("editMemberAvatarUrl").value.trim() || null;
 
         const selectedDays = [];
         document.querySelectorAll('input[name="editWorkingDays"]:checked').forEach(cb => selectedDays.push(cb.value));
@@ -2710,6 +2890,60 @@
         closeModal("editMemberModal");
         renderAllViews();
       }
+    }
+
+    function handleEditMemberAvatarFile(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById("editMemberAvatarUrl").value = e.target.result;
+          document.getElementById("editMemberAvatarPreview").innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function handleEditMemberAvatarUrlChange(val) {
+      const prev = document.getElementById("editMemberAvatarPreview");
+      if (val.trim()) {
+        prev.innerHTML = `<img src="${val.trim()}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-user text-slate-300\\'></i>'">`;
+      } else {
+        prev.innerHTML = `<i class="fa-solid fa-user text-slate-300 text-base"></i>`;
+      }
+    }
+
+    function clearEditMemberAvatar() {
+      document.getElementById("editMemberAvatarUrl").value = "";
+      const f = document.getElementById("editMemberAvatarFile");
+      if (f) f.value = "";
+      document.getElementById("editMemberAvatarPreview").innerHTML = `<i class="fa-solid fa-user text-slate-300 text-base"></i>`;
+    }
+
+    function handleAddMemberAvatarFile(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById("addMemberAvatarUrl").value = e.target.result;
+          document.getElementById("addMemberAvatarPreview").innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function handleAddMemberAvatarUrlChange(val) {
+      const prev = document.getElementById("addMemberAvatarPreview");
+      if (val.trim()) {
+        prev.innerHTML = `<img src="${val.trim()}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-user text-slate-300\\'></i>'">`;
+      } else {
+        prev.innerHTML = `<i class="fa-solid fa-user text-slate-300 text-base"></i>`;
+      }
+    }
+
+    function clearAddMemberAvatar() {
+      document.getElementById("addMemberAvatarUrl").value = "";
+      const f = document.getElementById("addMemberAvatarFile");
+      if (f) f.value = "";
+      document.getElementById("addMemberAvatarPreview").innerHTML = `<i class="fa-solid fa-user text-slate-300 text-base"></i>`;
     }
 
     function openDischargeModal(mId) {
@@ -2746,6 +2980,7 @@
     function handleCreateMember(e) {
       e.preventDefault();
       const name = document.getElementById("newMemberName").value.trim();
+      const avatar = document.getElementById("addMemberAvatarUrl").value.trim() || null;
       members.push({
         id: `mem-${Date.now()}`,
         name,
@@ -2759,10 +2994,12 @@
         extraDays: [],
         strikes: 0,
         score: 90,
-        status: "Active"
+        status: "Active",
+        avatar
       });
       closeModal("addMemberModal");
       document.getElementById("addMemberForm").reset();
+      clearAddMemberAvatar();
       showToast(`Ambassador ${name} registered.`);
       renderAllViews();
     }
@@ -3403,8 +3640,221 @@
     function saveUserCredentials(uId) { const u = systemUsers.find(x => x.id === uId); if (u) { u.name = document.getElementById(`usr-name-${uId}`).value.trim(); u.username = document.getElementById(`usr-uname-${uId}`).value.trim(); u.role = document.getElementById(`usr-role-${uId}`).value; u.password = document.getElementById(`usr-pwd-${uId}`).value.trim(); if (u.username === currentUser.username) { currentUser.name = u.name; currentUser.role = u.role; applyUserRoleUI(); } showToast(`Updated credentials.`); renderSystemUsersTable(); } }
     function handleAddNewUser(e) { e.preventDefault(); systemUsers.push({ id: `usr-${Date.now()}`, name: document.getElementById("newUserName").value.trim(), username: document.getElementById("newUserUsername").value.trim(), password: document.getElementById("newUserPassword").value.trim(), role: document.getElementById("newUserRole").value }); document.getElementById("addNewUserForm").reset(); showToast(`Added user.`); renderSystemUsersTable(); }
     function deleteSystemUser(uId) { systemUsers = systemUsers.filter(u => u.id !== uId); showToast("User login removed."); renderSystemUsersTable(); }
-    function openProfileModal() { document.getElementById("editProfileName").value = currentUser.name; document.getElementById("editProfileUsername").value = currentUser.username; document.getElementById("editOldPassword").value = ""; document.getElementById("editNewPassword").value = ""; document.getElementById("editConfirmPassword").value = ""; openModal("profileModal"); }
-    function handleProfileUpdate(e) { e.preventDefault(); const name = document.getElementById("editProfileName").value.trim(); const username = document.getElementById("editProfileUsername").value.trim(); const oldPwd = document.getElementById("editOldPassword").value; const newPwd = document.getElementById("editNewPassword").value; const confirmPwd = document.getElementById("editConfirmPassword").value; const u = systemUsers.find(x => x.username === currentUser.username); if (newPwd || confirmPwd || oldPwd) { if (!u || u.password !== oldPwd) { showToast("Incorrect old password.", "danger"); return; } if (newPwd !== confirmPwd) { showToast("New passwords do not match.", "danger"); return; } u.password = newPwd; } currentUser.name = name; currentUser.username = username; if (u) { u.name = name; u.username = username; } closeModal("profileModal"); applyUserRoleUI(); showToast("Profile updated."); }
+    function updateProfileModalAvatarPreview(avatarUrl) {
+      const prev = document.getElementById("profileModalAvatarPreview");
+      if (!prev) return;
+      if (avatarUrl && avatarUrl.trim()) {
+        prev.innerHTML = `<img src="${avatarUrl.trim()}" class="w-full h-full object-cover" onerror="this.parentElement.textContent='${(currentUser.name || 'HR').slice(0, 2).toUpperCase()}'">`;
+      } else {
+        const initials = (currentUser.name || "HR").split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() || "HR";
+        prev.textContent = initials;
+      }
+    }
+
+    function handleProfileAvatarFile(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById("editProfileAvatarUrl").value = e.target.result;
+          updateProfileModalAvatarPreview(e.target.result);
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function handleProfileAvatarUrlChange(val) {
+      updateProfileModalAvatarPreview(val);
+    }
+
+    function clearProfileAvatar() {
+      document.getElementById("editProfileAvatarUrl").value = "";
+      const f = document.getElementById("editProfileAvatarFile");
+      if (f) f.value = "";
+      updateProfileModalAvatarPreview("");
+    }
+
+    function openProfileModal() {
+      document.getElementById("editProfileName").value = currentUser.name;
+      document.getElementById("editProfileUsername").value = currentUser.username;
+      document.getElementById("editOldPassword").value = "";
+      document.getElementById("editNewPassword").value = "";
+      document.getElementById("editConfirmPassword").value = "";
+      document.getElementById("editProfileAvatarUrl").value = currentUser.avatar || "";
+      const f = document.getElementById("editProfileAvatarFile");
+      if (f) f.value = "";
+      updateProfileModalAvatarPreview(currentUser.avatar || "");
+      openModal("profileModal");
+    }
+
+    function handleProfileUpdate(e) {
+      e.preventDefault();
+      const name = document.getElementById("editProfileName").value.trim();
+      const username = document.getElementById("editProfileUsername").value.trim();
+      const oldPwd = document.getElementById("editOldPassword").value;
+      const newPwd = document.getElementById("editNewPassword").value;
+      const confirmPwd = document.getElementById("editConfirmPassword").value;
+      const avatarVal = document.getElementById("editProfileAvatarUrl").value.trim() || null;
+
+      const u = systemUsers.find(x => x.username === currentUser.username);
+      if (newPwd || confirmPwd || oldPwd) {
+        if (!u || u.password !== oldPwd) {
+          showToast("Incorrect old password.", "danger");
+          return;
+        }
+        if (newPwd !== confirmPwd) {
+          showToast("New passwords do not match.", "danger");
+          return;
+        }
+        u.password = newPwd;
+      }
+
+      currentUser.name = name;
+      currentUser.username = username;
+      currentUser.avatar = avatarVal;
+
+      if (u) {
+        u.name = name;
+        u.username = username;
+        u.avatar = avatarVal;
+      }
+
+      closeModal("profileModal");
+      applyUserRoleUI();
+      showToast("Profile & photo updated successfully.");
+    }
+
+    /* SYSTEM ICON MANAGEMENT */
+    const PRESET_SYSTEM_ICONS = [
+      { id: "anchor", icon: "fa-anchor", label: "Anchor (Naval)" },
+      { id: "building-columns", icon: "fa-building-columns", label: "Academy / College" },
+      { id: "graduation-cap", icon: "fa-graduation-cap", label: "Graduation Cap" },
+      { id: "shield-halved", icon: "fa-shield-halved", label: "Shield / Crest" },
+      { id: "award", icon: "fa-award", label: "Award / Merit" },
+      { id: "compass", icon: "fa-compass", label: "Compass / Nav" },
+      { id: "ship", icon: "fa-ship", label: "Maritime Ship" },
+      { id: "crown", icon: "fa-crown", label: "Crown / Royal" },
+      { id: "landmark", icon: "fa-landmark", label: "Heritage Campus" },
+      { id: "book-bookmark", icon: "fa-book-bookmark", label: "Knowledge" },
+      { id: "star", icon: "fa-star", label: "Star Flagship" },
+      { id: "users-gear", icon: "fa-users-gear", label: "Admissions HR" }
+    ];
+
+    let pendingSystemIcon = { ...systemIcon };
+
+    function renderSystemIcon() {
+      const headerContainer = document.getElementById("headerBrandIconContainer");
+      const loginContainer = document.getElementById("loginBrandIconContainer");
+
+      const iconContent = systemIcon.type === "image" && systemIcon.imageUrl
+        ? `<img src="${systemIcon.imageUrl}" alt="AASTMT Logo" class="w-full h-full object-contain p-0.5">`
+        : `<i class="fa-solid ${systemIcon.value || 'fa-anchor'} text-[#c59b27] text-lg"></i>`;
+
+      const loginIconContent = systemIcon.type === "image" && systemIcon.imageUrl
+        ? `<img src="${systemIcon.imageUrl}" alt="AASTMT Logo" class="w-full h-full object-contain p-1">`
+        : `<i class="fa-solid ${systemIcon.value || 'fa-anchor'} text-[#c59b27] text-2xl"></i>`;
+
+      if (headerContainer) headerContainer.innerHTML = iconContent;
+      if (loginContainer) loginContainer.innerHTML = loginIconContent;
+    }
+
+    function openSystemIconModal() {
+      pendingSystemIcon = { ...systemIcon };
+      renderSystemIconModalUI();
+      openModal("systemIconModal");
+    }
+
+    function renderSystemIconModalUI() {
+      const prevEl = document.getElementById("systemIconModalPreview");
+      if (prevEl) {
+        if (pendingSystemIcon.type === "image" && pendingSystemIcon.imageUrl) {
+          prevEl.innerHTML = `<img src="${pendingSystemIcon.imageUrl}" class="w-full h-full object-contain p-1">`;
+        } else {
+          prevEl.innerHTML = `<i class="fa-solid ${pendingSystemIcon.value || 'fa-anchor'} text-[#c59b27] text-2xl"></i>`;
+        }
+      }
+
+      const grid = document.getElementById("presetIconsGrid");
+      if (grid) {
+        grid.innerHTML = PRESET_SYSTEM_ICONS.map(p => {
+          const isSelected = pendingSystemIcon.type === "icon" && pendingSystemIcon.value === p.icon;
+          return `
+            <button type="button" onclick="selectPresetSystemIcon('${p.icon}')" class="p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition text-center group ${
+              isSelected ? 'bg-amber-50 border-[#c59b27] text-[#002244] ring-2 ring-[#c59b27]/40 shadow-sm' : 'bg-white border-slate-200 hover:border-slate-300 text-slate-600 hover:bg-slate-50'
+            }">
+              <i class="fa-solid ${p.icon} text-lg ${isSelected ? 'text-[#c59b27]' : 'text-slate-500 group-hover:text-slate-800'}"></i>
+              <span class="text-[10px] font-semibold truncate max-w-full leading-tight">${p.label.split(" ")[0]}</span>
+            </button>
+          `;
+        }).join("");
+      }
+
+      const urlInput = document.getElementById("customSystemIconUrl");
+      if (urlInput) {
+        urlInput.value = pendingSystemIcon.type === "image" ? pendingSystemIcon.imageUrl : "";
+      }
+    }
+
+    function selectPresetSystemIcon(iconClass) {
+      pendingSystemIcon = {
+        type: "icon",
+        value: iconClass,
+        imageUrl: ""
+      };
+      renderSystemIconModalUI();
+    }
+
+    function handleSystemIconFileUpload(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          pendingSystemIcon = {
+            type: "image",
+            value: "custom",
+            imageUrl: e.target.result
+          };
+          renderSystemIconModalUI();
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function handleSystemIconUrlInput(url) {
+      if (url.trim()) {
+        pendingSystemIcon = {
+          type: "image",
+          value: "custom",
+          imageUrl: url.trim()
+        };
+      } else {
+        pendingSystemIcon = {
+          type: "icon",
+          value: "fa-anchor",
+          imageUrl: ""
+        };
+      }
+      renderSystemIconModalUI();
+    }
+
+    function resetSystemIconToDefault() {
+      pendingSystemIcon = {
+        type: "icon",
+        value: "fa-anchor",
+        imageUrl: ""
+      };
+      const f = document.getElementById("customSystemIconFile");
+      if (f) f.value = "";
+      renderSystemIconModalUI();
+    }
+
+    function saveSystemIconChanges() {
+      systemIcon = { ...pendingSystemIcon };
+      try {
+        localStorage.setItem("aastmt_system_icon", JSON.stringify(systemIcon));
+      } catch (err) {}
+      renderSystemIcon();
+      closeModal("systemIconModal");
+      showToast("System icon & branding saved!");
+    }
 
     async function callGeminiApi(prompt) {
       const apiKey = "";
