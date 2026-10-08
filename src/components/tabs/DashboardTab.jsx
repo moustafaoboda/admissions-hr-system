@@ -154,41 +154,49 @@ export default function DashboardTab() {
               No star ambassadors currently selected. HR Leadership can assign ambassadors anytime.
             </div>
           ) : (
-            starAmbassadors.map(star => (
-              <div key={star.id} className="bg-gradient-to-br from-amber-50/60 via-white to-amber-50/20 border border-amber-300 rounded-xl p-4 shadow-sm relative group">
-                {isHeadOrVice && (
-                  <button
-                    onClick={() => removeStarAmbassador(star.id)}
-                    title="Remove Star Recognition"
-                    className="absolute top-3 right-3 text-slate-400 hover:text-rose-600 transition"
-                  >
-                    <i className="fa-solid fa-trash-can text-xs"></i>
-                  </button>
-                )}
-                <div className="flex items-center gap-3">
-                  <div className="relative flex-shrink-0">
-                    <MemberAvatar
-                      memberId={star.memberId}
-                      name={star.name}
-                      size="w-11 h-11 text-xs"
-                      className="border-2 border-[#c59b27]"
-                    />
-                    <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#c59b27] text-[#002244] flex items-center justify-center text-[10px] font-black shadow-xs">
-                      <i className="fa-solid fa-crown"></i>
+            starAmbassadors.map(star => {
+              const memberObj = members.find(m => m.id === star.memberId);
+              const displayName = star.name || memberObj?.name || 'Ambassador';
+              const displayRole = star.role || memberObj?.role || 'Staff';
+              const displayCollege = star.college || memberObj?.college || 'AASTMT';
+
+              return (
+                <div key={star.id} className="bg-gradient-to-br from-amber-50/60 via-white to-amber-50/20 border border-amber-300 rounded-xl p-4 shadow-sm relative group">
+                  {isHeadOrVice && (
+                    <button
+                      onClick={() => removeStarAmbassador(star.id)}
+                      title="Remove Star Recognition"
+                      className="absolute top-3 right-3 text-slate-400 hover:text-rose-600 transition"
+                    >
+                      <i className="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                  )}
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex-shrink-0">
+                      <MemberAvatar
+                        memberId={star.memberId}
+                        member={memberObj}
+                        name={displayName}
+                        size="w-11 h-11 text-xs"
+                        className="border-2 border-[#c59b27]"
+                      />
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#c59b27] text-[#002244] flex items-center justify-center text-[10px] font-black shadow-xs">
+                        <i className="fa-solid fa-crown"></i>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-sm text-[#002244]">{displayName}</div>
+                      <div className="text-[10px] text-amber-700 font-extrabold uppercase tracking-wide">{star.awardTitle}</div>
                     </div>
                   </div>
-                  <div>
-                    <div className="font-bold text-sm text-[#002244]">{star.name}</div>
-                    <div className="text-[10px] text-amber-700 font-extrabold uppercase tracking-wide">{star.awardTitle}</div>
+                  <p className="text-xs text-slate-600 mt-2.5 italic">"{star.citation}"</p>
+                  <div className="mt-3 pt-2.5 border-t border-amber-200/60 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                    <span><i className="fa-solid fa-layer-group text-slate-400"></i> {displayRole}</span>
+                    <span className="text-slate-700 font-semibold">{displayCollege}</span>
                   </div>
                 </div>
-                <p className="text-xs text-slate-600 mt-2.5 italic">"{star.citation}"</p>
-                <div className="mt-3 pt-2.5 border-t border-amber-200/60 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                  <span><i className="fa-solid fa-layer-group text-slate-400"></i> {star.role}</span>
-                  <span className="text-slate-700 font-semibold">{star.college}</span>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

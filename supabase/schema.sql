@@ -54,6 +54,9 @@ CREATE TABLE members (
 CREATE TABLE star_ambassadors (
     id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     member_id TEXT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+    name TEXT,
+    role TEXT,
+    college TEXT,
     award_title TEXT NOT NULL,
     citation TEXT NOT NULL,
     awarded_at TIMESTAMPTZ DEFAULT NOW()

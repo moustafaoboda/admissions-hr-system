@@ -363,12 +363,26 @@ const INITIAL_MONITORING_NOTES = [
   }
 ];
 
+const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000; // 7 days auto-logout expiration
+
 export function AuthProvider({ children }) {
-  // Persistent login session
+  // Persistent login session with 1-week auto-logout expiry
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem("aastmt_current_user");
-      return saved ? JSON.parse(saved) : null;
+      const loginTimeStr = localStorage.getItem("aastmt_login_timestamp");
+      if (saved && loginTimeStr) {
+        const loginTime = Number(loginTimeStr);
+        if (Date.now() - loginTime < ONE_WEEK_MS) {
+          return JSON.parse(saved);
+        } else {
+          // Expired after 1 week
+          localStorage.removeItem("aastmt_current_user");
+          localStorage.removeItem("aastmt_login_timestamp");
+          return null;
+        }
+      }
+      return null;
     } catch {
       return null;
     }
@@ -472,6 +486,29 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     try { localStorage.setItem("aastmt_active_tab", activeTab); } catch (e) {}
   }, [activeTab]);
+
+  // Periodic check to auto-logout if session exceeds 1 week
+  useEffect(() => {
+    const checkExpiry = () => {
+      const loginTimeStr = localStorage.getItem("aastmt_login_timestamp");
+      if (loginTimeStr && currentUser) {
+        const loginTime = Number(loginTimeStr);
+        if (Date.now() - loginTime >= ONE_WEEK_MS) {
+          setCurrentUser(null);
+          try {
+            localStorage.removeItem("aastmt_current_user");
+            localStorage.removeItem("aastmt_login_timestamp");
+          } catch (e) {}
+          setActiveModal('login');
+          showToast("Your session has expired after 1 week. Please sign in again.", "warning");
+        }
+      }
+    };
+
+    checkExpiry();
+    const timer = setInterval(checkExpiry, 60 * 1000); // Check every minute
+    return () => clearInterval(timer);
+  }, [currentUser, showToast]);
 
   const showToast = useCallback((message, type = "success") => {
     const id = Date.now() + Math.random();
@@ -747,15 +784,22 @@ export function AuthProvider({ children }) {
       // 3. Star Ambassadors
       const { data: dbStars, error: sErr } = await supabase.from('star_ambassadors').select('*');
       if (!sErr && dbStars && dbStars.length > 0) {
-        setStarAmbassadors(dbStars.map(s => ({
-          id: s.id,
-          memberId: s.member_id,
-          name: s.name || '',
-          role: s.role || '',
-          college: s.college || '',
-          awardTitle: s.award_title,
-          citation: s.citation
-        })));
+        const allKnownMembers = [...activeMems, ...disMems, ...members];
+        const resolvedStars = dbStars.map(s => {
+          const m = allKnownMembers.find(mem => mem.id === s.member_id);
+          return {
+            id: s.id,
+            memberId: s.member_id,
+            name: s.name || m?.name || 'Ambassador',
+            role: s.role || m?.role || 'Operations',
+            college: s.college || m?.college || 'AASTMT',
+            avatar: m?.avatar || null,
+            awardTitle: s.award_title,
+            citation: s.citation
+          };
+        });
+        setStarAmbassadors(resolvedStars);
+        try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(resolvedStars)); } catch (e) {}
       }
 
       // 4. Attendance Sessions
@@ -1026,7 +1070,10 @@ export function AuthProvider({ children }) {
         avatar: user.avatar || null
       };
       setCurrentUser(userObj);
-      try { localStorage.setItem("aastmt_current_user", JSON.stringify(userObj)); } catch(e) {}
+      try {
+        localStorage.setItem("aastmt_current_user", JSON.stringify(userObj));
+        localStorage.setItem("aastmt_login_timestamp", Date.now().toString());
+      } catch(e) {}
       if (userObj.role === "Admission's Dean" || userObj.role === "HR") {
         setActiveTab("dashboard");
       }
@@ -1041,7 +1088,10 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     setCurrentUser(null);
-    try { localStorage.removeItem("aastmt_current_user"); } catch (e) {}
+    try {
+      localStorage.removeItem("aastmt_current_user");
+      localStorage.removeItem("aastmt_login_timestamp");
+    } catch (e) {}
     setActiveModal('login');
     showToast("Logged out successfully.");
   };
@@ -1228,7 +1278,11 @@ export function AuthProvider({ children }) {
       citation
     };
 
-    setStarAmbassadors(prev => [star, ...prev]);
+    setStarAmbassadors(prev => {
+      const updated = [star, ...prev];
+      try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
     broadcastMutation('ADD_STAR', star);
 
     if (supabase) {
@@ -1245,7 +1299,11 @@ export function AuthProvider({ children }) {
   };
 
   const removeStarAmbassador = async (starId) => {
-    setStarAmbassadors(prev => prev.filter(s => s.id !== starId));
+    setStarAmbassadors(prev => {
+      const updated = prev.filter(s => s.id !== starId);
+      try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
     broadcastMutation('REMOVE_STAR', { id: starId });
 
     if (supabase) {
