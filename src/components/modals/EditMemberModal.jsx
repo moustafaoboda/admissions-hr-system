@@ -113,13 +113,6 @@ export default function EditMemberModal() {
                     </button>
                   )}
                 </div>
-                <input
-                  type="url"
-                  placeholder="Or paste photo URL (https://...)"
-                  value={avatar}
-                  onChange={(e) => setAvatar(e.target.value)}
-                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"
-                />
               </div>
             </div>
           </div>

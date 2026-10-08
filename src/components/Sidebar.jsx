@@ -18,6 +18,7 @@ export default function Sidebar() {
   const isDean = currentUser.role === "Admission's Dean";
 
   const initials = currentUser.name.split(" ").map(n => n[0]).slice(0, 2).join("");
+  const confirmedWarningsCount = warnings.filter(w => w.status !== 'Pending HR Approval').length;
   const pendingRequestsCount = warnings.filter(w => w.status === 'Pending HR Approval').length;
 
   const handleOpenWarning = (mode) => {
@@ -88,7 +89,7 @@ export default function Sidebar() {
             </div>
 
             <span className="px-2 py-0.5 bg-rose-100 text-rose-800 text-xs font-black rounded-full border border-rose-300">
-              {warnings.length}
+              {confirmedWarningsCount}
             </span>
           </div>
 
@@ -98,7 +99,7 @@ export default function Sidebar() {
               className="w-full py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold text-xs rounded-xl border border-rose-200 flex items-center justify-center gap-2 transition"
             >
               <i className="fa-solid fa-window-restore text-rose-600"></i>
-              <span>Open Warnings ({warnings.length})</span>
+              <span>Open Warnings ({confirmedWarningsCount})</span>
             </button>
 
             {isHeadOrVice && (

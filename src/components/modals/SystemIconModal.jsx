@@ -17,12 +17,14 @@ const PRESET_ICONS = [
 ];
 
 export default function SystemIconModal() {
-  const { activeModal, setActiveModal, systemIcon, updateSystemIcon } = useAuth();
+  const { currentUser, activeModal, setActiveModal, systemIcon, updateSystemIcon } = useAuth();
   const [currentConfig, setCurrentConfig] = useState({
     type: "icon",
     value: "fa-anchor",
     imageUrl: ""
   });
+
+  const isHeadOrVice = currentUser?.role === "HR Head" || currentUser?.role === "HR Vice Head";
 
   useEffect(() => {
     if (systemIcon) {
@@ -30,7 +32,7 @@ export default function SystemIconModal() {
     }
   }, [systemIcon, activeModal]);
 
-  if (activeModal !== 'systemIcon') return null;
+  if (activeModal !== 'systemIcon' || !isHeadOrVice) return null;
 
   const handleSelectPreset = (iconClass) => {
     setCurrentConfig({
@@ -153,7 +155,7 @@ export default function SystemIconModal() {
             </div>
           </div>
 
-          {/* Option 2: Upload Custom Logo Image or Paste URL */}
+          {/* Option 2: Upload Custom Logo Image */}
           <div className="pt-3 border-t border-slate-200 space-y-2">
             <label className="block font-bold text-slate-700 uppercase tracking-wider">
               Or Custom Image / Logo Upload
@@ -172,16 +174,6 @@ export default function SystemIconModal() {
                 <i className="fa-solid fa-rotate-left"></i>
                 <span>Reset to Anchor</span>
               </button>
-            </div>
-            <div>
-              <label className="block text-slate-500 text-[11px] mb-1">Custom Logo Image URL</label>
-              <input
-                type="url"
-                placeholder="https://example.com/logo.png"
-                value={currentConfig.type === "image" ? currentConfig.imageUrl : ""}
-                onChange={(e) => handleUrlChange(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs"
-              />
             </div>
           </div>
         </div>

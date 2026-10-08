@@ -20,15 +20,12 @@ export default function WarningsListModal() {
   const isHeadOrVice = currentUser?.role === "HR Head" || isViceHead;
   const isDean = currentUser?.role === "Admission's Dean";
 
-  const confirmedWarnings = warnings.filter(w => w.status === 'Confirmed Strike');
-  const pendingRequests = warnings.filter(w => w.status === 'Pending HR Approval');
+  const confirmedWarnings = warnings.filter(w => w.status !== 'Pending HR Approval');
 
   const handleOpenIssueWarning = () => {
     setModalExtraData({ mode: isHeadOrVice ? 'issue' : 'request' });
     setActiveModal('warning');
   };
-
-  const displayedList = subTab === 'confirmed' ? confirmedWarnings : pendingRequests;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
@@ -40,8 +37,8 @@ export default function WarningsListModal() {
               <i className="fa-solid fa-triangle-exclamation"></i>
             </div>
             <div>
-              <h3 className="font-bold text-sm sm:text-base">Warnings & Disciplinary Management</h3>
-              <p className="text-[10px] text-slate-300">Smart Village Admissions Disciplinary Suite</p>
+              <h3 className="font-bold text-sm sm:text-base">Warnings Log</h3>
+              <p className="text-[10px] text-slate-300">Smart Village Admissions Confirmed Disciplinary Strikes</p>
             </div>
           </div>
           <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-white transition p-1">
@@ -49,49 +46,36 @@ export default function WarningsListModal() {
           </button>
         </div>
 
-        {/* Modal Toolbar & Sub-tabs */}
+        {/* Modal Toolbar */}
         <div className="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 flex-shrink-0">
-          <div className="flex items-center gap-1 bg-slate-200/70 p-1 rounded-xl">
-            <button
-              onClick={() => setSubTab('confirmed')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                subTab === 'confirmed' ? 'bg-white text-[#002244] shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <i className="fa-solid fa-shield-halved text-rose-600"></i>
-              <span>Confirmed Warnings ({confirmedWarnings.length})</span>
-            </button>
-            <button
-              onClick={() => setSubTab('requests')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                subTab === 'requests' ? 'bg-white text-[#002244] shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <i className="fa-solid fa-clock-rotate-left text-amber-600"></i>
-              <span>Pending Requests ({pendingRequests.length})</span>
-            </button>
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+            <i className="fa-solid fa-shield-halved text-rose-600"></i>
+            <span>Confirmed Warnings Log:</span>
+            <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-extrabold border border-rose-200">
+              {confirmedWarnings.length}
+            </span>
           </div>
 
-          {!isDean && (
+          {!isDean && isHeadOrVice && (
             <button
               onClick={handleOpenIssueWarning}
               className="px-3 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center gap-1.5 transition shadow-sm"
             >
               <i className="fa-solid fa-plus text-xs"></i>
-              <span>{isHeadOrVice ? 'Issue Warning' : 'Submit Warning Request'}</span>
+              <span>Issue New Warning</span>
             </button>
           )}
         </div>
 
         {/* Warnings List Content */}
         <div className="p-4 overflow-y-auto space-y-3 custom-scrollbar flex-grow text-xs">
-          {displayedList.length === 0 ? (
+          {confirmedWarnings.length === 0 ? (
             <div className="py-12 text-center text-slate-400">
               <i className="fa-solid fa-circle-check text-3xl text-emerald-500 mb-2 block"></i>
-              {subTab === 'confirmed' ? 'No confirmed warning records logged.' : 'No pending warning requests.'}
+              No confirmed warning records logged.
             </div>
           ) : (
-            displayedList.map(wrn => (
+            confirmedWarnings.map(wrn => (
               <div
                 key={wrn.id}
                 className={`p-3.5 rounded-xl border transition ${
@@ -123,14 +107,6 @@ export default function WarningsListModal() {
                   <span className="text-[10px] text-slate-500">Reported by: <span className="font-semibold text-slate-700">{wrn.reportedBy}</span></span>
 
                   <div className="flex items-center gap-2">
-                    {wrn.status === 'Pending HR Approval' && isHeadOrVice && (
-                      <button
-                        onClick={() => approveWarningRequest(wrn.id)}
-                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded transition"
-                      >
-                        Approve Strike
-                      </button>
-                    )}
                     {isHeadOrVice && (
                       <button
                         onClick={() => {
