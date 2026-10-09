@@ -101,7 +101,7 @@
           <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Username</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-user text-sm"></i></span>
-            <input type="text" id="loginUsername" required class="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none" placeholder="omar.farouk">
+            <input type="text" id="loginUsername" required class="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none" placeholder="booda">
           </div>
         </div>
 
@@ -204,9 +204,9 @@
         <!-- User Info Card -->
         <div class="bg-gradient-to-br from-[#002244] to-[#00162e] text-white rounded-2xl p-4 border-2 border-[#c59b27] shadow-md relative overflow-hidden">
           <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-full bg-[#c59b27] text-[#002244] font-black flex items-center justify-center text-base border-2 border-white shadow overflow-hidden flex-shrink-0" id="sideUserAvatar">OF</div>
+            <div class="w-12 h-12 rounded-full bg-[#c59b27] text-[#002244] font-black flex items-center justify-center text-base border-2 border-white shadow overflow-hidden flex-shrink-0" id="sideUserAvatar">B</div>
             <div class="flex-grow">
-              <div class="font-extrabold text-sm text-white leading-tight" id="sideUserName">Omar Farouk</div>
+              <div class="font-extrabold text-sm text-white leading-tight" id="sideUserName">Booda</div>
               <div class="text-xs text-[#dfb743] font-bold mt-0.5" id="sideUserRole">HR Vice Head</div>
               <div class="text-[10px] text-slate-300 font-medium">Smart Village Admissions</div>
             </div>
@@ -606,7 +606,7 @@
                     </div>
                     <div>
                       <div class="text-[10px] text-slate-400 font-semibold uppercase">Note Author</div>
-                      <div class="font-bold text-slate-800" id="monitoringAuthorNamePreview">Omar Farouk</div>
+                      <div class="font-bold text-slate-800" id="monitoringAuthorNamePreview">Booda</div>
                     </div>
                   </div>
                   <span class="text-[10px] bg-blue-50 text-blue-700 font-extrabold px-2 py-0.5 rounded border border-blue-200" id="monitoringAuthorRolePreview">
@@ -1888,6 +1888,17 @@
       });
     }
 
+    const USERS_CACHE_VERSION = "v4_oct9_new_users";
+    try {
+      if (localStorage.getItem("aastmt_users_ver") !== USERS_CACHE_VERSION) {
+        localStorage.removeItem("aastmt_system_users");
+        localStorage.removeItem("aastmt_current_user");
+        localStorage.removeItem("aastmt_login_timestamp");
+        localStorage.removeItem("aastmt_deleted_users");
+        localStorage.setItem("aastmt_users_ver", USERS_CACHE_VERSION);
+      }
+    } catch (e) {}
+
     const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
     function getStoredCurrentUser() {
@@ -1971,10 +1982,10 @@
     }
 
     const INITIAL_SYSTEM_USERS = [
-      { id: "b3f74058-20b8-441c-bcdd-2bd27a302289", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
-      { id: "6ddf714f-079e-443a-820c-9a27de6c40bc", name: "Tarek Hegazy", username: "tarek.hegazy", password: "123", role: "HR Head", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" },
-      { id: "21b6358a-8cb0-43f1-a9e6-4fff0186a529", name: "Sarah Mostafa", username: "sarah.hr", password: "123", role: "HR", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80" },
-      { id: "2a2b5d87-1fdf-4b54-83b4-4849621a38bb", name: "Prof. Dr. Admissions Dean", username: "dean", password: "123", role: "Admission's Dean", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80" }
+      { id: "b3f74058-20b8-441c-bcdd-2bd27a302289", name: "Booda", username: "booda", password: "111", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
+      { id: "6ddf714f-079e-443a-820c-9a27de6c40bc", name: "Ali", username: "ali", password: "111", role: "HR Head", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" },
+      { id: "21b6358a-8cb0-43f1-a9e6-4fff0186a529", name: "Test HR", username: "test", password: "111", role: "HR", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80" },
+      { id: "2a2b5d87-1fdf-4b54-83b4-4849621a38bb", name: "Admissions Dean", username: "dean", password: "111", role: "Admission's Dean", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80" }
     ];
 
     const INITIAL_MEMBERS = [

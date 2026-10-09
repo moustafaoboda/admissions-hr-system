@@ -39,7 +39,7 @@ export default function LoginModal() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none"
-                placeholder="e.g. omar.farouk"
+                placeholder="e.g. booda"
               />
             </div>
           </div>

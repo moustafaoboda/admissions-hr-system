@@ -158,10 +158,10 @@ function normalizeSessionType(t) {
 }
 
 const INITIAL_SYSTEM_USERS = [
-  { id: "b3f74058-20b8-441c-bcdd-2bd27a302289", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
-  { id: "6ddf714f-079e-443a-820c-9a27de6c40bc", name: "Tarek Hegazy", username: "tarek.hegazy", password: "123", role: "HR Head", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" },
-  { id: "21b6358a-8cb0-43f1-a9e6-4fff0186a529", name: "Sarah Mostafa", username: "sarah.hr", password: "123", role: "HR", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80" },
-  { id: "2a2b5d87-1fdf-4b54-83b4-4849621a38bb", name: "Prof. Dr. Admissions Dean", username: "dean", password: "123", role: "Admission's Dean", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80" }
+  { id: "b3f74058-20b8-441c-bcdd-2bd27a302289", name: "Booda", username: "booda", password: "111", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
+  { id: "6ddf714f-079e-443a-820c-9a27de6c40bc", name: "Ali", username: "ali", password: "111", role: "HR Head", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" },
+  { id: "21b6358a-8cb0-43f1-a9e6-4fff0186a529", name: "Test HR", username: "test", password: "111", role: "HR", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80" },
+  { id: "2a2b5d87-1fdf-4b54-83b4-4849621a38bb", name: "Admissions Dean", username: "dean", password: "111", role: "Admission's Dean", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80" }
 ];
 
 const INITIAL_MEMBERS = [
@@ -478,6 +478,17 @@ const INITIAL_MONITORING_NOTES = [
 ];
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000; // 7 days auto-logout expiration
+
+const USERS_CACHE_VERSION = "v4_oct9_new_users";
+try {
+  if (typeof window !== "undefined" && localStorage.getItem("aastmt_users_ver") !== USERS_CACHE_VERSION) {
+    localStorage.removeItem("aastmt_system_users");
+    localStorage.removeItem("aastmt_current_user");
+    localStorage.removeItem("aastmt_login_timestamp");
+    localStorage.removeItem("aastmt_deleted_users");
+    localStorage.setItem("aastmt_users_ver", USERS_CACHE_VERSION);
+  }
+} catch (e) {}
 
 export function AuthProvider({ children }) {
   // Persistent login session with 1-week auto-logout expiry
