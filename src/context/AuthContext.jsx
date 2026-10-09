@@ -1709,9 +1709,6 @@ export function AuthProvider({ children }) {
         runDb(supabase.from('star_ambassadors').upsert([{
           id: star.id,
           member_id: star.memberId,
-          name: star.name,
-          role: star.role,
-          college: star.college,
           award_title: star.awardTitle,
           citation: star.citation
         }]));
@@ -1754,7 +1751,6 @@ export function AuthProvider({ children }) {
     if (supabase) {
       if (targetId) runDb(supabase.from('star_ambassadors').delete().eq('id', targetId));
       if (targetMemberId) runDb(supabase.from('star_ambassadors').delete().eq('member_id', targetMemberId));
-      if (targetName) runDb(supabase.from('star_ambassadors').delete().ilike('name', targetName));
     }
 
     logActivity(`Removed star recognition for: ${target?.name || targetName || 'Ambassador'}`, "Members");
@@ -2467,7 +2463,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('ADD_SYSTEM_USER', newUser);
 
     if (supabase) {
-      runDb(supabase.from('system_users').upsert(newUser, { onConflict: 'username' }));
+      runDb(supabase.from('system_users').upsert(newUser, { onConflict: 'id' }));
     }
 
     showToast(`New user ${cleanName} (${role}) added to credentials database.`);
@@ -2491,7 +2487,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('UPDATE_SYSTEM_USER', { id: cleanId, fields: cleanUpdated });
 
     if (supabase) {
-      runDb(supabase.from('system_users').upsert(cleanUpdated, { onConflict: 'username' }));
+      runDb(supabase.from('system_users').update(cleanUpdated).eq('id', cleanId));
     }
 
     if (currentUser && (currentUser.username === cleanUpdated.username || currentUser.id === cleanId || currentUser.id === id)) {
@@ -2525,36 +2521,42 @@ export function AuthProvider({ children }) {
   };
 
   const updateProfile = async (name, username, oldPassword, newPassword, avatar = undefined) => {
-    const userRecord = systemUsers.find(u => u.username === currentUser.username);
+    const userRecord = systemUsers.find(u => (u.username || '').toLowerCase().trim() === (currentUser?.username || '').toLowerCase().trim() || u.id === currentUser?.id);
+    if (!userRecord) {
+      showToast("User account not found.", "danger");
+      return false;
+    }
 
     if (newPassword || oldPassword) {
-      if (!userRecord || userRecord.password !== oldPassword) {
+      if ((userRecord.password || '').trim() !== (oldPassword || '').trim()) {
         showToast("Incorrect old password. Please verify your current password.", "danger");
         return false;
       }
-      userRecord.password = newPassword;
+      userRecord.password = newPassword.trim();
     }
 
-    userRecord.name = name;
-    userRecord.username = username;
+    userRecord.name = name.trim();
+    userRecord.username = username.trim().toLowerCase();
     const finalAvatar = avatar !== undefined ? avatar : (userRecord.avatar || null);
     userRecord.avatar = finalAvatar;
 
     setCurrentUser(prev => ({
       ...prev,
-      name,
-      username,
+      name: userRecord.name,
+      username: userRecord.username,
       role: userRecord.role,
       avatar: finalAvatar
     }));
 
-    const updatedObj = { name, username, password: newPassword || userRecord.password, avatar: finalAvatar };
+    const cleanId = getUserUuid(userRecord.id);
+    userRecord.id = cleanId;
+    const updatedObj = { name: userRecord.name, username: userRecord.username, password: userRecord.password, avatar: finalAvatar };
     setSystemUsers(prev => {
-      const nextUsers = prev.map(u => u.username === currentUser.username ? { ...u, ...updatedObj } : u);
+      const nextUsers = prev.map(u => (u.id === cleanId || u.username === userRecord.username) ? { ...u, ...updatedObj } : u);
       try { localStorage.setItem("aastmt_system_users", JSON.stringify(nextUsers)); } catch (e) {}
       return nextUsers;
     });
-    broadcastMutation('UPDATE_SYSTEM_USER', { id: userRecord.id, fields: updatedObj });
+    broadcastMutation('UPDATE_SYSTEM_USER', { id: cleanId, fields: updatedObj });
 
     if (supabase) {
       runDb(supabase.from('system_users').update({
@@ -2562,7 +2564,7 @@ export function AuthProvider({ children }) {
         username: updatedObj.username,
         password: updatedObj.password,
         avatar: updatedObj.avatar
-      }).eq('id', userRecord.id));
+      }).eq('id', cleanId));
     }
 
     showToast("Profile & password updated. Old password has been deleted from the database.");

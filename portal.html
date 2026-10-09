@@ -2439,21 +2439,25 @@
 
       // 7. Star Ambassadors
       portalSupabase.from('star_ambassadors').select('*').then(({ data, error }) => {
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
+          const allKnown = [...members, ...dischargedMembers];
           starAmbassadors = data
             .filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isStarDeleted(s))
-            .map(s => ({
-              id: s.id,
-              memberId: s.member_id,
-              name: s.name,
-              role: s.role,
-              college: s.college,
-              avatar: s.avatar || null,
-              awardTitle: s.award_title,
-              citation: s.citation
-            }));
+            .map(s => {
+              const m = allKnown.find(mem => mem.id === s.member_id || getMemberUuid(mem.id) === s.member_id);
+              return {
+                id: s.id,
+                memberId: s.member_id,
+                name: m ? m.name : 'Ambassador',
+                role: m ? m.role : 'Operations',
+                college: m ? m.college : 'AASTMT',
+                avatar: m?.avatar || null,
+                awardTitle: s.award_title,
+                citation: s.citation
+              };
+            });
           try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(starAmbassadors)); } catch(e) {}
-          renderAllViews();
+          renderStarAmbassadors();
         }
       }).catch(() => {});
 
@@ -2650,7 +2654,8 @@
       renderAllViews();
     }
 
-    function saveAllState() {
+    let syncAllDebounceTimer = null;
+    function saveAllState(broadcast = false) {
       try {
         localStorage.setItem("aastmt_members", JSON.stringify(members));
         localStorage.setItem("aastmt_discharged_members", JSON.stringify(dischargedMembers));
@@ -2662,8 +2667,11 @@
         localStorage.setItem("aastmt_system_users", JSON.stringify(systemUsers));
         localStorage.setItem("aastmt_recruits", JSON.stringify(recruits));
         localStorage.setItem("aastmt_activity_logs", JSON.stringify(activityLogs));
-        if (portalBc) {
-          portalBc.postMessage({ type: 'SYNC_ALL', timestamp: Date.now() });
+        if (broadcast && portalBc) {
+          clearTimeout(syncAllDebounceTimer);
+          syncAllDebounceTimer = setTimeout(() => {
+            try { portalBc.postMessage({ type: 'SYNC_ALL', timestamp: Date.now() }); } catch(e) {}
+          }, 300);
         }
       } catch (e) {}
     }
@@ -3063,7 +3071,6 @@
     }
 
     function renderMonitoringNotes() {
-      saveAllState();
       const search = (document.getElementById("monitoringSearchInput")?.value || "").toLowerCase().trim();
       const memberFilter = document.getElementById("monitoringMemberFilter")?.value || "";
       const catFilter = document.getElementById("monitoringCategoryFilter")?.value || "";
@@ -3167,7 +3174,8 @@
     function handleCreateMonitoringNote(e) {
       e.preventDefault();
       const mId = document.getElementById("monitoringTargetMember").value;
-      const mem = members.find(m => m.id === mId);
+      const normMemId = getMemberUuid(mId);
+      const mem = members.find(m => m.id === mId || m.id === normMemId);
       if (!mem) {
         showToast("Please choose a member.", "warning");
         return;
@@ -3178,10 +3186,12 @@
         return;
       }
       const cat = document.getElementById("monitoringCategory").value;
+      const noteId = generateUuid();
+      removeDeletedId("notes", noteId);
 
       const newNote = {
-        id: `note-${Date.now()}`,
-        memberId: mem.id,
+        id: noteId,
+        memberId: normMemId,
         memberName: mem.name,
         memberRole: mem.role,
         memberCollege: mem.college,
@@ -3194,6 +3204,25 @@
       };
 
       monitoringNotes.unshift(newNote);
+      saveAllState(true);
+
+      if (portalSupabase) {
+        runPortalDb(portalSupabase.from('monitoring_notes').insert([{
+          id: newNote.id,
+          member_id: normMemId,
+          member_name: newNote.memberName,
+          member_role: newNote.memberRole,
+          member_college: newNote.memberCollege,
+          author_name: newNote.authorName,
+          author_role: newNote.authorRole,
+          category: newNote.category,
+          note: newNote.note,
+          date: newNote.date,
+          time: newNote.time
+        }]));
+      }
+      broadcastPortalMutation('ADD_MONITORING_NOTE', newNote);
+
       document.getElementById("monitoringNoteText").value = "";
       showToast(`Monitoring note logged for ${mem.name}`);
       renderMonitoringNotes();
@@ -3233,15 +3262,29 @@
       if (!note) return;
 
       const mId = document.getElementById("editNoteTargetMember").value;
-      const mem = members.find(m => m.id === mId);
+      const normMemId = getMemberUuid(mId);
+      const mem = members.find(m => m.id === mId || m.id === normMemId);
       if (mem) {
-        note.memberId = mem.id;
+        note.memberId = normMemId;
         note.memberName = mem.name;
         note.memberRole = mem.role;
         note.memberCollege = mem.college;
       }
       note.category = document.getElementById("editNoteCategory").value;
       note.note = document.getElementById("editNoteContent").value.trim();
+      saveAllState(true);
+
+      if (portalSupabase) {
+        runPortalDb(portalSupabase.from('monitoring_notes').update({
+          member_id: note.memberId,
+          member_name: note.memberName,
+          member_role: note.memberRole,
+          member_college: note.memberCollege,
+          category: note.category,
+          note: note.note
+        }).eq('id', id));
+      }
+      broadcastPortalMutation('UPDATE_MONITORING_NOTE', { id, fields: { memberId: note.memberId, memberName: note.memberName, memberRole: note.memberRole, memberCollege: note.memberCollege, category: note.category, note: note.note } });
 
       closeModal("editMonitoringNoteModal");
       showToast("Monitoring note updated.");
@@ -3250,18 +3293,20 @@
 
     function deleteCurrentMonitoringNote() {
       const id = document.getElementById("editNoteTargetId").value;
-      addDeletedId("notes", id);
-      monitoringNotes = monitoringNotes.filter(n => n.id !== id);
-      saveAllState();
+      deleteMonitoringNote(id);
       closeModal("editMonitoringNoteModal");
-      showToast("Monitoring note deleted.");
-      renderMonitoringNotes();
     }
 
     function deleteMonitoringNote(id) {
       addDeletedId("notes", id);
       monitoringNotes = monitoringNotes.filter(n => n.id !== id);
-      saveAllState();
+      saveAllState(true);
+
+      if (portalSupabase) {
+        runPortalDb(portalSupabase.from('monitoring_notes').delete().eq('id', id));
+      }
+      broadcastPortalMutation('DELETE_MONITORING_NOTE', { id });
+
       showToast("Monitoring note deleted.");
       renderMonitoringNotes();
     }
@@ -3529,7 +3574,6 @@
     }
 
     function renderStarAmbassadors() {
-      saveAllState();
       const container = document.getElementById("starAmbassadorsContainer");
       const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
       if (starAmbassadors.length === 0) { container.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400 text-xs">No star ambassadors selected.</div>`; return; }
@@ -3557,7 +3601,6 @@
     }
 
     function renderMembersTable(filter = "") {
-      saveAllState();
       const tbody = document.getElementById("membersTableBody");
       const thead = document.getElementById("membersTableHead");
       if (!tbody) return;
@@ -3676,13 +3719,25 @@
     }
 
     function deleteMember(mId) {
-      const mem = members.find(m => m.id === mId);
+      const normId = getMemberUuid(mId);
+      const mem = members.find(m => m.id === mId || m.id === normId);
       if (mId) addDeletedId("members", mId);
+      if (normId) addDeletedId("members", normId);
       if (mem && mem.studentId) addDeletedId("members", mem.studentId);
       if (mem && mem.name) addDeletedId("members", mem.name.toLowerCase().trim());
-      removeStarAmbassador(null, mId, mem ? mem.name : '');
-      members = members.filter(m => m.id !== mId);
-      saveAllState();
+      removeStarAmbassador(null, normId, mem ? mem.name : '');
+      members = members.filter(m => m.id !== mId && m.id !== normId);
+      saveAllState(true);
+
+      if (portalSupabase) {
+        runPortalDb(portalSupabase.from('members').delete().eq('id', normId));
+        runPortalDb(portalSupabase.from('star_ambassadors').delete().eq('member_id', normId));
+        runPortalDb(portalSupabase.from('disciplinary_warnings').delete().eq('member_id', normId));
+        runPortalDb(portalSupabase.from('attendance_records').delete().eq('member_id', normId));
+      }
+      broadcastPortalMutation('DELETE_MEMBER', { id: normId, studentId: mem?.studentId, name: mem?.name });
+
+      closeModal("editMemberModal");
       showToast(`Member ${mem ? mem.name : ''} deleted.`);
       renderAllViews();
     }
@@ -3916,21 +3971,41 @@
     function handleConfirmDischarge(e) {
       e.preventDefault();
       const mId = document.getElementById("dischargeTargetId").value;
-      const mem = members.find(m => m.id === mId);
+      const normId = getMemberUuid(mId);
+      const mem = members.find(m => m.id === mId || m.id === normId);
       if (mem) {
-        dischargedMembers.unshift({
-          id: `dis-${Date.now()}`,
+        const dischargeType = document.getElementById("dischargeTypeSelect").value;
+        const dischargeReason = document.getElementById("dischargeReasonText").value.trim();
+        const disRecord = {
+          id: normId,
           name: mem.name,
           role: mem.role,
+          position: mem.position,
           college: mem.college,
           studentId: mem.studentId,
           phone: mem.phone,
-          dischargeType: document.getElementById("dischargeTypeSelect").value,
-          dischargeReason: document.getElementById("dischargeReasonText").value.trim(),
+          status: "Discharged",
+          dischargeType,
+          dischargeReason,
+          avatar: mem.avatar || null,
           date: new Date().toISOString().split("T")[0]
-        });
+        };
+        dischargedMembers.unshift(disRecord);
         mem.status = "Discharged";
-        saveAllState();
+        mem.dischargeType = dischargeType;
+        mem.dischargeReason = dischargeReason;
+        members = members.filter(m => m.id !== mId && m.id !== normId);
+        saveAllState(true);
+
+        if (portalSupabase) {
+          runPortalDb(portalSupabase.from('members').update({
+            status: 'Discharged',
+            discharge_type: dischargeType,
+            discharge_reason: dischargeReason
+          }).eq('id', normId));
+        }
+        broadcastPortalMutation('DISCHARGE_MEMBER', { memberId: normId, record: disRecord });
+
         showToast(`${mem.name} moved to Discharged Members list.`);
         closeModal("dischargeModal");
         renderAllViews();
@@ -3941,12 +4016,12 @@
       e.preventDefault();
       const name = document.getElementById("newMemberName").value.trim();
       const avatar = document.getElementById("addMemberAvatarUrl").value.trim() || null;
-      const newId = `mem-${Date.now()}`;
+      const newId = generateUuid();
       const sId = document.getElementById("newMemberStudentId").value.trim() || '2024101';
       removeDeletedId("members", newId);
       removeDeletedId("members", sId);
       removeDeletedId("members", name.toLowerCase().trim());
-      members.push({
+      const newMem = {
         id: newId,
         name,
         role: document.getElementById("newMemberRole").value,
@@ -3961,8 +4036,29 @@
         score: 90,
         status: "Active",
         avatar
-      });
-      saveAllState();
+      };
+      members.push(newMem);
+      saveAllState(true);
+
+      if (portalSupabase) {
+        runPortalDb(portalSupabase.from('members').insert([{
+          id: newMem.id,
+          name: newMem.name,
+          role: newMem.role,
+          position: newMem.position,
+          college: newMem.college,
+          student_id: newMem.studentId,
+          phone: newMem.phone,
+          attendance_count: 0,
+          official_days: newMem.officialDays,
+          strikes: 0,
+          score: 90,
+          status: 'Active',
+          avatar: newMem.avatar
+        }]));
+      }
+      broadcastPortalMutation('ADD_MEMBER', newMem);
+
       closeModal("addMemberModal");
       document.getElementById("addMemberForm").reset();
       clearAddMemberAvatar();
@@ -4414,7 +4510,6 @@
     }
 
     function renderSideWarnings() {
-      saveAllState();
       const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
       const confirmedOnly = warnings.filter(w => w.status !== "Pending HR Approval");
       const badge = document.getElementById("sideWarningCountBadge");
@@ -4462,7 +4557,6 @@
     }
 
     function renderDashboardEvents() {
-      saveAllState();
       const container = document.getElementById("dashboardEventsList");
       if (!container) return;
       const kpiEl = document.getElementById("kpiEventsCount");
@@ -4528,9 +4622,11 @@
       const desc = document.getElementById("newEventDesc").value.trim();
       const colorInput = document.querySelector('input[name="newEventColor"]:checked');
       const color = colorInput ? colorInput.value : "blue";
+      const newEvtId = generateUuid();
+      removeDeletedId("events", newEvtId);
 
-      events.push({
-        id: `evt-${Date.now()}`,
+      const newEvt = {
+        id: newEvtId,
         title,
         type,
         status,
@@ -4538,7 +4634,11 @@
         location,
         description: desc,
         color
-      });
+      };
+
+      events.push(newEvt);
+      saveAllState(true);
+      broadcastPortalMutation('ADD_EVENT', newEvt);
 
       closeModal("addEventModal");
       showToast(`Event "${title}" created successfully.`);
@@ -4582,6 +4682,9 @@
       const radio = document.querySelector('input[name="editEventColor"]:checked');
       if (radio) evt.color = radio.value;
 
+      saveAllState(true);
+      broadcastPortalMutation('UPDATE_EVENT', { id, fields: { title: evt.title, type: evt.type, status: evt.status, date: evt.date, location: evt.location, description: evt.description, color: evt.color } });
+
       closeModal("editEventModal");
       showToast(`Event "${evt.title}" updated.`);
       renderAllViews();
@@ -4597,7 +4700,8 @@
       if (evt) {
         addDeletedId("events", id);
         events = events.filter(e => e.id !== id);
-        saveAllState();
+        saveAllState(true);
+        broadcastPortalMutation('DELETE_EVENT', { id });
         closeModal("editEventModal");
         showToast("Event removed from logs.");
         renderAllViews();
@@ -4678,12 +4782,22 @@
     function handleUpdateDischarged(e) {
       e.preventDefault();
       const id = document.getElementById("editDischargedTargetId").value;
-      const d = dischargedMembers.find(m => m.id === id);
+      const normId = getMemberUuid(id);
+      const d = dischargedMembers.find(m => m.id === id || m.id === normId);
       if (!d) return;
       d.dischargeType = document.getElementById("editDischargedType").value;
       d.date = document.getElementById("editDischargedDate").value;
       d.dischargeReason = document.getElementById("editDischargedReason").value.trim();
-      saveAllState();
+      saveAllState(true);
+
+      if (portalSupabase) {
+        runPortalDb(portalSupabase.from('members').update({
+          discharge_type: d.dischargeType,
+          discharge_reason: d.dischargeReason
+        }).eq('id', normId));
+      }
+      broadcastPortalMutation('UPDATE_MEMBER', { id: normId, fields: { discharge_type: d.dischargeType, discharge_reason: d.dischargeReason } });
+
       closeModal("editDischargedModal");
       showToast("Discharged record updated.");
       renderAllViews();
@@ -4691,11 +4805,12 @@
 
     function reinstateCurrentDischargedMember() {
       const id = document.getElementById("editDischargedTargetId").value;
-      const d = dischargedMembers.find(m => m.id === id);
+      const normId = getMemberUuid(id);
+      const d = dischargedMembers.find(m => m.id === id || m.id === normId);
       if (!d) return;
-      dischargedMembers = dischargedMembers.filter(m => m.id !== id);
-      members.push({
-        id: d.id,
+      dischargedMembers = dischargedMembers.filter(m => m.id !== id && m.id !== normId);
+      const reinstated = {
+        id: normId,
         name: d.name,
         role: d.role,
         position: "Member",
@@ -4708,8 +4823,19 @@
         strikes: 0,
         score: 90,
         status: "Active"
-      });
-      saveAllState();
+      };
+      members.push(reinstated);
+      saveAllState(true);
+
+      if (portalSupabase) {
+        runPortalDb(portalSupabase.from('members').update({
+          status: 'Active',
+          discharge_type: null,
+          discharge_reason: null
+        }).eq('id', normId));
+      }
+      broadcastPortalMutation('UPDATE_MEMBER', { id: normId, fields: { status: 'Active', discharge_type: null, discharge_reason: null } });
+
       closeModal("editDischargedModal");
       showToast(`${d.name} reinstated to active team!`);
       renderAllViews();
@@ -4726,12 +4852,25 @@
         showToast("Only HR Leadership can delete discharged records.", "warning");
         return;
       }
-      const d = dischargedMembers.find(m => m.id === id);
+      const normId = getMemberUuid(id);
+      const d = dischargedMembers.find(m => m.id === id || m.id === normId);
       const name = d ? d.name : "Member";
       addDeletedId("members", id);
-      dischargedMembers = dischargedMembers.filter(m => m.id !== id);
-      members = members.filter(m => m.id !== id);
-      saveAllState();
+      if (normId) addDeletedId("members", normId);
+      if (d && d.studentId) addDeletedId("members", d.studentId);
+      if (d && d.name) addDeletedId("members", d.name.toLowerCase().trim());
+      dischargedMembers = dischargedMembers.filter(m => m.id !== id && m.id !== normId);
+      members = members.filter(m => m.id !== id && m.id !== normId);
+      saveAllState(true);
+
+      if (portalSupabase) {
+        runPortalDb(portalSupabase.from('members').delete().eq('id', normId));
+        runPortalDb(portalSupabase.from('star_ambassadors').delete().eq('member_id', normId));
+        runPortalDb(portalSupabase.from('disciplinary_warnings').delete().eq('member_id', normId));
+        runPortalDb(portalSupabase.from('attendance_records').delete().eq('member_id', normId));
+      }
+      broadcastPortalMutation('DELETE_MEMBER', { id: normId, studentId: d?.studentId, name: d?.name });
+
       showToast(`${name} permanently deleted.`);
       renderAllViews();
     }
@@ -4906,30 +5045,58 @@
     }
     function handleSaveStarAmbassador(e) {
       e.preventDefault();
-      const mem = members.find(m => m.id === document.getElementById("starMemberSelect").value);
+      const memId = document.getElementById("starMemberSelect").value;
+      const normMemId = getMemberUuid(memId);
+      const mem = members.find(m => m.id === memId || m.id === normMemId);
       if (!mem) return;
-      const starId = `star-${Date.now()}`;
+      const starId = generateUuid();
+      const awardTitle = document.getElementById("starAwardTitle").value.trim() || 'Ambassador of the Month';
+      const citation = document.getElementById("starCitation").value.trim() || 'Outstanding contribution to AASTMT Admissions.';
+
       removeDeletedId('stars', starId);
-      removeDeletedId('stars', mem.id);
+      removeDeletedId('stars', normMemId);
       removeDeletedId('stars', mem.name.toLowerCase().trim());
+
+      const newStar = {
+        id: starId,
+        memberId: normMemId,
+        name: mem.name,
+        role: mem.role,
+        college: mem.college,
+        avatar: mem.avatar || null,
+        awardTitle,
+        citation
+      };
       starAmbassadors = [
-        { id: starId, memberId: mem.id, name: mem.name, role: mem.role, college: mem.college, awardTitle: document.getElementById("starAwardTitle").value.trim(), citation: document.getElementById("starCitation").value.trim() },
-        ...starAmbassadors.filter(s => s.id !== starId && s.memberId !== mem.id)
+        newStar,
+        ...starAmbassadors.filter(s => s.id !== starId && s.memberId !== normMemId && s.memberId !== memId)
       ];
-      saveAllState();
+      saveAllState(true);
+
+      if (portalSupabase) {
+        runPortalDb(portalSupabase.from('star_ambassadors').insert([{
+          id: starId,
+          member_id: normMemId,
+          award_title: awardTitle,
+          citation: citation
+        }]));
+      }
+      broadcastPortalMutation('ADD_STAR', newStar);
+
       closeModal("addStarModal");
       document.getElementById("addStarForm").reset();
-      showToast(`Star Ambassador granted.`);
+      showToast(`Star Ambassador granted to ${mem.name}.`);
       renderStarAmbassadors();
     }
+
     function removeStarAmbassador(sId, mId, sName) {
       const target = starAmbassadors.find(s =>
         (sId && s.id === sId) ||
-        (mId && (s.memberId === mId || s.member_id === mId)) ||
+        (mId && (s.memberId === mId || s.member_id === mId || getMemberUuid(s.memberId) === getMemberUuid(mId))) ||
         (sName && s.name && s.name.toLowerCase().trim() === String(sName).toLowerCase().trim())
       );
       const targetId = sId || target?.id;
-      const targetMemberId = mId || target?.memberId || target?.member_id;
+      const targetMemberId = mId ? getMemberUuid(mId) : (target?.memberId || target?.member_id);
       const targetName = (sName || target?.name || '').toLowerCase().trim();
 
       if (targetId) addDeletedId('stars', targetId);
@@ -4939,11 +5106,22 @@
       starAmbassadors = starAmbassadors.filter(s => {
         if (targetId && s.id === targetId) return false;
         const sm = s.memberId || s.member_id;
-        if (targetMemberId && sm === targetMemberId) return false;
+        if (targetMemberId && (sm === targetMemberId || getMemberUuid(sm) === targetMemberId)) return false;
         if (targetName && s.name && s.name.toLowerCase().trim() === targetName) return false;
         return true;
       });
-      saveAllState();
+      saveAllState(true);
+
+      if (portalSupabase) {
+        if (targetId && targetId.includes('-')) {
+          runPortalDb(portalSupabase.from('star_ambassadors').delete().eq('id', targetId));
+        }
+        if (targetMemberId) {
+          runPortalDb(portalSupabase.from('star_ambassadors').delete().eq('member_id', targetMemberId));
+        }
+      }
+      broadcastPortalMutation('REMOVE_STAR', { id: targetId, memberId: targetMemberId });
+
       showToast("Star recognition removed.");
       renderStarAmbassadors();
     }
@@ -4992,17 +5170,16 @@
         saveAllState();
 
         if (portalSupabase) {
-          runPortalDb(portalSupabase.from('system_users').upsert({
-            id: u.id,
+          runPortalDb(portalSupabase.from('system_users').update({
             name: u.name,
             username: u.username,
             password: u.password,
             role: u.role,
             avatar: u.avatar || null
-          }, { onConflict: 'username' }));
+          }).eq('id', cleanId));
         }
 
-        broadcastPortalMutation('UPDATE_SYSTEM_USER', { id: u.id, fields: { name: u.name, username: u.username, role: u.role, password: u.password, avatar: u.avatar || null } });
+        broadcastPortalMutation('UPDATE_SYSTEM_USER', { id: cleanId, fields: { name: u.name, username: u.username, role: u.role, password: u.password, avatar: u.avatar || null } });
         showToast(`Updated credentials.`);
         renderSystemUsersTable();
       }
@@ -5039,7 +5216,7 @@
         systemUsers.push(newU);
       }
 
-      saveAllState();
+      saveAllState(true);
 
       if (portalSupabase) {
         runPortalDb(portalSupabase.from('system_users').upsert({
@@ -5049,7 +5226,7 @@
           password: newU.password,
           role: newU.role,
           avatar: null
-        }, { onConflict: 'username' }));
+        }, { onConflict: 'id' }));
       }
 
       broadcastPortalMutation('ADD_SYSTEM_USER', newU);
@@ -5135,17 +5312,17 @@
       const confirmPwd = document.getElementById("editConfirmPassword").value;
       const avatarVal = document.getElementById("editProfileAvatarUrl").value.trim() || null;
 
-      const u = systemUsers.find(x => x.username === currentUser.username);
+      const u = systemUsers.find(x => (x.username || '').toLowerCase().trim() === (currentUser.username || '').toLowerCase().trim() || x.id === currentUser.id);
       if (newPwd || confirmPwd || oldPwd) {
-        if (!u || u.password !== oldPwd) {
+        if (!u || (u.password || '').trim() !== oldPwd.trim()) {
           showToast("Incorrect old password.", "danger");
           return;
         }
-        if (newPwd !== confirmPwd) {
+        if (newPwd.trim() !== confirmPwd.trim()) {
           showToast("New passwords do not match.", "danger");
           return;
         }
-        u.password = newPwd;
+        u.password = newPwd.trim();
       }
 
       currentUser.name = name;
@@ -5173,7 +5350,7 @@
         broadcastPortalMutation('UPDATE_SYSTEM_USER', { id: cleanId, fields: { name: u.name, username: u.username, role: u.role, password: u.password, avatar: u.avatar } });
       }
 
-      saveAllState();
+      saveAllState(true);
       try {
         localStorage.setItem("aastmt_current_user", JSON.stringify(currentUser));
       } catch (err) {}
