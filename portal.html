@@ -1888,14 +1888,41 @@
       });
     }
 
-    const USERS_CACHE_VERSION = "v4_oct9_new_users";
+    const SYSTEM_CACHE_VERSION = "v5_oct9_full_sync";
     try {
-      if (localStorage.getItem("aastmt_users_ver") !== USERS_CACHE_VERSION) {
-        localStorage.removeItem("aastmt_system_users");
-        localStorage.removeItem("aastmt_current_user");
-        localStorage.removeItem("aastmt_login_timestamp");
-        localStorage.removeItem("aastmt_deleted_users");
-        localStorage.setItem("aastmt_users_ver", USERS_CACHE_VERSION);
+      if (typeof window !== "undefined" && localStorage.getItem("aastmt_sync_ver") !== SYSTEM_CACHE_VERSION) {
+        const keysToRemove = [
+          "aastmt_members",
+          "aastmt_discharged_members",
+          "aastmt_star_ambassadors",
+          "aastmt_attendance_sessions",
+          "aastmt_warnings",
+          "aastmt_events",
+          "aastmt_monitoring_notes",
+          "aastmt_system_users",
+          "aastmt_deleted_members",
+          "aastmt_deleted_users",
+          "aastmt_deleted_sessions",
+          "aastmt_deleted_warnings",
+          "aastmt_deleted_stars",
+          "aastmt_deleted_events",
+          "aastmt_deleted_notes"
+        ];
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+        const savedUser = localStorage.getItem("aastmt_current_user");
+        if (savedUser) {
+          try {
+            const parsed = JSON.parse(savedUser);
+            const validUsernames = ["dean", "ali", "booda", "test"];
+            if (!validUsernames.includes(parsed?.username?.toLowerCase()?.trim())) {
+              localStorage.removeItem("aastmt_current_user");
+              localStorage.removeItem("aastmt_login_timestamp");
+            }
+          } catch(e) {
+            localStorage.removeItem("aastmt_current_user");
+          }
+        }
+        localStorage.setItem("aastmt_sync_ver", SYSTEM_CACHE_VERSION);
       }
     } catch (e) {}
 
@@ -2287,7 +2314,6 @@
           const act = [];
           const dis = [];
           data.forEach(r => {
-            if (isMemberDeleted(r)) return;
             const memObj = {
               id: r.id,
               name: r.name,
@@ -2346,9 +2372,7 @@
         const { data: sData, error: sErr } = sessRes;
         const { data: rData } = recRes;
         if (!sErr && sData) {
-          const delS = getDeletedIds('sessions');
           attendanceSessions = sData
-            .filter(s => !delS.includes(s.id))
             .map(s => {
               const matchedRecords = (rData || []).filter(r => r.session_id === s.id);
               const rollCall = matchedRecords.map(r => {
@@ -2382,9 +2406,7 @@
       // 4. Disciplinary Warnings
       portalSupabase.from('disciplinary_warnings').select('*').then(({ data, error }) => {
         if (!error && data) {
-          const delW = getDeletedIds('warnings');
           warnings = data
-            .filter(w => !delW.includes(w.id))
             .map(w => {
               const m = members.find(mem => mem.id === w.member_id || getMemberUuid(mem.id) === w.member_id || mem.id === getMemberUuid(w.member_id)) || dischargedMembers.find(d => d.id === w.member_id || getMemberUuid(d.id) === w.member_id || d.id === getMemberUuid(w.member_id));
               return {
@@ -2406,9 +2428,7 @@
       // 5. Monitoring Notes
       portalSupabase.from('monitoring_notes').select('*').then(({ data, error }) => {
         if (!error && data && data.length > 0) {
-          const delN = getDeletedIds('notes');
           monitoringNotes = data
-            .filter(n => !delN.includes(n.id))
             .map(n => ({
               id: n.id,
               memberId: n.member_id,
@@ -2430,9 +2450,7 @@
       // 6. Events
       portalSupabase.from('events').select('*').then(({ data, error }) => {
         if (!error && data && data.length > 0) {
-          const delE = getDeletedIds('events');
           events = data
-            .filter(e => !delE.includes(e.id))
             .map(e => ({
               id: e.id,
               title: e.title,

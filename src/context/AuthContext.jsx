@@ -479,14 +479,41 @@ const INITIAL_MONITORING_NOTES = [
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000; // 7 days auto-logout expiration
 
-const USERS_CACHE_VERSION = "v4_oct9_new_users";
+const SYSTEM_CACHE_VERSION = "v5_oct9_full_sync";
 try {
-  if (typeof window !== "undefined" && localStorage.getItem("aastmt_users_ver") !== USERS_CACHE_VERSION) {
-    localStorage.removeItem("aastmt_system_users");
-    localStorage.removeItem("aastmt_current_user");
-    localStorage.removeItem("aastmt_login_timestamp");
-    localStorage.removeItem("aastmt_deleted_users");
-    localStorage.setItem("aastmt_users_ver", USERS_CACHE_VERSION);
+  if (typeof window !== "undefined" && localStorage.getItem("aastmt_sync_ver") !== SYSTEM_CACHE_VERSION) {
+    const keysToRemove = [
+      "aastmt_members",
+      "aastmt_discharged_members",
+      "aastmt_star_ambassadors",
+      "aastmt_attendance_sessions",
+      "aastmt_warnings",
+      "aastmt_events",
+      "aastmt_monitoring_notes",
+      "aastmt_system_users",
+      "aastmt_deleted_members",
+      "aastmt_deleted_users",
+      "aastmt_deleted_sessions",
+      "aastmt_deleted_warnings",
+      "aastmt_deleted_stars",
+      "aastmt_deleted_events",
+      "aastmt_deleted_notes"
+    ];
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    const savedUser = localStorage.getItem("aastmt_current_user");
+    if (savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        const validUsernames = ["dean", "ali", "booda", "test"];
+        if (!validUsernames.includes(parsed?.username?.toLowerCase()?.trim())) {
+          localStorage.removeItem("aastmt_current_user");
+          localStorage.removeItem("aastmt_login_timestamp");
+        }
+      } catch(e) {
+        localStorage.removeItem("aastmt_current_user");
+      }
+    }
+    localStorage.setItem("aastmt_sync_ver", SYSTEM_CACHE_VERSION);
   }
 } catch (e) {}
 
@@ -935,10 +962,6 @@ export function AuthProvider({ children }) {
       const { data: dbMembers, error: mErr } = await supabase.from('members').select('*');
       if (!mErr && dbMembers && dbMembers.length > 0) {
         dbMembers.forEach(row => {
-          if (isMemberDeleted(row)) {
-            runDb(supabase.from('members').delete().eq('id', row.id));
-            return;
-          }
           const formatted = {
             id: row.id,
             name: row.name,
@@ -1022,17 +1045,9 @@ export function AuthProvider({ children }) {
       const { data: dbStars, error: sErr } = await supabase.from('star_ambassadors').select('*');
 
       if (!sErr && dbStars) {
-        // Delete any legacy demo stars ('star-1', 'star-2') or tombstoned records from cloud DB
-        dbStars.forEach(s => {
-          if (s.id === 'star-1' || s.id === 'star-2' || isStarDeleted(s)) {
-            if (s.id) runDb(supabase.from('star_ambassadors').delete().eq('id', s.id));
-            if (s.member_id) runDb(supabase.from('star_ambassadors').delete().eq('member_id', s.member_id));
-          }
-        });
-
         const allKnownMembers = [...activeMems, ...disMems, ...members];
         const validDbStars = dbStars
-          .filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isStarDeleted(s))
+          .filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isLegacyDemoStar(s))
           .map(s => {
             const m = allKnownMembers.find(mem => mem.id === s.member_id);
             return {
@@ -1051,12 +1066,11 @@ export function AuthProvider({ children }) {
         try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(validDbStars)); } catch (e) {}
       } else if (sErr) {
         const localStars = loadStoredState("aastmt_star_ambassadors", [])
-          .filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isStarDeleted(s));
+          .filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isLegacyDemoStar(s));
         setStarAmbassadors(localStars);
       }
 
       // 4. Attendance Sessions & Relational Attendance Records
-      const deletedSessionIds = getDeletedIds('sessions');
       const [sessRes, recRes] = await Promise.all([
         supabase.from('attendance_sessions').select('*'),
         supabase.from('attendance_records').select('*')
@@ -1066,16 +1080,8 @@ export function AuthProvider({ children }) {
       const { data: dbRecords } = recRes;
 
       if (!aErr && dbSessions) {
-        if (deletedSessionIds.length > 0) {
-          deletedSessionIds.forEach(delId => {
-            if (dbSessions.some(s => s.id === delId)) {
-              runDb(supabase.from('attendance_sessions').delete().eq('id', delId));
-            }
-          });
-        }
         const allKnownMembers = [...activeMems, ...disMems, ...members];
         const validSessions = dbSessions
-          .filter(s => !deletedSessionIds.includes(s.id))
           .map(s => {
             const matchedRecords = (dbRecords || []).filter(r => r.session_id === s.id);
             const rollCall = matchedRecords.map(r => {
@@ -1107,19 +1113,10 @@ export function AuthProvider({ children }) {
       }
 
       // 5. Warnings
-      const deletedWarningIds = getDeletedIds('warnings');
       const { data: dbWarnings, error: wErr } = await supabase.from('disciplinary_warnings').select('*');
       if (!wErr && dbWarnings) {
-        if (deletedWarningIds.length > 0) {
-          deletedWarningIds.forEach(delId => {
-            if (dbWarnings.some(w => w.id === delId)) {
-              runDb(supabase.from('disciplinary_warnings').delete().eq('id', delId));
-            }
-          });
-        }
         const allKnownMembers = [...activeMems, ...disMems, ...members];
         const validWarnings = dbWarnings
-          .filter(w => !deletedWarningIds.includes(w.id))
           .map(w => {
             const m = allKnownMembers.find(mem => mem.id === w.member_id || getMemberUuid(mem.id) === w.member_id || mem.id === getMemberUuid(w.member_id));
             return {
@@ -1138,18 +1135,9 @@ export function AuthProvider({ children }) {
       }
 
       // 6. Monitoring Notes
-      const deletedNoteIds = getDeletedIds('notes');
       const { data: dbNotes, error: nErr } = await supabase.from('monitoring_notes').select('*');
       if (!nErr && dbNotes && dbNotes.length > 0) {
-        if (deletedNoteIds.length > 0) {
-          deletedNoteIds.forEach(delId => {
-            if (dbNotes.some(n => n.id === delId)) {
-              runDb(supabase.from('monitoring_notes').delete().eq('id', delId));
-            }
-          });
-        }
         const validNotes = dbNotes
-          .filter(n => !deletedNoteIds.includes(n.id))
           .map(n => ({
             id: n.id,
             memberId: n.member_id,
@@ -1168,18 +1156,9 @@ export function AuthProvider({ children }) {
       }
 
       // 7. Events
-      const deletedEventIds = getDeletedIds('events');
       const { data: dbEvents, error: eErr } = await supabase.from('events').select('*');
       if (!eErr && dbEvents && dbEvents.length > 0) {
-        if (deletedEventIds.length > 0) {
-          deletedEventIds.forEach(delId => {
-            if (dbEvents.some(e => e.id === delId)) {
-              runDb(supabase.from('events').delete().eq('id', delId));
-            }
-          });
-        }
         const validEvents = dbEvents
-          .filter(e => !deletedEventIds.includes(e.id))
           .map(e => ({
             id: e.id,
             title: e.title,
