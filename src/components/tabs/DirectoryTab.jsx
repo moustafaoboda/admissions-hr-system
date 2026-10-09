@@ -7,6 +7,7 @@ export default function DirectoryTab() {
   const {
     currentUser,
     members,
+    warnings,
     attendanceSessions,
     dischargedMembers,
     updateMemberPerformance,
@@ -112,11 +113,9 @@ export default function DirectoryTab() {
                   </>
                 )}
                 <th className="py-3 px-4">Official Working Days</th>
+                <th className="py-3 px-4 text-center">WARNINGS</th>
                 {!isHRMember && (
-                  <>
-                    <th className="py-3 px-4 text-center">WARNINGS</th>
-                    <th className="py-3 px-4 text-center">Performance</th>
-                  </>
+                  <th className="py-3 px-4 text-center">Performance</th>
                 )}
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
@@ -131,12 +130,34 @@ export default function DirectoryTab() {
               ) : (
                 filteredMembers.map(m => {
                   const rate = getMemberAttendanceRate(m, attendanceSessions);
+                  const memWarns = (warnings || []).filter(w =>
+                    w.memberId === m.id ||
+                    (w.memberName && w.memberName.toLowerCase().trim() === m.name.toLowerCase().trim())
+                  );
+                  const confirmedWarns = memWarns.filter(w => w.status === 'Confirmed Strike');
+                  const pendingWarns = memWarns.filter(w => w.status === 'Pending HR Approval');
+                  const totalStrikes = Math.max(m.strikes || 0, confirmedWarns.length);
+
                   return (
                     <tr key={m.id} className="hover:bg-slate-50 transition">
                       <td className="py-3 px-4 font-bold text-slate-800 text-sm whitespace-nowrap">
                         <div className="flex items-center gap-2.5">
                           <MemberAvatar member={m} size="w-8 h-8 text-xs" />
-                          <span>{m.name}</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span>{m.name}</span>
+                            {totalStrikes > 0 && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300" title={`${totalStrikes} Confirmed Strike(s)`}>
+                                <i className="fa-solid fa-triangle-exclamation text-[9px] text-rose-600"></i>
+                                {totalStrikes} Strike{totalStrikes > 1 ? 's' : ''}
+                              </span>
+                            )}
+                            {pendingWarns.length > 0 && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300 animate-pulse" title="Warning Request Pending Review">
+                                <i className="fa-solid fa-clock text-[9px] text-amber-600"></i>
+                                Req
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
 
@@ -220,15 +241,20 @@ export default function DirectoryTab() {
                         </div>
                       </td>
 
-                      {!isHRMember && (
                       <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
-                          m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'
-                        }`}>
-                          {m.strikes}
-                        </span>
+                        <div className="inline-flex items-center gap-1.5 justify-center">
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
+                            totalStrikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700 border border-rose-300'
+                          }`}>
+                            {totalStrikes}
+                          </span>
+                          {pendingWarns.length > 0 && (
+                            <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded border border-amber-300" title="1 Warning Request Pending">
+                              +{pendingWarns.length} req
+                            </span>
+                          )}
+                        </div>
                       </td>
-                      )}
 
                       {!isHRMember && (
                       <td className="py-3 px-4 text-center whitespace-nowrap">
@@ -258,16 +284,28 @@ export default function DirectoryTab() {
 
                       <td className="py-3 px-4 text-right whitespace-nowrap space-x-1">
                         {isHRMember ? (
-                          <button
-                            onClick={() => {
-                              setMonitoringSelectedMemberId(m.id);
-                              switchTab('monitoring');
-                            }}
-                            className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold transition inline-flex items-center gap-1 shadow-xs"
-                            title="Write Monitoring Note"
-                          >
-                            <i className="fa-solid fa-clipboard-check text-[10px]"></i> Note
-                          </button>
+                          <>
+                            <button
+                              onClick={() => {
+                                setMonitoringSelectedMemberId(m.id);
+                                switchTab('monitoring');
+                              }}
+                              className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold transition inline-flex items-center gap-1 shadow-xs"
+                              title="Write Monitoring Note"
+                            >
+                              <i className="fa-solid fa-clipboard-check text-[10px]"></i> Note
+                            </button>
+                            <button
+                              onClick={() => {
+                                setModalExtraData({ mode: 'request', preselectedMemberId: m.id });
+                                setActiveModal('warning');
+                              }}
+                              className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded text-[11px] font-bold transition inline-flex items-center gap-1 ml-1"
+                              title="Request Warning for Member"
+                            >
+                              <i className="fa-solid fa-triangle-exclamation text-[10px]"></i> Warning
+                            </button>
+                          </>
                         ) : isDean ? (
                           <span className="text-slate-400 italic">View only</span>
                         ) : (

@@ -15,8 +15,7 @@ export default function WarningsListModal() {
 
   const [subTab, setSubTab] = useState('confirmed'); // 'confirmed' | 'requests'
 
-  const isHRMember = currentUser?.role === "HR";
-  if (activeModal !== 'warningsListModal' || isHRMember) return null;
+  if (activeModal !== 'warningsListModal') return null;
 
   const isViceHead = currentUser?.role === "HR Vice Head";
   const isHeadOrVice = currentUser?.role === "HR Head" || isViceHead;

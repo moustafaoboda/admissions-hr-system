@@ -10,11 +10,21 @@ export function MemberAvatar({ member, memberId, name, size = "w-8 h-8 text-xs",
   let mem = null;
   if (member && typeof member === 'object') {
     mem = member;
+    if (!mem.avatar) {
+      const targetId = mem.id || mem.memberId || mem.member_id;
+      const targetName = (mem.name || '').toLowerCase().trim();
+      const found = members.find(m => (targetId && m.id === targetId) || (targetName && m.name?.toLowerCase().trim() === targetName))
+        || dischargedMembers.find(d => (targetId && d.id === targetId) || (targetName && d.name?.toLowerCase().trim() === targetName));
+      if (found && found.avatar) {
+        mem = { ...mem, avatar: found.avatar };
+      }
+    }
   } else {
-    const raw = (memberId || member || name || '').toString().toLowerCase().trim();
-    if (raw) {
-      mem = members.find(m => m.id === memberId || m.name?.toLowerCase() === raw || raw.includes(m.name?.toLowerCase()) || m.name?.toLowerCase().includes(raw))
-        || dischargedMembers.find(d => d.id === memberId || d.name?.toLowerCase() === raw || raw.includes(d.name?.toLowerCase()) || d.name?.toLowerCase().includes(raw));
+    const rawId = memberId || (typeof member === 'string' && member.length > 20 ? member : '');
+    const raw = (name || member || '').toString().toLowerCase().trim();
+    if (rawId || raw) {
+      mem = members.find(m => (rawId && m.id === rawId) || (raw && (m.id === raw || m.name?.toLowerCase() === raw || raw.includes(m.name?.toLowerCase()) || m.name?.toLowerCase().includes(raw))))
+        || dischargedMembers.find(d => (rawId && d.id === rawId) || (raw && (d.id === raw || d.name?.toLowerCase() === raw || raw.includes(d.name?.toLowerCase()) || d.name?.toLowerCase().includes(raw))));
     }
   }
 
@@ -54,6 +64,16 @@ export function UserAvatar({ user, username, name, size = "w-6 h-6 text-[10px]",
   let usr = null;
   if (user && typeof user === 'object') {
     usr = user;
+    if (!usr.avatar) {
+      const targetId = usr.id;
+      const targetUser = (usr.username || '').toLowerCase().trim();
+      const targetName = (usr.name || '').toLowerCase().trim();
+      const found = systemUsers.find(u => (targetId && u.id === targetId) || (targetUser && u.username?.toLowerCase() === targetUser) || (targetName && u.name?.toLowerCase() === targetName))
+        || (currentUser && ((targetId && currentUser.id === targetId) || (targetUser && currentUser.username?.toLowerCase() === targetUser) || (targetName && currentUser.name?.toLowerCase() === targetName)) ? currentUser : null);
+      if (found && found.avatar) {
+        usr = { ...usr, avatar: found.avatar };
+      }
+    }
   } else {
     const raw = (user || username || name || '').toString().toLowerCase().trim();
     if (raw) {

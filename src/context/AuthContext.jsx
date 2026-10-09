@@ -1390,7 +1390,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('UPDATE_SYSTEM_ICON', newIconConfig);
 
     if (supabase) {
-      runDb(supabase.from('system_settings').upsert({ key: 'system_icon', value: newIconConfig }));
+      runDb(supabase.from('system_settings').upsert({ key: 'system_icon', value: newIconConfig }, { onConflict: 'key' }));
     }
 
     logActivity("Updated system branding icon/logo", "System");

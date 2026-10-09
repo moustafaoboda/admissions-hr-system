@@ -85,12 +85,12 @@ export default function AttendanceTab() {
     setIsEditing(true);
   };
 
-  const handleTogglePresent = (memberId) => {
-    setEditRollCall(prev => prev.map(rc => rc.memberId === memberId ? {
+  const handleSetStatus = (memberId, isPresent) => {
+    setEditRollCall(prev => prev.map(rc => (rc.memberId === memberId || (rc.name && rc.name === memberId)) ? {
       ...rc,
-      isPresent: !rc.isPresent,
-      isExcused: !rc.isPresent ? false : rc.isExcused,
-      excuseReason: !rc.isPresent ? '' : rc.excuseReason
+      isPresent,
+      isExcused: isPresent ? false : rc.isExcused,
+      excuseReason: isPresent ? '' : rc.excuseReason
     } : rc));
   };
 
@@ -410,7 +410,7 @@ export default function AttendanceTab() {
                       {isEditing && isHeadOrVice ? (
                         <select
                           value={rc.isPresent ? 'present' : 'absent'}
-                          onChange={() => handleTogglePresent(rc.memberId)}
+                          onChange={(e) => handleSetStatus(rc.memberId, e.target.value === 'present')}
                           className={`px-2 py-1 border rounded text-xs font-semibold ${
                             rc.isPresent ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-rose-50 text-rose-800 border-rose-300'
                           }`}

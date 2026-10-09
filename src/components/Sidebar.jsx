@@ -74,46 +74,52 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Warnings Card: Hidden for HR members */}
-      {!isHRMember && (
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 hover:border-slate-300 transition">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-base font-bold shadow-sm">
-                <i className="fa-solid fa-triangle-exclamation"></i>
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-[#002244]">Warnings</h3>
-                <p className="text-[10px] text-slate-500">Disciplinary Notifications</p>
-              </div>
+      {/* Warnings Card: Visible to all system roles */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 hover:border-slate-300 transition">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-base font-bold shadow-sm">
+              <i className="fa-solid fa-triangle-exclamation"></i>
             </div>
-
-            <span className="px-2 py-0.5 bg-rose-100 text-rose-800 text-xs font-black rounded-full border border-rose-300">
-              {confirmedWarningsCount}
-            </span>
+            <div>
+              <h3 className="font-bold text-sm text-[#002244]">Warnings</h3>
+              <p className="text-[10px] text-slate-500">Disciplinary Notifications</p>
+            </div>
           </div>
 
-          <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
-            <button
-              onClick={() => setActiveModal('warningsListModal')}
-              className="w-full py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold text-xs rounded-xl border border-rose-200 flex items-center justify-center gap-2 transition"
-            >
-              <i className="fa-solid fa-window-restore text-rose-600"></i>
-              <span>Open Warnings ({confirmedWarningsCount})</span>
-            </button>
-
-            {isHeadOrVice && (
-              <button
-                onClick={() => handleOpenWarning('issue')}
-                className="w-full py-1.5 px-3 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center justify-center gap-1.5 transition"
-              >
-                <i className="fa-solid fa-plus text-[10px]"></i>
-                <span>Issue New Warning</span>
-              </button>
-            )}
-          </div>
+          <span className="px-2 py-0.5 bg-rose-100 text-rose-800 text-xs font-black rounded-full border border-rose-300">
+            {confirmedWarningsCount}
+          </span>
         </div>
-      )}
+
+        <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+          <button
+            onClick={() => setActiveModal('warningsListModal')}
+            className="w-full py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold text-xs rounded-xl border border-rose-200 flex items-center justify-center gap-2 transition"
+          >
+            <i className="fa-solid fa-window-restore text-rose-600"></i>
+            <span>Open Warnings ({confirmedWarningsCount})</span>
+          </button>
+
+          {isHeadOrVice ? (
+            <button
+              onClick={() => handleOpenWarning('issue')}
+              className="w-full py-1.5 px-3 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center justify-center gap-1.5 transition"
+            >
+              <i className="fa-solid fa-plus text-[10px]"></i>
+              <span>Issue New Warning</span>
+            </button>
+          ) : isHRMember ? (
+            <button
+              onClick={() => handleOpenWarning('request')}
+              className="w-full py-1.5 px-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg shadow-sm flex items-center justify-center gap-1.5 transition"
+            >
+              <i className="fa-solid fa-paper-plane text-[10px]"></i>
+              <span>Request Warning Issuance</span>
+            </button>
+          ) : null}
+        </div>
+      </div>
 
       {/* Warning Requests Card: Under Warnings, Visible ONLY to HR Leadership (Hidden for HR Members and Dean) */}
       {isHeadOrVice && (

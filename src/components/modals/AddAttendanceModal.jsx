@@ -24,21 +24,24 @@ export default function AddAttendanceModal() {
 
   useEffect(() => {
     if (members && members.length > 0) {
-      let filtered = members;
+      let filtered = members.filter(m => m.status !== "Discharged");
       if (filterByDay && dayName) {
-        filtered = members.filter(m => 
+        filtered = filtered.filter(m => 
           (m.officialDays || []).includes(dayName) || 
           (m.extraDays || []).includes(dayName)
         );
       }
-      setRollCall(filtered.map(m => ({
-        memberId: m.id,
-        name: m.name,
-        role: m.role,
-        isPresent: true,
-        isExcused: false,
-        excuseReason: ''
-      })));
+      setRollCall(prev => filtered.map(m => {
+        const existing = prev.find(p => p.memberId === m.id || p.name === m.name);
+        return existing || {
+          memberId: m.id,
+          name: m.name,
+          role: m.role,
+          isPresent: true,
+          isExcused: false,
+          excuseReason: ''
+        };
+      }));
     }
   }, [members, activeModal, dayName, filterByDay]);
 

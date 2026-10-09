@@ -2462,7 +2462,7 @@
       }).catch(() => {});
 
       // 7. Star Ambassadors
-      portalSupabase.from('star_ambassadors').select('*').then(({ data, error }) => {
+      runPortalDb(portalSupabase.from('star_ambassadors').select('*')).then(({ data, error }) => {
         if (!error && data) {
           const allKnown = [...members, ...dischargedMembers];
           starAmbassadors = data
@@ -2483,10 +2483,10 @@
           try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(starAmbassadors)); } catch(e) {}
           renderStarAmbassadors();
         }
-      }).catch(() => {});
+      });
 
       // 8. System Settings
-      portalSupabase.from('system_settings').select('*').then(({ data, error }) => {
+      runPortalDb(portalSupabase.from('system_settings').select('*')).then(({ data, error }) => {
         if (!error && data && data.length > 0) {
           const iconSetting = data.find(s => s.key === 'system_icon');
           if (iconSetting && iconSetting.value) {
@@ -2495,7 +2495,7 @@
             renderSystemIcon();
           }
         }
-      }).catch(() => {});
+      });
     }
 
     function initPortalSupabase() {
@@ -2625,6 +2625,10 @@
                   starAmbassadors = starAmbassadors.filter(s => s.id !== mut.payload.id && s.memberId !== mut.payload.memberId);
                   saveAllState();
                   renderAllViews();
+                } else if (mut.type === 'UPDATE_SYSTEM_ICON' && mut.payload) {
+                  systemIcon = mut.payload;
+                  try { localStorage.setItem("aastmt_system_icon", JSON.stringify(systemIcon)); } catch(e) {}
+                  renderSystemIcon();
                 }
               }
             })
@@ -2774,6 +2778,13 @@
       let mem = null;
       if (typeof memberOrIdOrName === "object" && memberOrIdOrName !== null) {
         mem = memberOrIdOrName;
+        if (!mem.avatar) {
+          const targetId = mem.id || mem.memberId || mem.member_id;
+          const targetName = (mem.name || '').toLowerCase().trim();
+          const found = members.find(m => (targetId && m.id === targetId) || (targetName && m.name.toLowerCase().trim() === targetName))
+             || dischargedMembers.find(d => (targetId && d.id === targetId) || (targetName && d.name.toLowerCase().trim() === targetName));
+          if (found && found.avatar) mem = { ...mem, avatar: found.avatar };
+        }
       } else if (typeof memberOrIdOrName === "string") {
         const raw = memberOrIdOrName.toLowerCase().trim();
         mem = members.find(m => m.id === memberOrIdOrName || m.name.toLowerCase() === raw || raw.includes(m.name.toLowerCase()))
@@ -2794,6 +2805,14 @@
       let usr = null;
       if (typeof userOrName === "object" && userOrName !== null) {
         usr = userOrName;
+        if (!usr.avatar) {
+          const targetId = usr.id;
+          const targetUser = (usr.username || '').toLowerCase().trim();
+          const targetName = (usr.name || '').toLowerCase().trim();
+          const found = systemUsers.find(u => (targetId && u.id === targetId) || (targetUser && u.username.toLowerCase() === targetUser) || (targetName && u.name.toLowerCase() === targetName))
+             || (currentUser && ((targetId && currentUser.id === targetId) || (targetUser && currentUser.username.toLowerCase() === targetUser) || (targetName && currentUser.name.toLowerCase() === targetName)) ? currentUser : null);
+          if (found && found.avatar) usr = { ...usr, avatar: found.avatar };
+        }
       } else if (typeof userOrName === "string") {
         const raw = userOrName.toLowerCase().trim();
         usr = systemUsers.find(u => raw.includes(u.username.toLowerCase()) || raw.includes(u.name.toLowerCase()) || u.name.toLowerCase().includes(raw))
@@ -3481,7 +3500,7 @@
       // Side control panel cards visibility
       const sideWarnCard = document.getElementById("sideWarningCard");
       const sideWarnReqCard = document.getElementById("sideWarningRequestsCard");
-      if (sideWarnCard) sideWarnCard.style.display = isHRMember ? "none" : "block";
+      if (sideWarnCard) sideWarnCard.style.display = "block";
       if (sideWarnReqCard) sideWarnReqCard.style.display = isHeadOrVice ? "block" : "none";
 
       // Tabs visibility
@@ -3511,6 +3530,8 @@
       if (sideWarningActionBtn) {
         if (isHeadOrVice) {
           sideWarningActionBtn.innerHTML = `<button onclick="openWarningModal('issue')" class="w-full py-2 px-3 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-plus text-[10px]"></i><span>Issue Warning</span></button>`;
+        } else if (isHRMember) {
+          sideWarningActionBtn.innerHTML = `<button onclick="openWarningModal('request')" class="w-full py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-paper-plane text-[10px]"></i><span>Request Warning</span></button>`;
         } else {
           sideWarningActionBtn.innerHTML = ``;
         }
@@ -3648,8 +3669,8 @@
             <th class="py-3 px-4 text-center">Attendance Count</th>
             <th class="py-3 px-4 text-center">Attendance Rate</th>`}
             <th class="py-3 px-4">Official Working Days</th>
-            ${isHRMember ? '' : `
             <th class="py-3 px-4 text-center">WARNINGS</th>
+            ${isHRMember ? '' : `
             <th class="py-3 px-4 text-center">Performance</th>`}
             <th class="py-3 px-4 text-right">Actions</th>
           </tr>
@@ -3659,7 +3680,7 @@
       if (dischargedSection) dischargedSection.style.display = isHRMember ? "none" : "";
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${isHRMember ? 5 : 11}" class="text-center py-6 text-slate-400">No team members found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${isHRMember ? 6 : 11}" class="text-center py-6 text-slate-400">No team members found.</td></tr>`;
         return;
       }
 
@@ -3677,14 +3698,27 @@
           </div>
         ` : (extraCount > 0 ? `<span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded">+${extraCount} Extra</span>` : '');
 
+        const memWarns = (warnings || []).filter(w =>
+          w.memberId === m.id ||
+          getMemberUuid(w.memberId) === getMemberUuid(m.id) ||
+          (w.memberName && w.memberName.toLowerCase().trim() === m.name.toLowerCase().trim())
+        );
+        const confirmedWarns = memWarns.filter(w => w.status === 'Confirmed Strike');
+        const pendingWarns = memWarns.filter(w => w.status === 'Pending HR Approval');
+        const totalStrikes = Math.max(m.strikes || 0, confirmedWarns.length);
+
         const memInitials = (m.name || "MB").split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() || "MB";
         const memberAvatarMarkup = `
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full border border-slate-200 bg-slate-100 flex-shrink-0 flex items-center justify-center font-bold text-xs text-[#002244] shadow-xs">
+            <div class="w-9 h-9 rounded-full border border-slate-200 bg-slate-100 flex-shrink-0 flex items-center justify-center font-bold text-xs text-[#002244] shadow-xs overflow-hidden">
               ${m.avatar ? `<img src="${m.avatar}" class="w-full h-full object-cover rounded-full block" alt="${m.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span>${memInitials}</span>'">` : `<span>${memInitials}</span>`}
             </div>
             <div>
-              <div class="font-bold text-slate-800 text-sm leading-snug">${m.name}</div>
+              <div class="font-bold text-slate-800 text-sm leading-snug flex items-center gap-1.5 flex-wrap">
+                <span>${m.name}</span>
+                ${totalStrikes > 0 ? `<span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300" title="${totalStrikes} Strike(s)"><i class="fa-solid fa-triangle-exclamation text-[9px] text-rose-600"></i>${totalStrikes}</span>` : ''}
+                ${pendingWarns.length > 0 ? `<span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300 animate-pulse" title="Warning Request Pending"><i class="fa-solid fa-clock text-[9px] text-amber-600"></i>Req</span>` : ''}
+              </div>
               ${isHRMember ? '' : `<div class="text-[10px] text-slate-400 font-mono">${m.studentId || '2024000'}</div>`}
             </div>
           </div>
@@ -3702,6 +3736,7 @@
         } else if (isHRMember) {
           actionButtons = `
             <button onclick="quickWriteMonitoringNoteForMember('${m.id}')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold transition inline-flex items-center gap-1 shadow-xs" title="Write Monitoring Note"><i class="fa-solid fa-clipboard-check text-[10px]"></i> Note</button>
+            <button onclick="openWarningModal('request', '${m.id}')" class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded text-[11px] font-bold transition inline-flex items-center gap-1 ml-1" title="Request Warning"><i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Warning</button>
           `;
         } else {
           actionButtons = '<span class="text-slate-400 italic">View only</span>';
@@ -3718,8 +3753,13 @@
             <td class="py-3 px-4 text-center whitespace-nowrap"><span class="bg-blue-50 border border-blue-200 text-blue-800 font-extrabold px-2.5 py-0.5 rounded-lg">${m.attendanceCount} Sessions</span></td>
             <td class="py-3 px-4 text-center whitespace-nowrap"><span class="font-bold ${rate >= 90 ? 'text-emerald-700' : 'text-blue-700'}">${rate}%</span></td>`}
             <td class="py-3 px-4 whitespace-nowrap"><div class="flex items-center flex-wrap gap-1">${daysBadges} ${extraDaysCtrl}</div></td>
+            <td class="py-3 px-4 text-center whitespace-nowrap">
+              <div class="inline-flex items-center gap-1.5 justify-center">
+                <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${totalStrikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700 border border-rose-300'}">${totalStrikes}</span>
+                ${pendingWarns.length > 0 ? `<span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded border border-amber-300" title="Warning Request Pending">+${pendingWarns.length} req</span>` : ''}
+              </div>
+            </td>
             ${isHRMember ? '' : `
-            <td class="py-3 px-4 text-center whitespace-nowrap"><span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'}">${m.strikes}</span></td>
             <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-slate-700">${m.score}/100</td>`}
             <td class="py-3 px-4 text-right whitespace-nowrap space-x-1">
               ${actionButtons}
@@ -4109,10 +4149,10 @@
         }));
       } else {
         // Retain roll call records for scheduled members only
-        s.rollCall = s.rollCall.filter(rc => scheduledM.some(m => m.name === rc.name || m.id === rc.memberId));
+        s.rollCall = s.rollCall.filter(rc => scheduledM.some(m => (rc.name && m.name && m.name.toLowerCase().trim() === rc.name.toLowerCase().trim()) || m.id === rc.memberId || getMemberUuid(m.id) === getMemberUuid(rc.memberId)));
         // Add any missing scheduled member
         scheduledM.forEach(m => {
-          if (!s.rollCall.some(rc => rc.name === m.name || rc.memberId === m.id)) {
+          if (!s.rollCall.some(rc => (rc.name && m.name && rc.name.toLowerCase().trim() === m.name.toLowerCase().trim()) || rc.memberId === m.id || getMemberUuid(rc.memberId) === getMemberUuid(m.id))) {
             s.rollCall.push({
               memberId: m.id,
               name: m.name,
@@ -5523,7 +5563,17 @@
       } catch (err) {}
       renderSystemIcon();
       closeModal("systemIconModal");
-      showToast("System icon & branding saved!");
+
+      if (portalSupabase) {
+        runPortalDb(portalSupabase.from('system_settings').upsert({
+          key: 'system_icon',
+          value: systemIcon
+        }, { onConflict: 'key' }));
+      }
+      broadcastPortalMutation('UPDATE_SYSTEM_ICON', systemIcon);
+
+      logActivity("Updated system branding icon/logo", "System");
+      showToast("System icon & branding saved across all devices!");
     }
 
     async function callGeminiApi(prompt) {
