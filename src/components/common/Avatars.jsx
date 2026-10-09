@@ -66,7 +66,7 @@ export function UserAvatar({ user, username, name, size = "w-6 h-6 text-[10px]",
     setImgError(false);
   }, [usr?.avatar]);
 
-  const displayName = usr?.name || (typeof user === 'string' ? user.split('(')[0].trim() : (name || 'User'));
+  const displayName = usr?.name || (typeof user === 'string' ? user.replace(/\s*\(.*/, '').trim() : (name || 'User'));
   const avatar = !imgError ? (usr?.avatar || null) : null;
   const initials = (displayName || 'HR').split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'HR';
 

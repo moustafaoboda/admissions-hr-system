@@ -60,11 +60,6 @@ function isLegacyDemoStar(s) {
   if (!s) return true;
   const sId = s.id ? String(s.id).toLowerCase().trim() : '';
   if (sId === 'star-1' || sId === 'star-2') return true;
-  const name = (s.name || '').toLowerCase().trim();
-  const award = (s.awardTitle || s.award_title || '').toLowerCase().trim();
-  const cit = (s.citation || '').toLowerCase().trim();
-  if (name.includes('farida') && (award.includes('operations champion') || cit.includes('volunteered for 3 non-scheduled'))) return true;
-  if (name.includes('youssef') && (award.includes('lead admissions ambassador') || cit.includes('spearheaded orientation'))) return true;
   return false;
 }
 
@@ -1335,7 +1330,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('ADD_ACTIVITY_LOG', newEntry);
 
     if (supabase) {
-      supabase.from('activity_logs').insert([{
+      runDb(supabase.from('activity_logs').insert([{
         id: newEntry.id,
         action: newEntry.action,
         category: newEntry.category,
@@ -1500,7 +1495,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('ADD_MEMBER', mem);
 
     if (supabase) {
-      supabase.from('members').insert([{
+      runDb(supabase.from('members').insert([{
         id: mem.id,
         name: mem.name,
         role: mem.role,
