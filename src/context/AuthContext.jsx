@@ -1114,6 +1114,25 @@ export function AuthProvider({ children }) {
 
   // Initialize Realtime Listeners & Storage Cross-Tab Sync
   useEffect(() => {
+    // Coalescing refresh: never overlaps requests, and re-runs once if changes arrived mid-flight
+    let refreshInFlight = false;
+    let refreshQueued = false;
+    let refreshTimeout = null;
+    const runRefresh = async () => {
+      if (refreshInFlight) { refreshQueued = true; return; }
+      refreshInFlight = true;
+      try {
+        await refreshDataFromCloud();
+      } finally {
+        refreshInFlight = false;
+        if (refreshQueued) { refreshQueued = false; runRefresh(); }
+      }
+    };
+    const scheduleRefresh = (delay = 0) => {
+      if (refreshTimeout) return;
+      refreshTimeout = setTimeout(() => { refreshTimeout = null; runRefresh(); }, delay);
+    };
+
     // 1. Multi-Tab Local Broadcast Channel
     if (typeof window !== 'undefined' && window.BroadcastChannel) {
       const bc = new BroadcastChannel('aastmt_admissions_realtime');
@@ -1162,7 +1181,7 @@ export function AuthProvider({ children }) {
         })
         .on('postgres_changes', { event: '*', schema: 'public' }, () => {
           // Automatic DB row changes trigger instant parity refresh across all connected devices
-          refreshDataFromCloud();
+          scheduleRefresh(50);
         })
         .on('presence', { event: 'sync' }, () => {
           const presenceState = channel.presenceState();
@@ -1183,15 +1202,15 @@ export function AuthProvider({ children }) {
       refreshDataFromCloud();
     }
 
-    // 4. Background Sync Heartbeat (Polling every 3.5s ensures 100% parity across all devices even if backgrounded)
+    // 4. Background Sync Heartbeat (Polling every 2s ensures parity across all devices even if backgrounded)
     const heartbeatTimer = setInterval(() => {
-      refreshDataFromCloud();
-    }, 3500);
+      scheduleRefresh(0);
+    }, 2000);
 
     // 5. Re-sync immediately when tab gains focus, becomes visible, or reconnects to network
     const handleActiveResume = () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        refreshDataFromCloud();
+        scheduleRefresh(0);
       }
     };
     window.addEventListener('focus', handleActiveResume);
@@ -1200,6 +1219,7 @@ export function AuthProvider({ children }) {
 
     return () => {
       clearInterval(heartbeatTimer);
+      if (refreshTimeout) clearTimeout(refreshTimeout);
       window.removeEventListener('focus', handleActiveResume);
       window.removeEventListener('online', handleActiveResume);
       document.removeEventListener('visibilitychange', handleActiveResume);
