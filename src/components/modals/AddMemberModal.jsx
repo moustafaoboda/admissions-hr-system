@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { compressImageFile } from '../../lib/imageUtils';
 
 export default function AddMemberModal() {
   const { activeModal, setActiveModal, addMember } = useAuth();
@@ -25,14 +26,17 @@ export default function AddMemberModal() {
     }
   };
 
-  const handleAvatarFile = (e) => {
+  const handleAvatarFile = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setAvatar(event.target.result);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImageFile(file, 300, 300, 0.82);
+        if (compressed) {
+          setAvatar(compressed);
+        }
+      } catch (err) {
+        console.warn('Avatar compression error:', err);
+      }
     }
   };
 

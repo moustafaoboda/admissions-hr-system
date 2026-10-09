@@ -133,13 +133,7 @@ export default function DirectoryTab() {
                     <tr key={m.id} className="hover:bg-slate-50 transition">
                       <td className="py-3 px-4 font-bold text-slate-800 text-sm whitespace-nowrap">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-[#002244] text-[#c59b27] font-black flex items-center justify-center text-xs border border-slate-200 overflow-hidden shadow-xs flex-shrink-0">
-                            {m.avatar ? (
-                              <img src={m.avatar} alt={m.name} className="w-full h-full object-cover rounded-full block" />
-                            ) : (
-                              (m.name || 'MB').slice(0, 2).toUpperCase()
-                            )}
-                          </div>
+                          <MemberAvatar member={m} size="w-8 h-8 text-xs" />
                           <span>{m.name}</span>
                         </div>
                       </td>

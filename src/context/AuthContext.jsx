@@ -618,6 +618,10 @@ export function AuthProvider({ children }) {
 
       case 'UPDATE_MEMBER':
         setMembers(prev => prev.map(m => m.id === payload.id ? { ...m, ...payload.fields } : m));
+        setDischargedMembers(prev => prev.map(d => d.id === payload.id ? { ...d, ...payload.fields } : d));
+        if (payload.fields?.avatar !== undefined) {
+          setStarAmbassadors(prev => prev.map(s => (s.memberId === payload.id || s.member_id === payload.id) ? { ...s, avatar: payload.fields.avatar } : s));
+        }
         break;
 
       case 'DELETE_MEMBER':
@@ -635,6 +639,10 @@ export function AuthProvider({ children }) {
 
       case 'UPDATE_DISCHARGED_MEMBER':
         setDischargedMembers(prev => prev.map(d => d.id === payload.id ? { ...d, ...payload.fields } : d));
+        if (payload.fields?.avatar !== undefined) {
+          setMembers(prev => prev.map(m => m.id === payload.id ? { ...m, ...payload.fields } : m));
+          setStarAmbassadors(prev => prev.map(s => (s.memberId === payload.id || s.member_id === payload.id) ? { ...s, avatar: payload.fields.avatar } : s));
+        }
         break;
 
       case 'REINSTATE_MEMBER':
@@ -1386,26 +1394,38 @@ export function AuthProvider({ children }) {
   };
 
   const editMemberInfo = (id, updatedFields) => {
-    const target = members.find(m => m.id === id);
+    const target = members.find(m => m.id === id) || dischargedMembers.find(d => d.id === id);
     setMembers(prev => prev.map(m => m.id === id ? { ...m, ...updatedFields } : m));
+    setDischargedMembers(prev => prev.map(d => d.id === id ? { ...d, ...updatedFields } : d));
+
+    if (updatedFields.avatar !== undefined) {
+      setStarAmbassadors(prev => prev.map(s => (s.memberId === id || s.member_id === id) ? { ...s, avatar: updatedFields.avatar } : s));
+    }
+
     broadcastMutation('UPDATE_MEMBER', { id, fields: updatedFields });
 
-    if (supabase) {
-      const dbFields = {};
-      if (updatedFields.name !== undefined) dbFields.name = updatedFields.name;
-      if (updatedFields.role !== undefined) dbFields.role = updatedFields.role;
-      if (updatedFields.position !== undefined) dbFields.position = updatedFields.position;
-      if (updatedFields.college !== undefined) dbFields.college = updatedFields.college;
-      if (updatedFields.studentId !== undefined) dbFields.student_id = updatedFields.studentId;
-      if (updatedFields.phone !== undefined) dbFields.phone = updatedFields.phone;
-      if (updatedFields.officialDays !== undefined) dbFields.official_days = updatedFields.officialDays;
-      if (updatedFields.avatar !== undefined) dbFields.avatar = updatedFields.avatar;
-      if (updatedFields.score !== undefined) dbFields.score = updatedFields.score;
-      if (updatedFields.strikes !== undefined) dbFields.strikes = updatedFields.strikes;
+    if (supabase && target) {
+      const fullMem = {
+        id: target.id,
+        name: updatedFields.name !== undefined ? updatedFields.name : target.name,
+        role: updatedFields.role !== undefined ? updatedFields.role : target.role,
+        position: updatedFields.position !== undefined ? updatedFields.position : target.position,
+        college: updatedFields.college !== undefined ? updatedFields.college : target.college,
+        student_id: updatedFields.studentId !== undefined ? updatedFields.studentId : (target.studentId || null),
+        phone: updatedFields.phone !== undefined ? updatedFields.phone : (target.phone || null),
+        attendance_count: target.attendanceCount || 0,
+        official_days: updatedFields.officialDays !== undefined ? updatedFields.officialDays : target.officialDays,
+        avatar: updatedFields.avatar !== undefined ? updatedFields.avatar : (target.avatar || null),
+        score: updatedFields.score !== undefined ? updatedFields.score : target.score,
+        strikes: updatedFields.strikes !== undefined ? updatedFields.strikes : target.strikes,
+        status: target.status || 'Active',
+        discharge_type: target.dischargeType || null,
+        discharge_reason: target.dischargeReason || null
+      };
 
-      if (Object.keys(dbFields).length > 0) {
-        supabase.from('members').update(dbFields).eq('id', id).catch(err => console.warn('Supabase update member error:', err));
-      }
+      supabase.from('members').upsert(fullMem, { onConflict: 'id' }).then(({ error }) => {
+        if (error) console.warn('Supabase upsert member error:', error);
+      }).catch(err => console.warn('Supabase upsert member error:', err));
     }
 
     logActivity(`Updated info for: ${target ? target.name : 'member'}`, "Members");
@@ -1921,16 +1941,33 @@ export function AuthProvider({ children }) {
   };
 
   const updateDischargedMember = async (id, updatedFields) => {
+    const target = dischargedMembers.find(d => d.id === id);
     setDischargedMembers(prev => prev.map(d => d.id === id ? { ...d, ...updatedFields } : d));
+    if (updatedFields.avatar !== undefined) {
+      setMembers(prev => prev.map(m => m.id === id ? { ...m, ...updatedFields } : m));
+      setStarAmbassadors(prev => prev.map(s => (s.memberId === id || s.member_id === id) ? { ...s, avatar: updatedFields.avatar } : s));
+    }
     broadcastMutation('UPDATE_DISCHARGED_MEMBER', { id, fields: updatedFields });
 
-    if (supabase) {
-      const dbFields = {};
-      if (updatedFields.name) dbFields.name = updatedFields.name;
-      if (updatedFields.role) dbFields.role = updatedFields.role;
-      if (updatedFields.dischargeType) dbFields.discharge_type = updatedFields.dischargeType;
-      if (updatedFields.dischargeReason) dbFields.discharge_reason = updatedFields.dischargeReason;
-      supabase.from('members').update(dbFields).eq('id', id).catch(e => console.warn(e));
+    if (supabase && target) {
+      const fullMem = {
+        id: target.id,
+        name: updatedFields.name !== undefined ? updatedFields.name : target.name,
+        role: updatedFields.role !== undefined ? updatedFields.role : target.role,
+        position: target.position || 'Member',
+        college: target.college || 'AASTMT',
+        student_id: target.studentId || '2024101',
+        phone: target.phone || '+20 100 000 0000',
+        attendance_count: target.attendanceCount || 0,
+        official_days: target.officialDays || ["Sunday", "Tuesday", "Thursday"],
+        avatar: updatedFields.avatar !== undefined ? updatedFields.avatar : target.avatar,
+        score: target.score || 90,
+        strikes: target.strikes || 0,
+        status: 'Discharged',
+        discharge_type: updatedFields.dischargeType !== undefined ? updatedFields.dischargeType : target.dischargeType,
+        discharge_reason: updatedFields.dischargeReason !== undefined ? updatedFields.dischargeReason : target.dischargeReason
+      };
+      supabase.from('members').upsert(fullMem, { onConflict: 'id' }).catch(e => console.warn(e));
     }
 
     logActivity(`Updated discharged record #${id}`, "Members");

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { compressImageFile } from '../../lib/imageUtils';
 
 export default function ProfileModal() {
   const { currentUser, activeModal, setActiveModal, updateProfile, showToast } = useAuth();
@@ -20,14 +21,17 @@ export default function ProfileModal() {
 
   if (activeModal !== 'profile' || !currentUser) return null;
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setAvatar(event.target.result);
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImageFile(file, 300, 300, 0.82);
+        if (compressed) {
+          setAvatar(compressed);
+        }
+      } catch (err) {
+        console.warn('Profile avatar compression error:', err);
+      }
     }
   };
 

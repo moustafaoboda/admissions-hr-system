@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 export function MemberAvatar({ member, memberId, name, size = "w-8 h-8 text-xs", className = "" }) {
@@ -17,6 +17,10 @@ export function MemberAvatar({ member, memberId, name, size = "w-8 h-8 text-xs",
         || dischargedMembers.find(d => d.id === memberId || d.name?.toLowerCase() === raw || raw.includes(d.name?.toLowerCase()) || d.name?.toLowerCase().includes(raw));
     }
   }
+
+  useEffect(() => {
+    setImgError(false);
+  }, [mem?.avatar]);
 
   const displayName = mem?.name || (typeof member === 'string' ? member : (name || 'Member'));
   const avatar = !imgError ? (mem?.avatar || null) : null;
@@ -57,6 +61,10 @@ export function UserAvatar({ user, username, name, size = "w-6 h-6 text-[10px]",
         || (currentUser && (raw.includes(currentUser.name?.toLowerCase()) || (currentUser.name && currentUser.name.toLowerCase().includes(raw))) ? currentUser : null);
     }
   }
+
+  useEffect(() => {
+    setImgError(false);
+  }, [usr?.avatar]);
 
   const displayName = usr?.name || (typeof user === 'string' ? user.split('(')[0].trim() : (name || 'User'));
   const avatar = !imgError ? (usr?.avatar || null) : null;
