@@ -19,7 +19,8 @@ export default function WarningModal() {
     }
   }, [modalExtraData, members]);
 
-  if (activeModal !== 'warning') return null;
+  const isHRMember = currentUser?.role === "HR";
+  if (activeModal !== 'warning' || isHRMember) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();

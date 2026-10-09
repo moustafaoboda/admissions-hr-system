@@ -23,6 +23,9 @@ export default function AttendanceTab() {
 
   const isHeadOrVice = currentUser?.role === "HR Head" || currentUser?.role === "HR Vice Head";
   const isDean = currentUser?.role === "Admission's Dean";
+  const isHRMember = currentUser?.role === "HR";
+
+  if (isHRMember) return null;
 
   // Helper to retrieve members scheduled for a given day
   const getScheduledMembersForDay = (dayName) => {
@@ -74,7 +77,7 @@ export default function AttendanceTab() {
   const activeSession = attendanceSessions.find(s => s.id === selectedSessionId);
 
   const startEditing = () => {
-    if (!activeSession || isDean) return;
+    if (!activeSession || !isHeadOrVice) return;
     setEditTitle(activeSession.title);
     setEditDate(activeSession.date);
     setEditType(activeSession.type);
@@ -138,7 +141,7 @@ export default function AttendanceTab() {
           </p>
         </div>
 
-        {!isDean && (
+        {isHeadOrVice && (
           <button
             onClick={() => setActiveModal('addAttendance')}
             className="px-3.5 py-1.5 bg-[#002244] hover:bg-[#00162e] text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-1.5"
@@ -192,33 +195,33 @@ export default function AttendanceTab() {
                   </div>
 
                   <div className="flex items-center gap-1">
-                    {!isDean && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedSessionId(session.id);
-                          startEditing();
-                        }}
-                        className="text-slate-400 hover:text-[#002244] hover:bg-amber-100 transition p-1.5 rounded"
-                        title="Edit Session Details & Roll Call"
-                      >
-                        <i className="fa-solid fa-pen-to-square text-xs"></i>
-                      </button>
-                    )}
                     {isHeadOrVice && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteAttendanceSession(session.id);
-                          if (selectedSessionId === session.id) setSelectedSessionId(null);
-                        }}
-                        className="text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded"
-                        title="Delete Session"
-                      >
-                        <i className="fa-solid fa-trash-can text-xs"></i>
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedSessionId(session.id);
+                            startEditing();
+                          }}
+                          className="text-slate-400 hover:text-[#002244] hover:bg-amber-100 transition p-1.5 rounded"
+                          title="Edit Session Details & Roll Call"
+                        >
+                          <i className="fa-solid fa-pen-to-square text-xs"></i>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteAttendanceSession(session.id);
+                            if (selectedSessionId === session.id) setSelectedSessionId(null);
+                          }}
+                          className="text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded"
+                          title="Delete Session"
+                        >
+                          <i className="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                      </>
                     )}
                     <i className="fa-solid fa-calendar-day text-slate-400 p-1"></i>
                   </div>
@@ -307,7 +310,7 @@ export default function AttendanceTab() {
             </div>
 
             <div className="flex items-center gap-2">
-              {!isDean && (
+              {isHeadOrVice && (
                 !isEditing ? (
                   <button
                     onClick={startEditing}
@@ -340,7 +343,7 @@ export default function AttendanceTab() {
           </div>
 
           {/* Editable Session Header Fields when in Edit Mode */}
-          {isEditing && !isDean && (
+          {isEditing && isHeadOrVice && (
             <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-xl space-y-3 text-xs">
               <div className="font-bold text-[#002244]">Editing Session Info:</div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -404,7 +407,7 @@ export default function AttendanceTab() {
                     <td className="py-2.5 px-3 text-slate-600">{rc.role}</td>
 
                     <td className="py-2.5 px-3 text-center">
-                      {isEditing && !isDean ? (
+                      {isEditing && isHeadOrVice ? (
                         <select
                           value={rc.isPresent ? 'present' : 'absent'}
                           onChange={() => handleTogglePresent(rc.memberId)}
@@ -425,7 +428,7 @@ export default function AttendanceTab() {
                     </td>
 
                     <td className="py-2.5 px-3">
-                      {isEditing && !isDean ? (
+                      {isEditing && isHeadOrVice ? (
                         <div className="flex items-center gap-2">
                           <label className="flex items-center gap-1 text-slate-600 cursor-pointer">
                             <input

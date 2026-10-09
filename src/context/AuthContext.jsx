@@ -1342,8 +1342,8 @@ export function AuthProvider({ children }) {
   };
 
   const switchTab = (tabId) => {
-    if (currentUser?.role === "HR" && tabId === "activityLog") {
-      showToast("Activity log is restricted to HR Leadership.", "warning");
+    if (currentUser?.role === "HR" && !["dashboard", "directory", "monitoring"].includes(tabId)) {
+      showToast("HR Members have access to Dashboard, Team Members, and Monitoring only.", "warning");
       return;
     }
     if (currentUser?.role === "Admission's Dean" && !["dashboard", "directory", "attendance"].includes(tabId)) {

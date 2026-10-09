@@ -207,11 +207,15 @@ export default function DirectoryTab() {
                       </td>
 
                       <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
-                          m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'
-                        }`}>
-                          {m.strikes}
-                        </span>
+                        {!isHRMember ? (
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+                            m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'
+                          }`}>
+                            {m.strikes}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-xs">-</span>
+                        )}
                       </td>
 
                       <td className="py-3 px-4 text-center whitespace-nowrap">
@@ -240,26 +244,16 @@ export default function DirectoryTab() {
 
                       <td className="py-3 px-4 text-right whitespace-nowrap space-x-1">
                         {isHRMember ? (
-                          <>
-                            <button
-                              onClick={() => {
-                                setMonitoringSelectedMemberId(m.id);
-                                switchTab('monitoring');
-                              }}
-                              className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold transition inline-flex items-center gap-1 shadow-xs"
-                              title="Write Monitoring Note"
-                            >
-                              <i className="fa-solid fa-clipboard-check text-[10px]"></i> Note
-                            </button>
-                            <button
-                              onClick={() => handleIssueWarning(m.id)}
-                              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-[11px] font-bold transition inline-flex items-center gap-1 shadow-sm"
-                              title="Submit Warning Request"
-                            >
-                              <i className="fa-solid fa-paper-plane text-[10px]"></i>
-                              <span>Request Warning</span>
-                            </button>
-                          </>
+                          <button
+                            onClick={() => {
+                              setMonitoringSelectedMemberId(m.id);
+                              switchTab('monitoring');
+                            }}
+                            className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold transition inline-flex items-center gap-1 shadow-xs"
+                            title="Write Monitoring Note"
+                          >
+                            <i className="fa-solid fa-clipboard-check text-[10px]"></i> Note
+                          </button>
                         ) : isDean ? (
                           <span className="text-slate-400 italic">View only</span>
                         ) : (

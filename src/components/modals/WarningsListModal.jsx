@@ -15,7 +15,8 @@ export default function WarningsListModal() {
 
   const [subTab, setSubTab] = useState('confirmed'); // 'confirmed' | 'requests'
 
-  if (activeModal !== 'warningsListModal') return null;
+  const isHRMember = currentUser?.role === "HR";
+  if (activeModal !== 'warningsListModal' || isHRMember) return null;
 
   const isViceHead = currentUser?.role === "HR Vice Head";
   const isHeadOrVice = currentUser?.role === "HR Head" || isViceHead;
@@ -24,7 +25,7 @@ export default function WarningsListModal() {
   const confirmedWarnings = warnings.filter(w => w.status !== 'Pending HR Approval');
 
   const handleOpenIssueWarning = () => {
-    setModalExtraData({ mode: isHeadOrVice ? 'issue' : 'request' });
+    setModalExtraData({ mode: 'issue' });
     setActiveModal('warning');
   };
 
@@ -57,17 +58,13 @@ export default function WarningsListModal() {
             </span>
           </div>
 
-          {!isDean && (
+          {isHeadOrVice && (
             <button
               onClick={handleOpenIssueWarning}
-              className={`px-3 py-1.5 font-bold text-xs rounded-lg border flex items-center gap-1.5 transition shadow-sm ${
-                isHeadOrVice
-                  ? 'bg-[#002244] hover:bg-[#00162e] text-[#c59b27] border-[#c59b27]'
-                  : 'bg-amber-600 hover:bg-amber-700 text-white border-amber-600'
-              }`}
+              className="px-3 py-1.5 font-bold text-xs rounded-lg border flex items-center gap-1.5 transition shadow-sm bg-[#002244] hover:bg-[#00162e] text-[#c59b27] border-[#c59b27]"
             >
-              <i className={`fa-solid ${isHeadOrVice ? 'fa-plus text-xs' : 'fa-paper-plane text-[10px]'}`}></i>
-              <span>{isHeadOrVice ? 'Issue New Warning' : 'Request Warning Strike'}</span>
+              <i className="fa-solid fa-plus text-xs"></i>
+              <span>Issue New Warning</span>
             </button>
           )}
         </div>

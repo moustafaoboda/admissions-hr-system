@@ -2937,7 +2937,14 @@
     }
 
     function closeModal(id) { const el = document.getElementById(id); if (el) { el.classList.add("hidden"); el.classList.remove("flex"); } }
-    function openModal(id) { const el = document.getElementById(id); if (el) { el.classList.remove("hidden"); el.classList.add("flex"); } }
+    function openModal(id) {
+      if (currentUser && currentUser.role === "HR" && ["warningModal", "warningsListModal", "warningRequestsModal", "addAttendanceModal"].includes(id)) {
+        showToast("Access restricted to HR Leadership.", "warning");
+        return;
+      }
+      const el = document.getElementById(id);
+      if (el) { el.classList.remove("hidden"); el.classList.add("flex"); }
+    }
     function openAddMemberModal() { openModal("addMemberModal"); }
     function openAddEventModal() { document.getElementById("addEventForm").reset(); openModal("addEventModal"); }
 
@@ -3028,7 +3035,7 @@
       if (addNewMemBtn) addNewMemBtn.style.display = isHeadOrVice ? "inline-flex" : "none";
 
       const createAttBtn = document.getElementById("btnCreateAttendanceSheet");
-      if (createAttBtn) createAttBtn.style.display = !isDean ? "inline-flex" : "none";
+      if (createAttBtn) createAttBtn.style.display = isHeadOrVice ? "inline-flex" : "none";
 
       const monFormCard = document.getElementById("monitoringFormCard");
       if (monFormCard) monFormCard.style.display = isDean ? "none" : "block";
@@ -3036,7 +3043,7 @@
       // Side control panel cards visibility
       const sideWarnCard = document.getElementById("sideWarningCard");
       const sideWarnReqCard = document.getElementById("sideWarningRequestsCard");
-      if (sideWarnCard) sideWarnCard.style.display = "block";
+      if (sideWarnCard) sideWarnCard.style.display = isHRMember ? "none" : "block";
       if (sideWarnReqCard) sideWarnReqCard.style.display = isHeadOrVice ? "block" : "none";
 
       // Tabs visibility
@@ -3048,24 +3055,12 @@
 
       if (tabDirectory) tabDirectory.style.display = "flex";
       if (tabMonitoring) tabMonitoring.style.display = !isDean ? "flex" : "none";
-      if (tabAttendance) tabAttendance.style.display = "flex";
-      if (tabCopilot) tabCopilot.style.display = isDean ? "none" : "flex";
+      if (tabAttendance) tabAttendance.style.display = isHRMember ? "none" : "flex";
+      if (tabCopilot) tabCopilot.style.display = isHeadOrVice ? "flex" : "none";
       if (tabActivityLog) tabActivityLog.style.display = isHeadOrVice ? "flex" : "none";
 
       const warnModalIssueBtn = document.getElementById("warningsListModalIssueBtn");
-      if (warnModalIssueBtn) {
-        if (isHeadOrVice) {
-          warnModalIssueBtn.style.display = "inline-flex";
-          warnModalIssueBtn.onclick = () => openWarningModal('issue');
-          warnModalIssueBtn.innerHTML = `<i class="fa-solid fa-plus text-xs"></i><span>Issue Warning</span>`;
-        } else if (!isDean) {
-          warnModalIssueBtn.style.display = "inline-flex";
-          warnModalIssueBtn.onclick = () => openWarningModal('request');
-          warnModalIssueBtn.innerHTML = `<i class="fa-solid fa-plus text-xs"></i><span>Request Warning Strike</span>`;
-        } else {
-          warnModalIssueBtn.style.display = "none";
-        }
-      }
+      if (warnModalIssueBtn) warnModalIssueBtn.style.display = isHeadOrVice ? "inline-flex" : "none";
 
       const noteAuthorEl = document.getElementById("monitoringAuthorNamePreview");
       if (noteAuthorEl) noteAuthorEl.textContent = currentUser.name;
@@ -3078,8 +3073,6 @@
       if (sideWarningActionBtn) {
         if (isHeadOrVice) {
           sideWarningActionBtn.innerHTML = `<button onclick="openWarningModal('issue')" class="w-full py-2 px-3 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-plus text-[10px]"></i><span>Issue Warning</span></button>`;
-        } else if (!isDean) {
-          sideWarningActionBtn.innerHTML = `<button onclick="openWarningModal('request')" class="w-full py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-flag text-[10px]"></i><span>Request Warning Strike</span></button>`;
         } else {
           sideWarningActionBtn.innerHTML = ``;
         }
@@ -3092,7 +3085,7 @@
         }
       } else if (isHRMember) {
         const currentActive = document.querySelector(".tab-content.active");
-        if (currentActive && currentActive.id === "tab-activityLog") {
+        if (currentActive && ["tab-attendance", "tab-copilot", "tab-activityLog"].includes(currentActive.id)) {
           switchTab("dashboard");
         }
       }
@@ -3101,12 +3094,16 @@
     }
 
     function switchTab(tabId) {
-      if (tabId === "activityLog" && currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") {
-        showToast("Activity log is restricted to HR Leadership.", "warning");
+      if (currentUser.role === "HR" && !["dashboard", "directory", "monitoring"].includes(tabId)) {
+        showToast("HR Members have access to Dashboard, Team Members, and Monitoring only.", "warning");
         return;
       }
       if (currentUser.role === "Admission's Dean" && !["dashboard", "directory", "attendance"].includes(tabId)) {
         showToast("Dean access is limited to Dashboard, Team Members, and Attendance only.", "warning");
+        return;
+      }
+      if (tabId === "activityLog" && currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") {
+        showToast("Activity log is restricted to HR Leadership.", "warning");
         return;
       }
       document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
@@ -3253,8 +3250,7 @@
           `;
         } else if (isHRMember) {
           actionButtons = `
-            <button onclick="quickWriteMonitoringNoteForMember('${m.id}')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold transition" title="Write Monitoring Note"><i class="fa-solid fa-clipboard-check"></i> Note</button>
-            <button onclick="quickRequestWarningForMember('${m.id}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded text-[11px] font-bold transition inline-flex items-center gap-1 shadow-xs" title="Submit Warning Strike Request"><i class="fa-solid fa-paper-plane text-[10px] text-amber-600"></i><span>Request Warning</span></button>
+            <button onclick="quickWriteMonitoringNoteForMember('${m.id}')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold transition inline-flex items-center gap-1 shadow-xs" title="Write Monitoring Note"><i class="fa-solid fa-clipboard-check text-[10px]"></i> Note</button>
           `;
         } else {
           actionButtons = '<span class="text-slate-400 italic">View only</span>';
@@ -3270,7 +3266,7 @@
             <td class="py-3 px-4 text-center whitespace-nowrap"><span class="bg-blue-50 border border-blue-200 text-blue-800 font-extrabold px-2.5 py-0.5 rounded-lg">${m.attendanceCount} Sessions</span></td>
             <td class="py-3 px-4 text-center whitespace-nowrap"><span class="font-bold ${rate >= 90 ? 'text-emerald-700' : 'text-blue-700'}">${rate}%</span></td>
             <td class="py-3 px-4 whitespace-nowrap"><div class="flex items-center flex-wrap gap-1">${daysBadges} ${extraDaysCtrl}</div></td>
-            <td class="py-3 px-4 text-center whitespace-nowrap"><span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'}">${m.strikes}</span></td>
+            <td class="py-3 px-4 text-center whitespace-nowrap">${!isHRMember ? `<span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'}">${m.strikes}</span>` : `<span class="text-slate-400 text-xs">-</span>`}</td>
             <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-slate-700">${m.score}/100</td>
             <td class="py-3 px-4 text-right whitespace-nowrap space-x-1">
               ${actionButtons}
@@ -3670,10 +3666,8 @@
               <h4 class="font-bold text-sm text-[#002244] mt-1">${s.title}</h4>
             </div>
             <div class="flex items-center gap-1.5">
-              ${!isDean ? `
-                <button onclick="event.stopPropagation(); inspectSession('${s.id}', true)" class="text-slate-400 hover:text-[#002244] hover:bg-amber-100 transition p-1.5 rounded" title="Edit Session Details & Roll Call"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-              ` : ''}
               ${isHeadOrVice ? `
+                <button onclick="event.stopPropagation(); inspectSession('${s.id}', true)" class="text-slate-400 hover:text-[#002244] hover:bg-amber-100 transition p-1.5 rounded" title="Edit Session Details & Roll Call"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
                 <button onclick="event.stopPropagation(); deleteAttendanceSession('${s.id}')" class="text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded" title="Delete Session"><i class="fa-solid fa-trash-can text-xs"></i></button>
               ` : ''}
               <i class="fa-solid fa-calendar-day text-slate-400 p-1"></i>
@@ -3743,8 +3737,7 @@
       const editForm = document.getElementById("inspectorEditForm");
       const saveBtnContainer = document.getElementById("inspectorSaveBtnContainer");
       const editBtn = document.getElementById("inspectorEditBtn");
-      const isDean = currentUser.role === "Admission's Dean";
-      const canEdit = !isDean;
+      const canEdit = isHeadOrVice;
 
       if (editBtn) editBtn.style.display = canEdit ? "inline-flex" : "none";
 
@@ -4309,6 +4302,10 @@
     }
 
     function openWarningModal(mode = "issue") {
+      if (currentUser.role === "HR") {
+        showToast("Warnings are restricted to HR Leadership.", "warning");
+        return;
+      }
       const sel = document.getElementById("warningMemberSelect");
       const activeM = members.filter(m => m.status !== "Discharged");
       sel.innerHTML = activeM.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join("");
@@ -4322,7 +4319,10 @@
     }
     function handleWarningSubmit(e) {
       e.preventDefault();
-      if (currentUser.role === "Admission's Dean") { showToast("Dean profile has read-only access.", "warning"); return; }
+      if (currentUser.role === "Admission's Dean" || currentUser.role === "HR") {
+        showToast("Warnings are restricted to HR Leadership.", "warning");
+        return;
+      }
       const mem = members.find(m => m.id === document.getElementById("warningMemberSelect").value);
       if (!mem) return;
       const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
