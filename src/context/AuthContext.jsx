@@ -609,6 +609,29 @@ export function AuthProvider({ children }) {
     if (senderId === CLIENT_ID) return; // Ignore echoes
 
     switch (type) {
+      case 'SYNC_ALL':
+        try {
+          const storedMems = loadStoredState("aastmt_members", null);
+          if (storedMems) setMembers(storedMems.filter(m => !isMemberDeleted(m)));
+          const storedDis = loadStoredState("aastmt_discharged_members", null);
+          if (storedDis) setDischargedMembers(storedDis.filter(m => !isMemberDeleted(m)));
+          const storedAtt = loadStoredState("aastmt_attendance_sessions", null);
+          if (storedAtt) setAttendanceSessions(storedAtt.filter(s => !getDeletedIds("sessions").includes(s.id)));
+          const storedWarn = loadStoredState("aastmt_warnings", null);
+          if (storedWarn) setWarnings(storedWarn.filter(w => !getDeletedIds("warnings").includes(w.id)));
+          const storedEvt = loadStoredState("aastmt_events", null);
+          if (storedEvt) setEvents(storedEvt.filter(e => !getDeletedIds("events").includes(e.id)));
+          const storedStars = loadStoredState("aastmt_star_ambassadors", null);
+          if (storedStars) setStarAmbassadors(storedStars.filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isStarDeleted(s)));
+          const storedNotes = loadStoredState("aastmt_monitoring_notes", null);
+          if (storedNotes) setMonitoringNotes(storedNotes.filter(n => !getDeletedIds("notes").includes(n.id)));
+          const storedUsers = loadStoredState("aastmt_system_users", null);
+          if (storedUsers) setSystemUsers(storedUsers.filter(u => !getDeletedIds("users").includes(u.id)));
+          const storedIcon = loadStoredState("aastmt_system_icon", null);
+          if (storedIcon) setSystemIcon(storedIcon);
+        } catch(e) {}
+        break;
+
       case 'ADD_MEMBER':
         if (payload.id) removeDeletedId("members", payload.id);
         if (payload.studentId) removeDeletedId("members", payload.studentId);

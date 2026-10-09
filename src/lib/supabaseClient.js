@@ -18,6 +18,9 @@ export function normalizeSupabaseUrl(url) {
   return cleaned;
 }
 
+export const DEFAULT_SUPABASE_URL = 'https://tehzetyysrrytrmsmrgp.supabase.co';
+export const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlaHpldHl5c3JyeXRybXNtcmdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0ODE4NDgsImV4cCI6MjEwNzA1Nzg0OH0.PZZb5kXdyGjJiYXGi7c2k0VRPVo3_a5NsOWIWsnUe2Y';
+
 // Retrieve credentials either from localStorage or build environment variables
 export function getStoredSupabaseConfig() {
   try {
@@ -36,7 +39,7 @@ export function getStoredSupabaseConfig() {
     return { url: normalizeSupabaseUrl(envUrl), key: envKey, source: 'env' };
   }
 
-  return { url: '', key: '', source: 'none' };
+  return { url: DEFAULT_SUPABASE_URL, key: DEFAULT_SUPABASE_KEY, source: 'default' };
 }
 
 const initialConfig = getStoredSupabaseConfig();

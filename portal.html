@@ -146,6 +146,10 @@
         </div>
 
         <div class="flex items-center gap-2 sm:gap-3">
+          <div id="cloudSyncHeaderBadge" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-xs" title="Cross-Device Real-time Sync Status">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="cloudSyncHeaderText">Live Cloud Synced</span>
+          </div>
           <button id="systemIconHeaderBtn" type="button" onclick="openSystemIconModal()" class="hidden items-center gap-1.5 bg-white/10 hover:bg-white/20 text-[#dfb743] border border-[#c59b27]/40 px-2.5 py-1.5 rounded-lg text-xs font-bold transition shadow-xs" title="Customize System Icon & Logo">
             <i class="fa-solid fa-icons text-xs"></i>
             <span class="hidden md:inline">System Icon</span>
@@ -2137,36 +2141,235 @@
       reader.readAsDataURL(file);
     }
 
-    // Portal Supabase Realtime Client (Cloud sync across devices when configured)
+    // Portal Supabase Realtime Client (Cloud sync across devices)
+    const DEFAULT_PORTAL_SUPABASE_URL = "https://tehzetyysrrytrmsmrgp.supabase.co";
+    const DEFAULT_PORTAL_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlaHpldHl5c3JyeXRybXNtcmdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0ODE4NDgsImV4cCI6MjEwNzA1Nzg0OH0.PZZb5kXdyGjJiYXGi7c2k0VRPVo3_a5NsOWIWsnUe2Y";
+
     let portalSupabase = null;
     let portalSupabaseChannel = null;
 
     function broadcastPortalMutation(type, payload) {
+      const msg = {
+        type,
+        payload,
+        senderId: 'portal_tab_' + Date.now(),
+        timestamp: Date.now()
+      };
       if (portalBc) {
-        portalBc.postMessage({ type, payload, senderId: 'portal_tab_' + Date.now(), timestamp: Date.now() });
+        try { portalBc.postMessage(msg); } catch(e) {}
       }
       if (portalSupabaseChannel) {
         try {
           portalSupabaseChannel.send({
             type: 'broadcast',
             event: 'MUTATION',
-            payload: {
-              type,
-              payload,
-              senderId: 'portal_tab_' + Date.now(),
-              timestamp: Date.now()
-            }
+            payload: msg
           });
         } catch(e) {}
       }
     }
 
+    function updateCloudSyncBadge(isLive) {
+      const badge = document.getElementById("cloudSyncHeaderBadge");
+      const txt = document.getElementById("cloudSyncHeaderText");
+      if (!badge) return;
+      badge.classList.remove("hidden");
+      badge.classList.add("inline-flex");
+      if (isLive) {
+        badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-xs";
+        if (txt) txt.textContent = "Live Cloud Synced";
+      } else {
+        badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-xs";
+        if (txt) txt.textContent = "Local Storage (Connecting...)";
+      }
+    }
+
+    function fetchPortalCloudData() {
+      if (!portalSupabase) return;
+
+      // 1. Members (Active & Discharged)
+      portalSupabase.from('members').select('*').then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          const act = [];
+          const dis = [];
+          data.forEach(r => {
+            if (isMemberDeleted(r)) return;
+            const memObj = {
+              id: r.id,
+              name: r.name,
+              role: r.role,
+              position: r.position,
+              college: r.college,
+              studentId: r.student_id,
+              phone: r.phone,
+              attendanceCount: r.attendance_count || 0,
+              officialDays: r.official_days || ["Sunday", "Tuesday", "Thursday"],
+              extraDays: r.extra_days || [],
+              strikes: r.strikes || 0,
+              score: r.score || 90,
+              status: r.status,
+              dischargeType: r.discharge_type,
+              dischargeReason: r.discharge_reason,
+              avatar: r.avatar || null
+            };
+            if (r.status === 'Discharged') dis.push(memObj);
+            else act.push(memObj);
+          });
+          members = act;
+          dischargedMembers = dis;
+          try {
+            localStorage.setItem("aastmt_members", JSON.stringify(members));
+            localStorage.setItem("aastmt_discharged_members", JSON.stringify(dischargedMembers));
+          } catch(e) {}
+          renderAllViews();
+        }
+      }).catch(() => {});
+
+      // 2. System Users
+      portalSupabase.from('system_users').select('*').then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          const deletedU = getDeletedIds('users');
+          systemUsers = data
+            .filter(u => !deletedU.includes(u.id) && !deletedU.includes(u.username?.toLowerCase().trim()))
+            .map(u => ({
+              id: u.id,
+              name: u.name,
+              username: (u.username || '').toLowerCase().trim(),
+              password: (u.password || '').trim(),
+              role: u.role,
+              avatar: u.avatar || ''
+            }));
+          try { localStorage.setItem("aastmt_system_users", JSON.stringify(systemUsers)); } catch(e) {}
+          renderAllViews();
+        }
+      }).catch(() => {});
+
+      // 3. Attendance Sessions
+      portalSupabase.from('attendance_sessions').select('*').then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          const delS = getDeletedIds('sessions');
+          attendanceSessions = data
+            .filter(s => !delS.includes(s.id))
+            .map(s => ({
+              id: s.id,
+              title: s.title,
+              date: s.date,
+              dayName: s.day_name,
+              type: s.session_type,
+              presentCount: s.present_count,
+              totalCount: s.total_count,
+              rollCall: s.roll_call || []
+            }));
+          try { localStorage.setItem("aastmt_attendance_sessions", JSON.stringify(attendanceSessions)); } catch(e) {}
+          renderAllViews();
+        }
+      }).catch(() => {});
+
+      // 4. Disciplinary Warnings
+      portalSupabase.from('disciplinary_warnings').select('*').then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          const delW = getDeletedIds('warnings');
+          warnings = data
+            .filter(w => !delW.includes(w.id))
+            .map(w => ({
+              id: w.id,
+              memberId: w.member_id,
+              memberName: w.member_name || '',
+              level: w.level,
+              reason: w.reason,
+              reportedBy: w.reported_by,
+              date: w.date,
+              status: w.status
+            }));
+          try { localStorage.setItem("aastmt_warnings", JSON.stringify(warnings)); } catch(e) {}
+          renderAllViews();
+        }
+      }).catch(() => {});
+
+      // 5. Monitoring Notes
+      portalSupabase.from('monitoring_notes').select('*').then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          const delN = getDeletedIds('notes');
+          monitoringNotes = data
+            .filter(n => !delN.includes(n.id))
+            .map(n => ({
+              id: n.id,
+              memberId: n.member_id,
+              memberName: n.member_name,
+              memberRole: n.member_role,
+              memberCollege: n.member_college,
+              authorName: n.author_name,
+              authorRole: n.author_role,
+              category: n.category,
+              note: n.note,
+              date: n.date,
+              time: n.time
+            }));
+          try { localStorage.setItem("aastmt_monitoring_notes", JSON.stringify(monitoringNotes)); } catch(e) {}
+          renderAllViews();
+        }
+      }).catch(() => {});
+
+      // 6. Events
+      portalSupabase.from('events').select('*').then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          const delE = getDeletedIds('events');
+          events = data
+            .filter(e => !delE.includes(e.id))
+            .map(e => ({
+              id: e.id,
+              title: e.title,
+              type: e.type,
+              status: e.status,
+              description: e.description,
+              location: e.location,
+              date: e.date,
+              color: e.color
+            }));
+          try { localStorage.setItem("aastmt_events", JSON.stringify(events)); } catch(e) {}
+          renderAllViews();
+        }
+      }).catch(() => {});
+
+      // 7. Star Ambassadors
+      portalSupabase.from('star_ambassadors').select('*').then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          starAmbassadors = data
+            .filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isStarDeleted(s))
+            .map(s => ({
+              id: s.id,
+              memberId: s.member_id,
+              name: s.name,
+              role: s.role,
+              college: s.college,
+              avatar: s.avatar || null,
+              awardTitle: s.award_title,
+              citation: s.citation
+            }));
+          try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(starAmbassadors)); } catch(e) {}
+          renderAllViews();
+        }
+      }).catch(() => {});
+
+      // 8. System Settings
+      portalSupabase.from('system_settings').select('*').then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          const iconSetting = data.find(s => s.key === 'system_icon');
+          if (iconSetting && iconSetting.value) {
+            systemIcon = iconSetting.value;
+            try { localStorage.setItem("aastmt_system_icon", JSON.stringify(systemIcon)); } catch(e) {}
+            renderSystemIcon();
+          }
+        }
+      }).catch(() => {});
+    }
+
     function initPortalSupabase() {
       try {
-        const url = localStorage.getItem('supabase_url');
-        const key = localStorage.getItem('supabase_anon_key');
+        const url = (localStorage.getItem('supabase_url') || DEFAULT_PORTAL_SUPABASE_URL).trim();
+        const key = (localStorage.getItem('supabase_anon_key') || DEFAULT_PORTAL_SUPABASE_KEY).trim();
         if (window.supabase && url && key) {
-          portalSupabase = window.supabase.createClient(url.trim(), key.trim());
+          portalSupabase = window.supabase.createClient(url, key);
           portalSupabaseChannel = portalSupabase.channel('admissions_realtime_broadcast', {
             config: { broadcast: { self: false } }
           });
@@ -2175,7 +2378,10 @@
             .on('broadcast', { event: 'MUTATION' }, (payload) => {
               if (payload && payload.payload) {
                 const mut = payload.payload;
-                if (mut.type === 'UPDATE_MEMBER' && mut.payload) {
+                if (mut.type === 'SYNC_ALL') {
+                  reloadStateFromStorage();
+                  fetchPortalCloudData();
+                } else if (mut.type === 'UPDATE_MEMBER' && mut.payload) {
                   const targetMem = members.find(m => m.id === mut.payload.id) || dischargedMembers.find(d => d.id === mut.payload.id);
                   if (targetMem) {
                     Object.assign(targetMem, mut.payload.fields);
@@ -2187,6 +2393,22 @@
                     saveAllState();
                     renderAllViews();
                   }
+                } else if (mut.type === 'ADD_MEMBER' && mut.payload) {
+                  if (!members.some(m => m.id === mut.payload.id)) {
+                    members.push(mut.payload);
+                    saveAllState();
+                    renderAllViews();
+                  }
+                } else if (mut.type === 'DELETE_MEMBER' && mut.payload) {
+                  members = members.filter(m => m.id !== mut.payload.id);
+                  dischargedMembers = dischargedMembers.filter(d => d.id !== mut.payload.id);
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'DISCHARGE_MEMBER' && mut.payload) {
+                  members = members.filter(m => m.id !== mut.payload.memberId);
+                  dischargedMembers = [mut.payload.record, ...dischargedMembers.filter(d => d.id !== mut.payload.record.id)];
+                  saveAllState();
+                  renderAllViews();
                 } else if (mut.type === 'ADD_SYSTEM_USER' && mut.payload) {
                   removeDeletedId('users', mut.payload.id);
                   if (mut.payload.username) removeDeletedId('users', mut.payload.username.toLowerCase().trim());
@@ -2225,62 +2447,72 @@
                   attendanceSessions = attendanceSessions.filter(s => s.id !== mut.payload.id);
                   saveAllState();
                   renderAllViews();
-                }
-              }
-            })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, () => {
-              portalSupabase.from('members').select('*').then(({ data }) => {
-                if (data && data.length > 0) {
-                  data.forEach(row => {
-                    const localM = members.find(m => m.id === row.id) || dischargedMembers.find(d => d.id === row.id);
-                    if (localM && row.avatar !== undefined) {
-                      localM.avatar = row.avatar;
-                      starAmbassadors.forEach(s => {
-                        if (s.memberId === row.id) s.avatar = row.avatar;
-                      });
-                    }
-                  });
+                } else if (mut.type === 'SUBMIT_WARNING' && mut.payload) {
+                  warnings = [mut.payload.warning, ...warnings.filter(w => w.id !== mut.payload.warning.id)];
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'APPROVE_WARNING' && mut.payload) {
+                  warnings = warnings.map(w => w.id === mut.payload.id ? { ...w, status: "Confirmed Strike" } : w);
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'DISMISS_WARNING' && mut.payload) {
+                  warnings = warnings.filter(w => w.id !== mut.payload.id);
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'ADD_MONITORING_NOTE' && mut.payload) {
+                  monitoringNotes = [mut.payload, ...monitoringNotes.filter(n => n.id !== mut.payload.id)];
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'UPDATE_MONITORING_NOTE' && mut.payload) {
+                  monitoringNotes = monitoringNotes.map(n => n.id === mut.payload.id ? { ...n, ...mut.payload.fields } : n);
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'DELETE_MONITORING_NOTE' && mut.payload) {
+                  monitoringNotes = monitoringNotes.filter(n => n.id !== mut.payload.id);
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'ADD_EVENT' && mut.payload) {
+                  events = [mut.payload, ...events.filter(e => e.id !== mut.payload.id)];
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'DELETE_EVENT' && mut.payload) {
+                  events = events.filter(e => e.id !== mut.payload.id);
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'ADD_STAR' && mut.payload) {
+                  starAmbassadors = [mut.payload, ...starAmbassadors.filter(s => s.id !== mut.payload.id)];
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'REMOVE_STAR' && mut.payload) {
+                  starAmbassadors = starAmbassadors.filter(s => s.id !== mut.payload.id && s.memberId !== mut.payload.memberId);
                   saveAllState();
                   renderAllViews();
                 }
-              });
-            })
-            .subscribe();
-
-          // Sync system users from cloud
-          portalSupabase.from('system_users').select('*').then(({ data }) => {
-            if (data && data.length > 0) {
-              const deletedU = getDeletedIds('users');
-              let updated = false;
-              data.forEach(row => {
-                const uname = (row.username || '').toLowerCase().trim();
-                if (!deletedU.includes(row.id) && !deletedU.includes(uname)) {
-                  const idx = systemUsers.findIndex(u => u.id === row.id || u.username.toLowerCase().trim() === uname);
-                  const uObj = {
-                    id: row.id,
-                    name: row.name,
-                    username: uname,
-                    password: row.password,
-                    role: row.role,
-                    avatar: row.avatar || ''
-                  };
-                  if (idx >= 0) {
-                    systemUsers[idx] = { ...systemUsers[idx], ...uObj };
-                  } else {
-                    systemUsers.push(uObj);
-                    updated = true;
-                  }
-                }
-              });
-              if (updated) {
-                saveAllState();
-                renderAllViews();
               }
-            }
-          }).catch(err => console.warn('Supabase system_users fetch error:', err));
+            })
+            .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+              fetchPortalCloudData();
+            })
+            .subscribe((status) => {
+              if (status === 'SUBSCRIBED') {
+                updateCloudSyncBadge(true);
+                fetchPortalCloudData();
+              } else {
+                updateCloudSyncBadge(false);
+              }
+            });
+
+          // Fetch initial cloud data
+          fetchPortalCloudData();
+
+          // Background heartbeat polling ensures zero-lag parity across backgrounded tabs/devices
+          setInterval(fetchPortalCloudData, 3500);
+          window.addEventListener('focus', fetchPortalCloudData);
+          window.addEventListener('online', fetchPortalCloudData);
         }
       } catch (e) {
         console.warn('Portal Supabase init error:', e);
+        updateCloudSyncBadge(false);
       }
     }
     if (typeof window !== 'undefined') {
@@ -2948,10 +3180,37 @@
     function openAddMemberModal() { openModal("addMemberModal"); }
     function openAddEventModal() { document.getElementById("addEventForm").reset(); openModal("addEventModal"); }
 
-    function handleLoginSubmit(e) {
+    async function handleLoginSubmit(e) {
       e.preventDefault();
       const usernameInput = document.getElementById("loginUsername").value.trim().toLowerCase();
       const passwordInput = document.getElementById("loginPassword").value.trim();
+
+      // Ensure freshest system users from cloud before authenticating
+      if (portalSupabase) {
+        try {
+          const { data: dbUsers, error } = await portalSupabase.from('system_users').select('*');
+          if (!error && dbUsers && dbUsers.length > 0) {
+            const deletedU = getDeletedIds('users');
+            systemUsers = dbUsers
+              .filter(u => !deletedU.includes(u.id) && !deletedU.includes(u.username?.toLowerCase().trim()))
+              .map(u => ({
+                id: u.id,
+                name: u.name,
+                username: (u.username || '').toLowerCase().trim(),
+                password: (u.password || '').trim(),
+                role: u.role,
+                avatar: u.avatar || ''
+              }));
+            try { localStorage.setItem("aastmt_system_users", JSON.stringify(systemUsers)); } catch(e) {}
+          }
+        } catch(err) {
+          console.warn("Cloud credential check error:", err);
+        }
+      }
+
+      // Reload from storage in case updated
+      systemUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS).filter(u => !getDeletedIds("users").includes(u.id));
+
       const user = systemUsers.find(u => u.username.toLowerCase().trim() === usernameInput);
       if (user && user.password.trim() === passwordInput) {
         currentUser = { name: user.name, username: user.username, role: user.role, avatar: user.avatar || null };
