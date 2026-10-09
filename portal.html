@@ -417,7 +417,7 @@
           </div>
 
           <!-- Discharged Members Section -->
-          <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm space-y-3">
+          <div id="dischargedMembersSection" class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm space-y-3">
             <div class="flex items-center gap-2.5 pb-3 border-b border-slate-100">
               <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-sm font-bold">
                 <i class="fa-solid fa-user-slash"></i>
@@ -3195,20 +3195,24 @@
             <th class="py-3 px-4">Name</th>
             <th class="py-3 px-4">Role & Position</th>
             <th class="py-3 px-4">Faculty</th>
+            ${isHRMember ? '' : `
             <th class="py-3 px-4">ID</th>
             <th class="py-3 px-4">Phone Number</th>
             <th class="py-3 px-4 text-center">Attendance Count</th>
-            <th class="py-3 px-4 text-center">Attendance Rate</th>
+            <th class="py-3 px-4 text-center">Attendance Rate</th>`}
             <th class="py-3 px-4">Official Working Days</th>
+            ${isHRMember ? '' : `
             <th class="py-3 px-4 text-center">WARNINGS</th>
-            <th class="py-3 px-4 text-center">Performance</th>
+            <th class="py-3 px-4 text-center">Performance</th>`}
             <th class="py-3 px-4 text-right">Actions</th>
           </tr>
         `;
       }
+      const dischargedSection = document.getElementById("dischargedMembersSection");
+      if (dischargedSection) dischargedSection.style.display = isHRMember ? "none" : "";
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-slate-400">No team members found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${isHRMember ? 5 : 11}" class="text-center py-6 text-slate-400">No team members found.</td></tr>`;
         return;
       }
 
@@ -3234,7 +3238,7 @@
             </div>
             <div>
               <div class="font-bold text-slate-800 text-sm leading-snug">${m.name}</div>
-              <div class="text-[10px] text-slate-400 font-mono">${m.studentId || '2024000'}</div>
+              ${isHRMember ? '' : `<div class="text-[10px] text-slate-400 font-mono">${m.studentId || '2024000'}</div>`}
             </div>
           </div>
         `;
@@ -3261,13 +3265,15 @@
             <td class="py-3 px-4 whitespace-nowrap">${memberAvatarMarkup}</td>
             <td class="py-3 px-4 whitespace-nowrap"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800">${m.role}</span><span class="text-[10px] text-slate-500 ml-1">(${m.position})</span></td>
             <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${m.college}</td>
+            ${isHRMember ? '' : `
             <td class="py-3 px-4 font-mono text-slate-700 whitespace-nowrap">${m.studentId || '2024000'}</td>
             <td class="py-3 px-4 font-medium text-slate-700 whitespace-nowrap">${m.phone || '-'}</td>
             <td class="py-3 px-4 text-center whitespace-nowrap"><span class="bg-blue-50 border border-blue-200 text-blue-800 font-extrabold px-2.5 py-0.5 rounded-lg">${m.attendanceCount} Sessions</span></td>
-            <td class="py-3 px-4 text-center whitespace-nowrap"><span class="font-bold ${rate >= 90 ? 'text-emerald-700' : 'text-blue-700'}">${rate}%</span></td>
+            <td class="py-3 px-4 text-center whitespace-nowrap"><span class="font-bold ${rate >= 90 ? 'text-emerald-700' : 'text-blue-700'}">${rate}%</span></td>`}
             <td class="py-3 px-4 whitespace-nowrap"><div class="flex items-center flex-wrap gap-1">${daysBadges} ${extraDaysCtrl}</div></td>
-            <td class="py-3 px-4 text-center whitespace-nowrap">${!isHRMember ? `<span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'}">${m.strikes}</span>` : `<span class="text-slate-400 text-xs">-</span>`}</td>
-            <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-slate-700">${m.score}/100</td>
+            ${isHRMember ? '' : `
+            <td class="py-3 px-4 text-center whitespace-nowrap"><span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'}">${m.strikes}</span></td>
+            <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-slate-700">${m.score}/100</td>`}
             <td class="py-3 px-4 text-right whitespace-nowrap space-x-1">
               ${actionButtons}
             </td>

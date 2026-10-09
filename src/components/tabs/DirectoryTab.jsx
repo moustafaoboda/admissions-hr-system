@@ -101,20 +101,28 @@ export default function DirectoryTab() {
                 <th className="py-3 px-4">Name</th>
                 <th className="py-3 px-4">Role & Position</th>
                 <th className="py-3 px-4">Faculty</th>
-                <th className="py-3 px-4">ID</th>
-                <th className="py-3 px-4">Phone Number</th>
-                <th className="py-3 px-4 text-center">Attendance Count</th>
-                <th className="py-3 px-4 text-center">Attendance Rate</th>
+                {!isHRMember && (
+                  <>
+                    <th className="py-3 px-4">ID</th>
+                    <th className="py-3 px-4">Phone Number</th>
+                    <th className="py-3 px-4 text-center">Attendance Count</th>
+                    <th className="py-3 px-4 text-center">Attendance Rate</th>
+                  </>
+                )}
                 <th className="py-3 px-4">Official Working Days</th>
-                <th className="py-3 px-4 text-center">WARNINGS</th>
-                <th className="py-3 px-4 text-center">Performance</th>
+                {!isHRMember && (
+                  <>
+                    <th className="py-3 px-4 text-center">WARNINGS</th>
+                    <th className="py-3 px-4 text-center">Performance</th>
+                  </>
+                )}
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {filteredMembers.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="text-center py-6 text-slate-400">
+                  <td colSpan={isHRMember ? 5 : 11} className="text-center py-6 text-slate-400">
                     No team members matched your criteria.
                   </td>
                 </tr>
@@ -145,6 +153,8 @@ export default function DirectoryTab() {
 
                       <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{m.college}</td>
 
+                      {!isHRMember && (
+                        <>
                       <td className="py-3 px-4 font-mono text-slate-700 whitespace-nowrap">{m.studentId || '2024000'}</td>
 
                       <td className="py-3 px-4 font-medium text-slate-700 whitespace-nowrap">{m.phone || '+20 100 000 0000'}</td>
@@ -160,6 +170,8 @@ export default function DirectoryTab() {
                           {rate}%
                         </span>
                       </td>
+                        </>
+                      )}
 
                       <td className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center flex-wrap gap-1">
@@ -206,18 +218,17 @@ export default function DirectoryTab() {
                         </div>
                       </td>
 
+                      {!isHRMember && (
                       <td className="py-3 px-4 text-center whitespace-nowrap">
-                        {!isHRMember ? (
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
-                            m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'
-                          }`}>
-                            {m.strikes}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 text-xs">-</span>
-                        )}
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+                          m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'
+                        }`}>
+                          {m.strikes}
+                        </span>
                       </td>
+                      )}
 
+                      {!isHRMember && (
                       <td className="py-3 px-4 text-center whitespace-nowrap">
                         {editingScoreId === m.id && isHeadOrVice ? (
                           <input
@@ -241,6 +252,7 @@ export default function DirectoryTab() {
                           </span>
                         )}
                       </td>
+                      )}
 
                       <td className="py-3 px-4 text-right whitespace-nowrap space-x-1">
                         {isHRMember ? (
@@ -311,6 +323,7 @@ export default function DirectoryTab() {
       </div>
 
       {/* Discharged Members Section */}
+      {!isHRMember && (
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-3">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
@@ -393,6 +406,7 @@ export default function DirectoryTab() {
             </table>
           </div>
         </div>
+      )}
     </div>
   );
 }
