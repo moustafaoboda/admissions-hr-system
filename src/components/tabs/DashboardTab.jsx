@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { MemberAvatar } from '../common/Avatars';
+import { getMemberAttendanceRate } from '../../lib/attendanceUtils';
 
 export default function DashboardTab() {
   const {
@@ -37,8 +38,8 @@ export default function DashboardTab() {
   const avgAttendanceRate = totalEligibleRollCalls > 0
     ? ((totalPresentRollCalls / totalEligibleRollCalls) * 100).toFixed(1)
     : (totalMembers > 0
-        ? (activeMembers.reduce((acc, m) => acc + (m.attendanceCount > 0 ? Math.min(100, Math.round((m.attendanceCount / 12) * 100)) : 100), 0) / totalMembers).toFixed(1)
-        : '100.0');
+        ? (activeMembers.reduce((acc, m) => acc + getMemberAttendanceRate(m, attendanceSessions), 0) / totalMembers).toFixed(1)
+        : '0.0');
 
   // Real-time dynamic calculation from Warnings log
   const totalActualWarnings = (warnings || []).length;

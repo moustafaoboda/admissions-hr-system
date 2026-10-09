@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { MemberAvatar } from '../common/Avatars';
+import { getMemberAttendanceRate } from '../../lib/attendanceUtils';
 
 export default function DirectoryTab() {
   const {
     currentUser,
     members,
+    attendanceSessions,
     dischargedMembers,
     updateMemberPerformance,
     updateExtraDaysCount,
@@ -128,7 +130,7 @@ export default function DirectoryTab() {
                 </tr>
               ) : (
                 filteredMembers.map(m => {
-                  const rate = m.attendanceCount > 0 ? Math.min(100, Math.round((m.attendanceCount / 12) * 100)) : 100;
+                  const rate = getMemberAttendanceRate(m, attendanceSessions);
                   return (
                     <tr key={m.id} className="hover:bg-slate-50 transition">
                       <td className="py-3 px-4 font-bold text-slate-800 text-sm whitespace-nowrap">

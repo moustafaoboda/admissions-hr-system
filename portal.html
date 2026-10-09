@@ -2148,6 +2148,31 @@
     let portalSupabase = null;
     let portalSupabaseChannel = null;
 
+    function runPortalDb(builder) {
+      if (!builder) return Promise.resolve(null);
+      return Promise.resolve(builder).catch(err => {
+        console.warn('Portal Supabase error:', err);
+        return null;
+      });
+    }
+
+    function getPortalMemberAttendanceRate(m) {
+      if (!m) return 0;
+      const memSessions = (attendanceSessions || []).filter(s =>
+        Array.isArray(s.rollCall) && s.rollCall.some(rc => rc.memberId === m.id)
+      );
+      if (memSessions.length > 0) {
+        const presentCount = memSessions.filter(s =>
+          s.rollCall.some(rc => rc.memberId === m.id && rc.isPresent)
+        ).length;
+        return Math.round((presentCount / memSessions.length) * 100);
+      }
+      const count = Number(m.attendanceCount) || 0;
+      if (count <= 0) return 0;
+      const benchmark = (attendanceSessions && attendanceSessions.length > 0) ? attendanceSessions.length : 12;
+      return Math.min(100, Math.round((count / benchmark) * 100));
+    }
+
     function broadcastPortalMutation(type, payload) {
       const msg = {
         type,
@@ -2444,7 +2469,11 @@
                   saveAllState();
                   renderAllViews();
                 } else if (mut.type === 'DELETE_ATTENDANCE_SESSION' && mut.payload) {
+                  addDeletedId("sessions", mut.payload.id);
                   attendanceSessions = attendanceSessions.filter(s => s.id !== mut.payload.id);
+                  if (mut.payload.wasPresentIds && mut.payload.wasPresentIds.length > 0) {
+                    members = members.map(m => mut.payload.wasPresentIds.includes(m.id) ? { ...m, attendanceCount: Math.max(0, (m.attendanceCount || 0) - 1) } : m);
+                  }
                   saveAllState();
                   renderAllViews();
                 } else if (mut.type === 'SUBMIT_WARNING' && mut.payload) {
@@ -2871,7 +2900,7 @@
       if (!selVal) { container.innerHTML = ""; return; }
       const m = members.find(x => x.id === selVal);
       if (!m) { container.innerHTML = ""; return; }
-      const rate = m.attendanceCount > 0 ? Math.min(100, Math.round((m.attendanceCount / 12) * 100)) : 100;
+      const rate = getPortalMemberAttendanceRate(m);
       container.innerHTML = `
         <div class="p-2.5 bg-gradient-to-r from-slate-50 to-amber-50/30 rounded-xl border border-amber-200/80 flex items-center gap-3 shadow-xs">
           ${getMemberAvatarMarkup(m, "w-11 h-11 text-xs border-2 border-[#c59b27]")}
@@ -3374,7 +3403,18 @@
     function renderDashboard() {
       const activeM = members.filter(m => m.status !== "Discharged");
       document.getElementById("kpiTotalMembers").textContent = activeM.length;
-      const avgRate = activeM.length > 0 ? (activeM.reduce((acc, m) => acc + (m.attendanceCount > 0 ? Math.min(100, Math.round((m.attendanceCount / 12) * 100)) : 100), 0) / activeM.length).toFixed(1) : '100.0';
+
+      const totalEligibleRollCalls = (attendanceSessions || []).reduce((acc, s) => {
+        return acc + (s.totalCount || (s.rollCall ? s.rollCall.length : 0));
+      }, 0);
+      const totalPresentRollCalls = (attendanceSessions || []).reduce((acc, s) => {
+        return acc + (s.presentCount !== undefined ? s.presentCount : (s.rollCall ? s.rollCall.filter(r => r.isPresent).length : 0));
+      }, 0);
+      const avgRate = totalEligibleRollCalls > 0
+        ? ((totalPresentRollCalls / totalEligibleRollCalls) * 100).toFixed(1)
+        : (activeM.length > 0
+            ? (activeM.reduce((acc, m) => acc + getPortalMemberAttendanceRate(m), 0) / activeM.length).toFixed(1)
+            : '0.0');
       document.getElementById("kpiAvgAttendance").textContent = avgRate + "%";
       const actualWarnings = warnings || [];
       const confirmedCount = actualWarnings.filter(w => w.status === 'Confirmed Strike').length;
@@ -3476,7 +3516,7 @@
       }
 
       tbody.innerHTML = filtered.map(m => {
-        const rate = m.attendanceCount > 0 ? Math.min(100, Math.round((m.attendanceCount / 12) * 100)) : 100;
+        const rate = getPortalMemberAttendanceRate(m);
         const daysBadges = (m.officialDays || []).map(d => `<span class="bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold px-1.5 py-0.5 rounded">${d.substring(0,3)}</span>`).join(" ");
         const extraCount = m.extraDaysCount !== undefined ? m.extraDaysCount : (m.extraDays ? m.extraDays.length : 0);
 
@@ -3691,7 +3731,7 @@
         });
 
         if (portalSupabase) {
-          portalSupabase.from('members').upsert({
+          runPortalDb(portalSupabase.from('members').upsert({
             id: mem.id,
             name: mem.name,
             role: mem.role,
@@ -3705,7 +3745,7 @@
             score: mem.score,
             strikes: mem.strikes || 0,
             status: mem.status || 'Active'
-          }, { onConflict: 'id' }).catch(function(err) { console.warn('Supabase member save error:', err); });
+          }, { onConflict: 'id' }));
 
           if (portalSupabaseChannel) {
             try {
@@ -3974,16 +4014,30 @@
       const s = attendanceSessions.find(x => x.id === sId);
       if (!s) return;
       addDeletedId("sessions", sId);
+      const wasPresentIds = s?.rollCall ? s.rollCall.filter(r => r.isPresent).map(r => r.memberId) : [];
+
+      if (wasPresentIds.length > 0) {
+        members = members.map(m => wasPresentIds.includes(m.id) ? { ...m, attendanceCount: Math.max(0, (m.attendanceCount || 0) - 1) } : m);
+        if (portalSupabase) {
+          wasPresentIds.forEach(memId => {
+            const memObj = members.find(m => m.id === memId);
+            if (memObj) {
+              runPortalDb(portalSupabase.from('members').update({ attendance_count: memObj.attendanceCount }).eq('id', memId));
+            }
+          });
+        }
+      }
+
       attendanceSessions = attendanceSessions.filter(x => x.id !== sId);
       saveAllState();
 
       if (portalSupabase) {
-        portalSupabase.from('attendance_sessions').delete().eq('id', sId).catch(err => console.warn('Supabase delete session error:', err));
+        runPortalDb(portalSupabase.from('attendance_sessions').delete().eq('id', sId));
       }
-      broadcastPortalMutation('DELETE_ATTENDANCE_SESSION', { id: sId });
+      broadcastPortalMutation('DELETE_ATTENDANCE_SESSION', { id: sId, wasPresentIds });
 
       logActivity(`Deleted attendance session: ${s.title}`, "Attendance", `${s.dayName}, ${s.date}`);
-      showToast("Attendance session deleted.");
+      showToast("Attendance session deleted & member totals updated.");
       document.getElementById("attendanceInspectorBox")?.classList.add("hidden");
       renderAllViews();
     }
@@ -4116,7 +4170,7 @@
       saveAllState();
 
       if (portalSupabase) {
-        portalSupabase.from('attendance_sessions').update({
+        runPortalDb(portalSupabase.from('attendance_sessions').update({
           title: s.title,
           date: s.date,
           day_name: s.dayName,
@@ -4124,7 +4178,7 @@
           present_count: s.presentCount,
           total_count: s.totalCount,
           roll_call: s.rollCall
-        }).eq('id', s.id).catch(err => console.warn('Supabase update session error:', err));
+        }).eq('id', s.id));
       }
       broadcastPortalMutation('UPDATE_ATTENDANCE_SESSION', { id: s.id, data: s });
 
@@ -4222,7 +4276,7 @@
       saveAllState();
 
       if (portalSupabase) {
-        portalSupabase.from('attendance_sessions').upsert({
+        runPortalDb(portalSupabase.from('attendance_sessions').upsert({
           id: newSession.id,
           title: newSession.title,
           date: newSession.date,
@@ -4231,7 +4285,7 @@
           present_count: newSession.presentCount,
           total_count: newSession.totalCount,
           roll_call: newSession.rollCall
-        }, { onConflict: 'id' }).catch(err => console.warn('Supabase create session error:', err));
+        }, { onConflict: 'id' }));
       }
       broadcastPortalMutation('CREATE_ATTENDANCE_SESSION', { session: newSession, updatedMemberIds: rollCall.filter(r => r.isPresent).map(r => r.memberId) });
 
@@ -4757,14 +4811,14 @@
         saveAllState();
 
         if (portalSupabase) {
-          portalSupabase.from('system_users').upsert({
+          runPortalDb(portalSupabase.from('system_users').upsert({
             id: u.id,
             name: u.name,
             username: u.username,
             password: u.password,
             role: u.role,
             avatar: u.avatar || null
-          }, { onConflict: 'username' }).catch(err => console.warn('Supabase save user error:', err));
+          }, { onConflict: 'username' }));
         }
 
         broadcastPortalMutation('UPDATE_SYSTEM_USER', { id: u.id, fields: { name: u.name, username: u.username, role: u.role, password: u.password, avatar: u.avatar || null } });
@@ -4807,14 +4861,14 @@
       saveAllState();
 
       if (portalSupabase) {
-        portalSupabase.from('system_users').upsert({
+        runPortalDb(portalSupabase.from('system_users').upsert({
           id: newU.id,
           name: newU.name,
           username: newU.username,
           password: newU.password,
           role: newU.role,
           avatar: null
-        }, { onConflict: 'username' }).catch(err => console.warn('Supabase add user error:', err));
+        }, { onConflict: 'username' }));
       }
 
       broadcastPortalMutation('ADD_SYSTEM_USER', newU);
@@ -4834,9 +4888,9 @@
 
       if (portalSupabase) {
         if (userToDelete?.username) {
-          portalSupabase.from('system_users').delete().eq('username', userToDelete.username.toLowerCase().trim()).catch(err => console.warn(err));
+          runPortalDb(portalSupabase.from('system_users').delete().eq('username', userToDelete.username.toLowerCase().trim()));
         }
-        portalSupabase.from('system_users').delete().eq('id', uId).catch(err => console.warn(err));
+        runPortalDb(portalSupabase.from('system_users').delete().eq('id', uId));
       }
 
       broadcastPortalMutation('DELETE_SYSTEM_USER', { id: uId, username: userToDelete?.username });
@@ -4921,12 +4975,12 @@
         u.avatar = avatarVal;
 
         if (portalSupabase) {
-          portalSupabase.from('system_users').update({
+          runPortalDb(portalSupabase.from('system_users').update({
             name: u.name,
             username: u.username,
             password: u.password,
             avatar: u.avatar
-          }).eq('id', u.id).catch(function(err) { console.warn('Supabase system_user save error:', err); });
+          }).eq('id', u.id));
         }
       }
 

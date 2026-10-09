@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { MemberAvatar, UserAvatar } from '../common/Avatars';
+import { getMemberAttendanceRate } from '../../lib/attendanceUtils';
 
 export default function MonitoringTab() {
   const {
     members,
+    attendanceSessions,
     currentUser,
     monitoringNotes,
     addMonitoringNote,
@@ -147,7 +149,7 @@ export default function MonitoringTab() {
               {/* Target Member Preview Card */}
               {activeMembers.find(m => m.id === targetMemberId) && (() => {
                 const mem = activeMembers.find(m => m.id === targetMemberId);
-                const rate = mem.attendanceCount > 0 ? Math.min(100, Math.round((mem.attendanceCount / 12) * 100)) : 100;
+                const rate = getMemberAttendanceRate(mem, attendanceSessions);
                 return (
                   <div className="flex items-center gap-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-lg mt-2 shadow-xs">
                     <MemberAvatar member={mem} size="w-10 h-10 text-xs" />

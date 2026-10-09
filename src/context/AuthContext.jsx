@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { supabase, isSupabaseConfigured, getStoredSupabaseConfig } from '../lib/supabaseClient';
+import { supabase, isSupabaseConfigured, getStoredSupabaseConfig, runDb } from '../lib/supabaseClient';
 
 const AuthContext = createContext(null);
 
@@ -723,6 +723,7 @@ export function AuthProvider({ children }) {
         break;
 
       case 'DELETE_ATTENDANCE_SESSION':
+        if (payload.id) addDeletedId('sessions', payload.id);
         setAttendanceSessions(prev => prev.filter(s => s.id !== payload.id));
         if (payload.wasPresentIds && payload.wasPresentIds.length > 0) {
           setMembers(prev => prev.map(m => payload.wasPresentIds.includes(m.id) ? { ...m, attendanceCount: Math.max(0, m.attendanceCount - 1) } : m));
@@ -866,7 +867,7 @@ export function AuthProvider({ children }) {
       if (!mErr && dbMembers && dbMembers.length > 0) {
         dbMembers.forEach(row => {
           if (isMemberDeleted(row)) {
-            supabase.from('members').delete().eq('id', row.id).catch(() => {});
+            runDb(supabase.from('members').delete().eq('id', row.id));
             return;
           }
           const formatted = {
@@ -918,7 +919,7 @@ export function AuthProvider({ children }) {
           avatar: m.avatar || null
         }));
         if (seedPayload.length > 0) {
-          supabase.from('members').insert(seedPayload).catch(() => {});
+          runDb(supabase.from('members').insert(seedPayload));
         }
       }
 
@@ -944,7 +945,7 @@ export function AuthProvider({ children }) {
       } else if (!uErr && (!dbUsers || dbUsers.length === 0)) {
         const currentUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS).filter(u => !deletedUserIds.includes(u.id));
         if (currentUsers.length > 0) {
-          supabase.from('system_users').insert(currentUsers).catch(() => {});
+          runDb(supabase.from('system_users').insert(currentUsers));
         }
       }
 
@@ -955,8 +956,8 @@ export function AuthProvider({ children }) {
         // Delete any legacy demo stars ('star-1', 'star-2') or tombstoned records from cloud DB
         dbStars.forEach(s => {
           if (s.id === 'star-1' || s.id === 'star-2' || isStarDeleted(s)) {
-            if (s.id) supabase.from('star_ambassadors').delete().eq('id', s.id).catch(() => {});
-            if (s.member_id) supabase.from('star_ambassadors').delete().eq('member_id', s.member_id).catch(() => {});
+            if (s.id) runDb(supabase.from('star_ambassadors').delete().eq('id', s.id));
+            if (s.member_id) runDb(supabase.from('star_ambassadors').delete().eq('member_id', s.member_id));
           }
         });
 
@@ -992,7 +993,7 @@ export function AuthProvider({ children }) {
         if (deletedSessionIds.length > 0) {
           deletedSessionIds.forEach(delId => {
             if (dbSessions.some(s => s.id === delId)) {
-              supabase.from('attendance_sessions').delete().eq('id', delId).catch(() => {});
+              runDb(supabase.from('attendance_sessions').delete().eq('id', delId));
             }
           });
         }
@@ -1014,7 +1015,7 @@ export function AuthProvider({ children }) {
       } else if (!aErr && (!dbSessions || dbSessions.length === 0)) {
         const currentSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS)
           .filter(s => !deletedSessionIds.includes(s.id));
-        supabase.from('attendance_sessions').insert(currentSessions.map(s => ({
+        runDb(supabase.from('attendance_sessions').insert(currentSessions.map(s => ({
           id: s.id,
           title: s.title,
           date: s.date,
@@ -1023,7 +1024,7 @@ export function AuthProvider({ children }) {
           present_count: s.presentCount,
           total_count: s.totalCount,
           roll_call: s.rollCall
-        }))).catch(() => {});
+        }))));
       }
 
       // 5. Warnings
@@ -1033,7 +1034,7 @@ export function AuthProvider({ children }) {
         if (deletedWarningIds.length > 0) {
           deletedWarningIds.forEach(delId => {
             if (dbWarnings.some(w => w.id === delId)) {
-              supabase.from('disciplinary_warnings').delete().eq('id', delId).catch(() => {});
+              runDb(supabase.from('disciplinary_warnings').delete().eq('id', delId));
             }
           });
         }
@@ -1060,7 +1061,7 @@ export function AuthProvider({ children }) {
         if (deletedNoteIds.length > 0) {
           deletedNoteIds.forEach(delId => {
             if (dbNotes.some(n => n.id === delId)) {
-              supabase.from('monitoring_notes').delete().eq('id', delId).catch(() => {});
+              runDb(supabase.from('monitoring_notes').delete().eq('id', delId));
             }
           });
         }
@@ -1090,7 +1091,7 @@ export function AuthProvider({ children }) {
         if (deletedEventIds.length > 0) {
           deletedEventIds.forEach(delId => {
             if (dbEvents.some(e => e.id === delId)) {
-              supabase.from('events').delete().eq('id', delId).catch(() => {});
+              runDb(supabase.from('events').delete().eq('id', delId));
             }
           });
         }
@@ -1283,7 +1284,7 @@ export function AuthProvider({ children }) {
         time: newEntry.time,
         is_starred: false,
         details: newEntry.details
-      }]).catch(err => console.warn('Supabase activity log error:', err));
+      }]));
     }
   };
 
@@ -1300,7 +1301,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('TOGGLE_STAR_ACTIVITY_LOG', { id, isStarred: nextStarred });
 
     if (supabase) {
-      supabase.from('activity_logs').update({ is_starred: nextStarred }).eq('id', id).catch(e => console.warn(e));
+      runDb(supabase.from('activity_logs').update({ is_starred: nextStarred }).eq('id', id));
     }
   };
 
@@ -1310,7 +1311,7 @@ export function AuthProvider({ children }) {
     showToast("Activity log entry updated.");
 
     if (supabase) {
-      supabase.from('activity_logs').update(updatedFields).eq('id', id).catch(e => console.warn(e));
+      runDb(supabase.from('activity_logs').update(updatedFields).eq('id', id));
     }
   };
 
@@ -1320,7 +1321,7 @@ export function AuthProvider({ children }) {
     showToast("Activity log entry removed.");
 
     if (supabase) {
-      supabase.from('activity_logs').delete().eq('id', id).catch(e => console.warn(e));
+      runDb(supabase.from('activity_logs').delete().eq('id', id));
     }
   };
 
@@ -1332,7 +1333,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('UPDATE_SYSTEM_ICON', newIconConfig);
 
     if (supabase) {
-      supabase.from('system_settings').upsert({ key: 'system_icon', value: newIconConfig }).catch(e => console.warn(e));
+      runDb(supabase.from('system_settings').upsert({ key: 'system_icon', value: newIconConfig }));
     }
 
     logActivity("Updated system branding icon/logo", "System");
@@ -1451,7 +1452,7 @@ export function AuthProvider({ children }) {
         score: mem.score,
         status: mem.status,
         avatar: mem.avatar
-      }]).catch(err => console.warn('Supabase add member error:', err));
+      }]));
     }
 
     logActivity(`Added new team member: ${mem.name}`, "Members", `${mem.role} - ${mem.college}`);
@@ -1488,9 +1489,7 @@ export function AuthProvider({ children }) {
         discharge_reason: target.dischargeReason || null
       };
 
-      supabase.from('members').upsert(fullMem, { onConflict: 'id' }).then(({ error }) => {
-        if (error) console.warn('Supabase upsert member error:', error);
-      }).catch(err => console.warn('Supabase upsert member error:', err));
+      runDb(supabase.from('members').upsert(fullMem, { onConflict: 'id' }));
     }
 
     logActivity(`Updated info for: ${target ? target.name : 'member'}`, "Members");
@@ -1501,7 +1500,7 @@ export function AuthProvider({ children }) {
     setMembers(prev => prev.map(m => m.id === id ? { ...m, extraDays } : m));
     broadcastMutation('UPDATE_MEMBER', { id, fields: { extraDays } });
     if (supabase) {
-      supabase.from('members').update({ extra_days: extraDays }).eq('id', id).catch(() => {});
+      runDb(supabase.from('members').update({ extra_days: extraDays }).eq('id', id));
     }
     showToast("Extra attendance days updated.");
   };
@@ -1518,7 +1517,7 @@ export function AuthProvider({ children }) {
     }));
     broadcastMutation('UPDATE_MEMBER', { id, fields: { extraDaysCount: nextCount } });
     if (supabase) {
-      supabase.from('members').update({ extra_days_count: nextCount }).eq('id', id).catch(() => {});
+      runDb(supabase.from('members').update({ extra_days_count: nextCount }).eq('id', id));
     }
     showToast("Extra days counter updated.");
   };
@@ -1536,8 +1535,8 @@ export function AuthProvider({ children }) {
     broadcastMutation('DELETE_MEMBER', { id, studentId: mem?.studentId, name: mem?.name });
 
     if (supabase) {
-      supabase.from('members').delete().eq('id', id).catch(err => console.warn('Supabase delete member error:', err));
-      if (mem?.studentId) supabase.from('members').delete().eq('student_id', mem.studentId).catch(() => {});
+      runDb(supabase.from('members').delete().eq('id', id));
+      if (mem?.studentId) runDb(supabase.from('members').delete().eq('student_id', mem.studentId));
     }
 
     logActivity(`Deleted team member: ${mem?.name || 'Member'}`, "Members");
@@ -1567,11 +1566,11 @@ export function AuthProvider({ children }) {
     broadcastMutation('DISCHARGE_MEMBER', { memberId: id, record: dischargedRecord });
 
     if (supabase) {
-      supabase.from('members').update({
+      runDb(supabase.from('members').update({
         status: 'Discharged',
         discharge_type: dischargedRecord.dischargeType,
         discharge_reason: dischargedRecord.dischargeReason
-      }).eq('id', id).catch(err => console.warn('Supabase discharge member error:', err));
+      }).eq('id', id));
     }
 
     logActivity(`Discharged member: ${mem.name}`, "Members", `${dischargeType} - Reason: ${reason}`);
@@ -1585,7 +1584,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('UPDATE_MEMBER', { id, fields: { score: scoreVal } });
 
     if (supabase) {
-      supabase.from('members').update({ score: scoreVal }).eq('id', id).catch(err => console.warn('Supabase update score error:', err));
+      runDb(supabase.from('members').update({ score: scoreVal }).eq('id', id));
     }
 
     logActivity(`Updated performance score for: ${mem ? mem.name : 'member'} to ${newScore}%`, "Members");
@@ -1619,7 +1618,7 @@ export function AuthProvider({ children }) {
 
     if (supabase) {
       // First ensure the member is in Supabase members table so foreign key constraint is satisfied
-      supabase.from('members').upsert([{
+      runDb(supabase.from('members').upsert([{
         id: mem.id,
         name: mem.name,
         role: mem.role,
@@ -1634,8 +1633,8 @@ export function AuthProvider({ children }) {
         score: mem.score || 90,
         status: mem.status || 'Active',
         avatar: mem.avatar || null
-      }]).then(() => {
-        supabase.from('star_ambassadors').upsert([{
+      }])).then(() => {
+        runDb(supabase.from('star_ambassadors').upsert([{
           id: star.id,
           member_id: star.memberId,
           name: star.name,
@@ -1643,8 +1642,8 @@ export function AuthProvider({ children }) {
           college: star.college,
           award_title: star.awardTitle,
           citation: star.citation
-        }]).catch(err => console.warn('Supabase add star error:', err));
-      }).catch(err => console.warn('Supabase ensure member error:', err));
+        }]));
+      });
     }
 
     logActivity(`Granted star ambassador recognition to ${mem.name}`, "Members", awardTitle);
@@ -1681,9 +1680,9 @@ export function AuthProvider({ children }) {
     broadcastMutation('REMOVE_STAR', { id: targetId, memberId: targetMemberId, name: targetName });
 
     if (supabase) {
-      if (targetId) supabase.from('star_ambassadors').delete().eq('id', targetId).catch(err => console.warn('Supabase remove star error:', err));
-      if (targetMemberId) supabase.from('star_ambassadors').delete().eq('member_id', targetMemberId).catch(err => console.warn('Supabase remove star by member error:', err));
-      if (targetName) supabase.from('star_ambassadors').delete().ilike('name', targetName).catch(err => console.warn('Supabase remove star by name error:', err));
+      if (targetId) runDb(supabase.from('star_ambassadors').delete().eq('id', targetId));
+      if (targetMemberId) runDb(supabase.from('star_ambassadors').delete().eq('member_id', targetMemberId));
+      if (targetName) runDb(supabase.from('star_ambassadors').delete().ilike('name', targetName));
     }
 
     logActivity(`Removed star recognition for: ${target?.name || targetName || 'Ambassador'}`, "Members");
@@ -1702,7 +1701,7 @@ export function AuthProvider({ children }) {
         wasPresentIds.forEach(memId => {
           const memObj = members.find(m => m.id === memId);
           if (memObj) {
-            supabase.from('members').update({ attendance_count: Math.max(0, memObj.attendanceCount - 1) }).eq('id', memId).catch(e => console.warn(e));
+            runDb(supabase.from('members').update({ attendance_count: Math.max(0, memObj.attendanceCount - 1) }).eq('id', memId));
           }
         });
       }
@@ -1712,7 +1711,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('DELETE_ATTENDANCE_SESSION', { id: sessionId, wasPresentIds });
 
     if (supabase) {
-      supabase.from('attendance_sessions').delete().eq('id', sessionId).catch(err => console.warn('Supabase delete session error:', err));
+      runDb(supabase.from('attendance_sessions').delete().eq('id', sessionId));
     }
 
     logActivity(`Deleted attendance session: ${s ? s.title : sessionId}`, "Attendance");
@@ -1735,12 +1734,12 @@ export function AuthProvider({ children }) {
         if (!wasP && isP) {
           memberAttendanceDeltas[m.id] = (memberAttendanceDeltas[m.id] || 0) + 1;
           const newCnt = m.attendanceCount + 1;
-          if (supabase) supabase.from('members').update({ attendance_count: newCnt }).eq('id', m.id).catch(e => console.warn(e));
+          if (supabase) runDb(supabase.from('members').update({ attendance_count: newCnt }).eq('id', m.id));
           return { ...m, attendanceCount: newCnt };
         } else if (wasP && !isP) {
           memberAttendanceDeltas[m.id] = (memberAttendanceDeltas[m.id] || 0) - 1;
           const newCnt = Math.max(0, m.attendanceCount - 1);
-          if (supabase) supabase.from('members').update({ attendance_count: newCnt }).eq('id', m.id).catch(e => console.warn(e));
+          if (supabase) runDb(supabase.from('members').update({ attendance_count: newCnt }).eq('id', m.id));
           return { ...m, attendanceCount: newCnt };
         }
         return m;
@@ -1760,7 +1759,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('UPDATE_ATTENDANCE_SESSION', { id: sessionId, data: updatedData, deltas: memberAttendanceDeltas });
 
     if (supabase && finalSession) {
-      supabase.from('attendance_sessions').update({
+      runDb(supabase.from('attendance_sessions').update({
         title: finalSession.title,
         date: finalSession.date,
         day_name: finalSession.dayName,
@@ -1768,7 +1767,7 @@ export function AuthProvider({ children }) {
         present_count: finalSession.presentCount,
         total_count: finalSession.totalCount,
         roll_call: finalSession.rollCall
-      }).eq('id', sessionId).catch(err => console.warn('Supabase update session error:', err));
+      }).eq('id', sessionId));
     }
 
     logActivity(`Updated attendance session: ${updatedData.title || sessionId}`, "Attendance");
@@ -1808,7 +1807,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('CREATE_ATTENDANCE_SESSION', { session, updatedMemberIds: presentMemberIds });
 
     if (supabase) {
-      supabase.from('attendance_sessions').insert([{
+      runDb(supabase.from('attendance_sessions').insert([{
         id: session.id,
         title: session.title,
         date: session.date,
@@ -1817,13 +1816,13 @@ export function AuthProvider({ children }) {
         present_count: session.presentCount,
         total_count: session.totalCount,
         roll_call: session.rollCall
-      }]).catch(err => console.warn('Supabase insert session error:', err));
+      }]));
 
       // Update members attendance count in DB
       presentMemberIds.forEach(memId => {
         const memObj = members.find(m => m.id === memId);
         if (memObj) {
-          supabase.from('members').update({ attendance_count: memObj.attendanceCount + 1 }).eq('id', memId).catch(e => console.warn(e));
+          runDb(supabase.from('members').update({ attendance_count: memObj.attendanceCount + 1 }).eq('id', memId));
         }
       });
     }
@@ -1874,12 +1873,12 @@ export function AuthProvider({ children }) {
           reported_by: wrn.reportedBy,
           date: wrn.date,
           status: wrn.status
-        }]).catch(e => console.warn(e));
+        }]));
 
-        supabase.from('members').update({
+        runDb(supabase.from('members').update({
           strikes: mem.strikes + 1,
           score: Math.max(50, mem.score - 8)
-        }).eq('id', mem.id).catch(e => console.warn(e));
+        }).eq('id', mem.id));
       }
 
       logActivity(`Issued warning to: ${mem.name}`, "Warnings", `${level} - ${reason}`);
@@ -1902,7 +1901,7 @@ export function AuthProvider({ children }) {
       broadcastMutation('SUBMIT_WARNING', { warning: wrn, memberId: mem.id, incrementStrikes: false });
 
       if (supabase) {
-        supabase.from('disciplinary_warnings').insert([{
+        runDb(supabase.from('disciplinary_warnings').insert([{
           id: wrn.id,
           member_id: wrn.memberId,
           level: wrn.level,
@@ -1910,7 +1909,7 @@ export function AuthProvider({ children }) {
           reported_by: wrn.reportedBy,
           date: wrn.date,
           status: wrn.status
-        }]).catch(e => console.warn(e));
+        }]));
       }
 
       logActivity(`Submitted warning request for: ${mem.name}`, "Warnings", `${level} - ${reason}`);
@@ -1936,13 +1935,13 @@ export function AuthProvider({ children }) {
     broadcastMutation('APPROVE_WARNING', { id: warningId, memberId: wrn.memberId });
 
     if (supabase) {
-      supabase.from('disciplinary_warnings').update({ status: 'Confirmed Strike' }).eq('id', warningId).catch(e => console.warn(e));
+      runDb(supabase.from('disciplinary_warnings').update({ status: 'Confirmed Strike' }).eq('id', warningId));
       const targetMem = members.find(m => m.id === wrn.memberId);
       if (targetMem) {
-        supabase.from('members').update({
+        runDb(supabase.from('members').update({
           strikes: targetMem.strikes + 1,
           score: Math.max(50, targetMem.score - 8)
-        }).eq('id', wrn.memberId).catch(e => console.warn(e));
+        }).eq('id', wrn.memberId));
       }
     }
 
@@ -1970,10 +1969,10 @@ export function AuthProvider({ children }) {
       if (supabase) {
         const targetMem = members.find(m => m.id === memberId);
         if (targetMem) {
-          supabase.from('members').update({
+          runDb(supabase.from('members').update({
             strikes: Math.max(0, targetMem.strikes - 1),
             score: Math.min(100, targetMem.score + 8)
-          }).eq('id', memberId).catch(() => {});
+          }).eq('id', memberId));
         }
       }
     }
@@ -1982,7 +1981,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('DISMISS_WARNING', { id: warningId, memberId, wasConfirmed });
 
     if (supabase) {
-      supabase.from('disciplinary_warnings').delete().eq('id', warningId).catch(e => console.warn(e));
+      runDb(supabase.from('disciplinary_warnings').delete().eq('id', warningId));
     }
 
     logActivity(`Dismissed warning for: ${wrn ? wrn.memberName : warningId}`, "Warnings");
@@ -1998,7 +1997,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('UPDATE_WARNING', { id, fields: updatedFields });
 
     if (supabase) {
-      supabase.from('disciplinary_warnings').update(updatedFields).eq('id', id).catch(e => console.warn(e));
+      runDb(supabase.from('disciplinary_warnings').update(updatedFields).eq('id', id));
     }
 
     logActivity(`Updated warning details #${id}`, "Warnings");
@@ -2032,7 +2031,7 @@ export function AuthProvider({ children }) {
         discharge_type: updatedFields.dischargeType !== undefined ? updatedFields.dischargeType : target.dischargeType,
         discharge_reason: updatedFields.dischargeReason !== undefined ? updatedFields.dischargeReason : target.dischargeReason
       };
-      supabase.from('members').upsert(fullMem, { onConflict: 'id' }).catch(e => console.warn(e));
+      runDb(supabase.from('members').upsert(fullMem, { onConflict: 'id' }));
     }
 
     logActivity(`Updated discharged record #${id}`, "Members");
@@ -2068,11 +2067,11 @@ export function AuthProvider({ children }) {
     broadcastMutation('REINSTATE_MEMBER', { id, reinstatedMember });
 
     if (supabase) {
-      supabase.from('members').update({
+      runDb(supabase.from('members').update({
         status: 'Active',
         discharge_type: null,
         discharge_reason: null
-      }).eq('id', id).catch(e => console.warn(e));
+      }).eq('id', id));
     }
 
     logActivity(`Reinstated member back to active team: ${mem.name}`, "Members");
@@ -2089,8 +2088,8 @@ export function AuthProvider({ children }) {
     broadcastMutation('DELETE_DISCHARGED_MEMBER', { id, studentId: mem?.studentId, name: mem?.name });
 
     if (supabase) {
-      supabase.from('members').delete().eq('id', id).catch(err => console.warn('Supabase delete discharged member error:', err));
-      if (mem?.studentId) supabase.from('members').delete().eq('student_id', mem.studentId).catch(() => {});
+      runDb(supabase.from('members').delete().eq('id', id));
+      if (mem?.studentId) runDb(supabase.from('members').delete().eq('student_id', mem.studentId));
     }
 
     logActivity(`Permanently deleted discharged record: ${mem?.name || 'Member'}`, "Members");
@@ -2117,7 +2116,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('ADD_EVENT', evt);
 
     if (supabase) {
-      supabase.from('events').insert([evt]).catch(e => console.warn(e));
+      runDb(supabase.from('events').insert([evt]));
     }
 
     logActivity(`Created event: ${evt.title}`, "Events", `${evt.type} on ${evt.date}`);
@@ -2133,7 +2132,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('UPDATE_EVENT', { id, fields: updatedFields });
 
     if (supabase) {
-      supabase.from('events').update(updatedFields).eq('id', id).catch(e => console.warn(e));
+      runDb(supabase.from('events').update(updatedFields).eq('id', id));
     }
 
     logActivity(`Updated event: ${updatedFields.title || id}`, "Events");
@@ -2151,7 +2150,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('DELETE_EVENT', { id });
 
     if (supabase) {
-      supabase.from('events').delete().eq('id', id).catch(e => console.warn(e));
+      runDb(supabase.from('events').delete().eq('id', id));
     }
 
     logActivity(`Deleted event: ${evt ? evt.title : id}`, "Events");
@@ -2179,7 +2178,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('ADD_MONITORING_NOTE', newNote);
 
     if (supabase) {
-      supabase.from('monitoring_notes').insert([{
+      runDb(supabase.from('monitoring_notes').insert([{
         id: newNote.id,
         member_id: newNote.memberId,
         member_name: newNote.memberName,
@@ -2191,7 +2190,7 @@ export function AuthProvider({ children }) {
         note: newNote.note,
         date: newNote.date,
         time: newNote.time
-      }]).catch(e => console.warn(e));
+      }]));
     }
 
     logActivity(`Logged monitoring note for: ${mem ? mem.name : 'member'}`, "Monitoring", `Category: ${category}`);
@@ -2221,14 +2220,14 @@ export function AuthProvider({ children }) {
     broadcastMutation('UPDATE_MONITORING_NOTE', { id, fields: updatedFields });
 
     if (supabase && finalNote) {
-      supabase.from('monitoring_notes').update({
+      runDb(supabase.from('monitoring_notes').update({
         category: finalNote.category,
         note: finalNote.note,
         member_id: finalNote.memberId,
         member_name: finalNote.memberName,
         member_role: finalNote.memberRole,
         member_college: finalNote.memberCollege
-      }).eq('id', id).catch(e => console.warn(e));
+      }).eq('id', id));
     }
 
     logActivity(`Updated monitoring note #${id}`, "Monitoring");
@@ -2241,7 +2240,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('DELETE_MONITORING_NOTE', { id });
 
     if (supabase) {
-      supabase.from('monitoring_notes').delete().eq('id', id).catch(e => console.warn(e));
+      runDb(supabase.from('monitoring_notes').delete().eq('id', id));
     }
 
     logActivity(`Deleted monitoring note #${id}`, "Monitoring");
@@ -2348,7 +2347,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('ADD_SYSTEM_USER', newUser);
 
     if (supabase) {
-      supabase.from('system_users').upsert(newUser, { onConflict: 'username' }).then(({ error }) => { if (error) { console.warn(error); showToast('Cloud save failed for new user: ' + error.message, 'danger'); } }).catch(e => console.warn(e));
+      runDb(supabase.from('system_users').upsert(newUser, { onConflict: 'username' }));
     }
 
     showToast(`New user ${cleanName} (${role}) added to credentials database.`);
@@ -2370,7 +2369,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('UPDATE_SYSTEM_USER', { id, fields: cleanUpdated });
 
     if (supabase) {
-      supabase.from('system_users').upsert({ id, ...cleanUpdated }, { onConflict: 'id' }).then(({ error }) => { if (error) { console.warn(error); showToast('Cloud save failed for user update: ' + error.message, 'danger'); } }).catch(e => console.warn(e));
+      runDb(supabase.from('system_users').upsert({ id, ...cleanUpdated }, { onConflict: 'id' }));
     }
 
     if (currentUser && currentUser.username === cleanUpdated.username) {
@@ -2392,7 +2391,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('DELETE_SYSTEM_USER', { id, username: target?.username });
 
     if (supabase) {
-      supabase.from('system_users').delete().eq('id', id).catch(e => console.warn(e));
+      runDb(supabase.from('system_users').delete().eq('id', id));
     }
 
     showToast("User login removed across all systems.");
@@ -2431,14 +2430,12 @@ export function AuthProvider({ children }) {
     broadcastMutation('UPDATE_SYSTEM_USER', { id: userRecord.id, fields: updatedObj });
 
     if (supabase) {
-      supabase.from('system_users').update({
+      runDb(supabase.from('system_users').update({
         name: updatedObj.name,
         username: updatedObj.username,
         password: updatedObj.password,
         avatar: updatedObj.avatar
-      }).eq('id', userRecord.id).then(({ error }) => {
-        if (error) { console.warn("Supabase update system_users password error:", error); showToast('Cloud save failed for profile: ' + error.message, 'danger'); }
-      }).catch(e => console.warn(e));
+      }).eq('id', userRecord.id));
     }
 
     showToast("Profile & password updated. Old password has been deleted from the database.");
