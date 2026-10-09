@@ -914,17 +914,8 @@ export function AuthProvider({ children }) {
             avatar: u.avatar || null
           }));
 
-        // Preserve any newly added local users that haven't synced to cloud yet
-        const currentLocalUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS)
-          .filter(u => !deletedUserIds.includes(u.id) && !deletedUserIds.includes(u.username?.toLowerCase()));
-
-        currentLocalUsers.forEach(lu => {
-          if (!validUsers.some(vu => vu.username.toLowerCase() === lu.username.toLowerCase())) {
-            validUsers.push(lu);
-            supabase.from('system_users').upsert(lu, { onConflict: 'username' }).catch(() => {});
-          }
-        });
-
+        // Database is the single source of truth: stale local copies must never be pushed back
+        // (that previously resurrected old/renamed accounts and old passwords on other devices).
         setSystemUsers(validUsers);
         try { localStorage.setItem("aastmt_system_users", JSON.stringify(validUsers)); } catch (e) {}
       } else if (!uErr && (!dbUsers || dbUsers.length === 0)) {
@@ -1325,11 +1316,30 @@ export function AuthProvider({ children }) {
     showToast("System icon & branding updated successfully across all devices.");
   };
 
-  const login = (username, password) => {
+  const login = async (username, password) => {
     const cleanUsername = (username || '').trim().toLowerCase();
     const cleanPassword = (password || '').trim();
-    const user = systemUsers.find(u => u.username.toLowerCase() === cleanUsername);
-    if (user && user.password.trim() === cleanPassword) {
+
+    // Always validate against the freshest cloud credentials (database is source of truth)
+    let userList = systemUsers;
+    if (supabase) {
+      try {
+        const { data: dbUsers, error: uErr } = await supabase.from('system_users').select('*');
+        if (!uErr && dbUsers && dbUsers.length > 0) {
+          const deletedUserIds = getDeletedIds('users');
+          userList = dbUsers
+            .filter(u => !deletedUserIds.includes(u.id) && !deletedUserIds.includes(u.username?.toLowerCase()))
+            .map(u => ({ id: u.id, name: u.name, username: u.username, password: u.password, role: u.role, avatar: u.avatar || null }));
+          setSystemUsers(userList);
+          try { localStorage.setItem("aastmt_system_users", JSON.stringify(userList)); } catch (e) {}
+        }
+      } catch (e) {
+        console.warn('Login cloud credential fetch failed, using local copy:', e);
+      }
+    }
+
+    const user = userList.find(u => (u.username || '').toLowerCase() === cleanUsername);
+    if (user && (user.password || '').trim() === cleanPassword) {
       const userObj = {
         name: user.name,
         username: user.username,
@@ -2315,7 +2325,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('ADD_SYSTEM_USER', newUser);
 
     if (supabase) {
-      supabase.from('system_users').upsert(newUser, { onConflict: 'username' }).catch(e => console.warn(e));
+      supabase.from('system_users').upsert(newUser, { onConflict: 'username' }).then(({ error }) => { if (error) { console.warn(error); showToast('Cloud save failed for new user: ' + error.message, 'danger'); } }).catch(e => console.warn(e));
     }
 
     showToast(`New user ${cleanName} (${role}) added to credentials database.`);
@@ -2337,7 +2347,7 @@ export function AuthProvider({ children }) {
     broadcastMutation('UPDATE_SYSTEM_USER', { id, fields: cleanUpdated });
 
     if (supabase) {
-      supabase.from('system_users').upsert({ id, ...cleanUpdated }, { onConflict: 'id' }).catch(e => console.warn(e));
+      supabase.from('system_users').upsert({ id, ...cleanUpdated }, { onConflict: 'id' }).then(({ error }) => { if (error) { console.warn(error); showToast('Cloud save failed for user update: ' + error.message, 'danger'); } }).catch(e => console.warn(e));
     }
 
     if (currentUser && currentUser.username === cleanUpdated.username) {
@@ -2404,7 +2414,7 @@ export function AuthProvider({ children }) {
         password: updatedObj.password,
         avatar: updatedObj.avatar
       }).eq('id', userRecord.id).then(({ error }) => {
-        if (error) console.warn("Supabase update system_users password error:", error);
+        if (error) { console.warn("Supabase update system_users password error:", error); showToast('Cloud save failed for profile: ' + error.message, 'danger'); }
       }).catch(e => console.warn(e));
     }
 
