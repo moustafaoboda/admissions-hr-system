@@ -33,7 +33,7 @@ export default function Navigation() {
           <span>Team Members</span>
         </button>
 
-        {!isHRMember && (
+        {!isDean && (
           <button
             onClick={() => switchTab('attendance')}
             className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${
@@ -57,7 +57,7 @@ export default function Navigation() {
           </button>
         )}
 
-        {!isHRMember && !isDean && (
+        {!isDean && (
           <button
             onClick={() => switchTab('copilot')}
             className={`nav-tab py-2.5 px-3 sm:px-4 text-slate-300 hover:text-white transition flex items-center gap-2 whitespace-nowrap ${

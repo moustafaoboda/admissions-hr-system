@@ -57,13 +57,17 @@ export default function WarningsListModal() {
             </span>
           </div>
 
-          {!isDean && isHeadOrVice && (
+          {!isDean && (
             <button
               onClick={handleOpenIssueWarning}
-              className="px-3 py-1.5 bg-[#002244] hover:bg-[#00162e] text-[#c59b27] font-bold text-xs rounded-lg border border-[#c59b27] flex items-center gap-1.5 transition shadow-sm"
+              className={`px-3 py-1.5 font-bold text-xs rounded-lg border flex items-center gap-1.5 transition shadow-sm ${
+                isHeadOrVice
+                  ? 'bg-[#002244] hover:bg-[#00162e] text-[#c59b27] border-[#c59b27]'
+                  : 'bg-amber-600 hover:bg-amber-700 text-white border-amber-600'
+              }`}
             >
-              <i className="fa-solid fa-plus text-xs"></i>
-              <span>Issue New Warning</span>
+              <i className={`fa-solid ${isHeadOrVice ? 'fa-plus text-xs' : 'fa-paper-plane text-[10px]'}`}></i>
+              <span>{isHeadOrVice ? 'Issue New Warning' : 'Request Warning Strike'}</span>
             </button>
           )}
         </div>

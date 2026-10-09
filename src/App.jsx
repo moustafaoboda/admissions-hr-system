@@ -68,9 +68,9 @@ export default function App() {
           <div className="flex-grow w-full min-w-0">
             {activeTab === 'dashboard' && <DashboardTab />}
             {activeTab === 'directory' && <DirectoryTab />}
-            {!isHRMember && activeTab === 'attendance' && <AttendanceTab />}
+            {!isDean && activeTab === 'attendance' && <AttendanceTab />}
             {!isDean && activeTab === 'monitoring' && <MonitoringTab />}
-            {!isHRMember && !isDean && activeTab === 'copilot' && <CopilotTab />}
+            {!isDean && activeTab === 'copilot' && <CopilotTab />}
             {isHeadOrVice && activeTab === 'activityLog' && <ActivityLogTab />}
           </div>
         </div>

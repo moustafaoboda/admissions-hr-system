@@ -2140,6 +2140,27 @@
     // Portal Supabase Realtime Client (Cloud sync across devices when configured)
     let portalSupabase = null;
     let portalSupabaseChannel = null;
+
+    function broadcastPortalMutation(type, payload) {
+      if (portalBc) {
+        portalBc.postMessage({ type, payload, senderId: 'portal_tab_' + Date.now(), timestamp: Date.now() });
+      }
+      if (portalSupabaseChannel) {
+        try {
+          portalSupabaseChannel.send({
+            type: 'broadcast',
+            event: 'MUTATION',
+            payload: {
+              type,
+              payload,
+              senderId: 'portal_tab_' + Date.now(),
+              timestamp: Date.now()
+            }
+          });
+        } catch(e) {}
+      }
+    }
+
     function initPortalSupabase() {
       try {
         const url = localStorage.getItem('supabase_url');
@@ -2166,6 +2187,44 @@
                     saveAllState();
                     renderAllViews();
                   }
+                } else if (mut.type === 'ADD_SYSTEM_USER' && mut.payload) {
+                  removeDeletedId('users', mut.payload.id);
+                  if (mut.payload.username) removeDeletedId('users', mut.payload.username.toLowerCase().trim());
+                  const idx = systemUsers.findIndex(u => u.id === mut.payload.id || u.username.toLowerCase().trim() === mut.payload.username.toLowerCase().trim());
+                  if (idx >= 0) {
+                    systemUsers[idx] = { ...systemUsers[idx], ...mut.payload };
+                  } else {
+                    systemUsers.push(mut.payload);
+                  }
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'UPDATE_SYSTEM_USER' && mut.payload) {
+                  systemUsers = systemUsers.map(u => u.id === mut.payload.id ? { ...u, ...mut.payload.fields } : u);
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'DELETE_SYSTEM_USER' && mut.payload) {
+                  addDeletedId('users', mut.payload.id);
+                  if (mut.payload.username) addDeletedId('users', mut.payload.username.toLowerCase().trim());
+                  systemUsers = systemUsers.filter(u => u.id !== mut.payload.id && u.username.toLowerCase().trim() !== (mut.payload.username || '').toLowerCase().trim());
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'CREATE_ATTENDANCE_SESSION' && mut.payload) {
+                  attendanceSessions = [mut.payload.session, ...attendanceSessions.filter(s => s.id !== mut.payload.session.id)];
+                  if (mut.payload.updatedMemberIds && mut.payload.updatedMemberIds.length > 0) {
+                    members.forEach(m => {
+                      if (mut.payload.updatedMemberIds.includes(m.id)) m.attendanceCount = (m.attendanceCount || 0) + 1;
+                    });
+                  }
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'UPDATE_ATTENDANCE_SESSION' && mut.payload) {
+                  attendanceSessions = attendanceSessions.map(s => s.id === mut.payload.id ? { ...s, ...mut.payload.data } : s);
+                  saveAllState();
+                  renderAllViews();
+                } else if (mut.type === 'DELETE_ATTENDANCE_SESSION' && mut.payload) {
+                  attendanceSessions = attendanceSessions.filter(s => s.id !== mut.payload.id);
+                  saveAllState();
+                  renderAllViews();
                 }
               }
             })
@@ -2187,6 +2246,38 @@
               });
             })
             .subscribe();
+
+          // Sync system users from cloud
+          portalSupabase.from('system_users').select('*').then(({ data }) => {
+            if (data && data.length > 0) {
+              const deletedU = getDeletedIds('users');
+              let updated = false;
+              data.forEach(row => {
+                const uname = (row.username || '').toLowerCase().trim();
+                if (!deletedU.includes(row.id) && !deletedU.includes(uname)) {
+                  const idx = systemUsers.findIndex(u => u.id === row.id || u.username.toLowerCase().trim() === uname);
+                  const uObj = {
+                    id: row.id,
+                    name: row.name,
+                    username: uname,
+                    password: row.password,
+                    role: row.role,
+                    avatar: row.avatar || ''
+                  };
+                  if (idx >= 0) {
+                    systemUsers[idx] = { ...systemUsers[idx], ...uObj };
+                  } else {
+                    systemUsers.push(uObj);
+                    updated = true;
+                  }
+                }
+              });
+              if (updated) {
+                saveAllState();
+                renderAllViews();
+              }
+            }
+          }).catch(err => console.warn('Supabase system_users fetch error:', err));
         }
       } catch (e) {
         console.warn('Portal Supabase init error:', e);
@@ -2854,8 +2945,8 @@
       e.preventDefault();
       const usernameInput = document.getElementById("loginUsername").value.trim().toLowerCase();
       const passwordInput = document.getElementById("loginPassword").value.trim();
-      const user = systemUsers.find(u => u.username.toLowerCase() === usernameInput);
-      if (user && user.password === passwordInput) {
+      const user = systemUsers.find(u => u.username.toLowerCase().trim() === usernameInput);
+      if (user && user.password.trim() === passwordInput) {
         currentUser = { name: user.name, username: user.username, role: user.role, avatar: user.avatar || null };
         try {
           localStorage.setItem("aastmt_current_user", JSON.stringify(currentUser));
@@ -2937,7 +3028,7 @@
       if (addNewMemBtn) addNewMemBtn.style.display = isHeadOrVice ? "inline-flex" : "none";
 
       const createAttBtn = document.getElementById("btnCreateAttendanceSheet");
-      if (createAttBtn) createAttBtn.style.display = isHeadOrVice ? "inline-flex" : "none";
+      if (createAttBtn) createAttBtn.style.display = !isDean ? "inline-flex" : "none";
 
       const monFormCard = document.getElementById("monitoringFormCard");
       if (monFormCard) monFormCard.style.display = isDean ? "none" : "block";
@@ -2945,7 +3036,7 @@
       // Side control panel cards visibility
       const sideWarnCard = document.getElementById("sideWarningCard");
       const sideWarnReqCard = document.getElementById("sideWarningRequestsCard");
-      if (sideWarnCard) sideWarnCard.style.display = isHRMember ? "none" : "block";
+      if (sideWarnCard) sideWarnCard.style.display = "block";
       if (sideWarnReqCard) sideWarnReqCard.style.display = isHeadOrVice ? "block" : "none";
 
       // Tabs visibility
@@ -2956,13 +3047,25 @@
       const tabActivityLog = document.getElementById("tabBtn-activityLog");
 
       if (tabDirectory) tabDirectory.style.display = "flex";
-      if (tabMonitoring) tabMonitoring.style.display = (isHRMember || isHeadOrVice) && !isDean ? "flex" : "none";
-      if (tabAttendance) tabAttendance.style.display = isHRMember ? "none" : "flex";
-      if (tabCopilot) tabCopilot.style.display = (isHRMember || isDean) ? "none" : "flex";
+      if (tabMonitoring) tabMonitoring.style.display = !isDean ? "flex" : "none";
+      if (tabAttendance) tabAttendance.style.display = "flex";
+      if (tabCopilot) tabCopilot.style.display = isDean ? "none" : "flex";
       if (tabActivityLog) tabActivityLog.style.display = isHeadOrVice ? "flex" : "none";
 
       const warnModalIssueBtn = document.getElementById("warningsListModalIssueBtn");
-      if (warnModalIssueBtn) warnModalIssueBtn.style.display = isHeadOrVice ? "inline-flex" : "none";
+      if (warnModalIssueBtn) {
+        if (isHeadOrVice) {
+          warnModalIssueBtn.style.display = "inline-flex";
+          warnModalIssueBtn.onclick = () => openWarningModal('issue');
+          warnModalIssueBtn.innerHTML = `<i class="fa-solid fa-plus text-xs"></i><span>Issue Warning</span>`;
+        } else if (!isDean) {
+          warnModalIssueBtn.style.display = "inline-flex";
+          warnModalIssueBtn.onclick = () => openWarningModal('request');
+          warnModalIssueBtn.innerHTML = `<i class="fa-solid fa-plus text-xs"></i><span>Request Warning Strike</span>`;
+        } else {
+          warnModalIssueBtn.style.display = "none";
+        }
+      }
 
       const noteAuthorEl = document.getElementById("monitoringAuthorNamePreview");
       if (noteAuthorEl) noteAuthorEl.textContent = currentUser.name;
@@ -2974,7 +3077,9 @@
       const sideWarningActionBtn = document.getElementById("sideWarningActionBtn");
       if (sideWarningActionBtn) {
         if (isHeadOrVice) {
-          sideWarningActionBtn.innerHTML = `<button onclick="openWarningModal('issue')" class="px-2.5 py-1 bg-rose-600 text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-1"><i class="fa-solid fa-plus text-[10px]"></i><span>Issue</span></button>`;
+          sideWarningActionBtn.innerHTML = `<button onclick="openWarningModal('issue')" class="w-full py-2 px-3 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-plus text-[10px]"></i><span>Issue Warning</span></button>`;
+        } else if (!isDean) {
+          sideWarningActionBtn.innerHTML = `<button onclick="openWarningModal('request')" class="w-full py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5"><i class="fa-solid fa-flag text-[10px]"></i><span>Request Warning Strike</span></button>`;
         } else {
           sideWarningActionBtn.innerHTML = ``;
         }
@@ -2987,7 +3092,7 @@
         }
       } else if (isHRMember) {
         const currentActive = document.querySelector(".tab-content.active");
-        if (currentActive && ["tab-attendance", "tab-copilot", "tab-activityLog"].includes(currentActive.id)) {
+        if (currentActive && currentActive.id === "tab-activityLog") {
           switchTab("dashboard");
         }
       }
@@ -2996,16 +3101,12 @@
     }
 
     function switchTab(tabId) {
-      if (currentUser.role === "HR" && !["dashboard", "directory", "monitoring"].includes(tabId)) {
-        showToast("HR Members have access to Dashboard, Team Members, and Monitoring only.", "warning");
+      if (tabId === "activityLog" && currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") {
+        showToast("Activity log is restricted to HR Leadership.", "warning");
         return;
       }
       if (currentUser.role === "Admission's Dean" && !["dashboard", "directory", "attendance"].includes(tabId)) {
         showToast("Dean access is limited to Dashboard, Team Members, and Attendance only.", "warning");
-        return;
-      }
-      if (currentUser.role === "Admission's Dean" && tabId === "activityLog") {
-        showToast("Activity log is restricted to HR Leadership.", "warning");
         return;
       }
       document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
@@ -3092,37 +3193,25 @@
       const isHRMember = currentUser.role === "HR";
 
       if (thead) {
-        if (isHRMember) {
-          thead.innerHTML = `
-            <tr>
-              <th class="py-3 px-4">Name</th>
-              <th class="py-3 px-4">Role & Position</th>
-              <th class="py-3 px-4">Faculty</th>
-              <th class="py-3 px-4">Official Working Days</th>
-              <th class="py-3 px-4 text-right">Actions</th>
-            </tr>
-          `;
-        } else {
-          thead.innerHTML = `
-            <tr>
-              <th class="py-3 px-4">Name</th>
-              <th class="py-3 px-4">Role & Position</th>
-              <th class="py-3 px-4">Faculty</th>
-              <th class="py-3 px-4">ID</th>
-              <th class="py-3 px-4">Phone Number</th>
-              <th class="py-3 px-4 text-center">Attendance Count</th>
-              <th class="py-3 px-4 text-center">Attendance Rate</th>
-              <th class="py-3 px-4">Official Working Days</th>
-              <th class="py-3 px-4 text-center">WARNINGS</th>
-              <th class="py-3 px-4 text-center">Performance</th>
-              <th class="py-3 px-4 text-right">Actions</th>
-            </tr>
-          `;
-        }
+        thead.innerHTML = `
+          <tr>
+            <th class="py-3 px-4">Name</th>
+            <th class="py-3 px-4">Role & Position</th>
+            <th class="py-3 px-4">Faculty</th>
+            <th class="py-3 px-4">ID</th>
+            <th class="py-3 px-4">Phone Number</th>
+            <th class="py-3 px-4 text-center">Attendance Count</th>
+            <th class="py-3 px-4 text-center">Attendance Rate</th>
+            <th class="py-3 px-4">Official Working Days</th>
+            <th class="py-3 px-4 text-center">WARNINGS</th>
+            <th class="py-3 px-4 text-center">Performance</th>
+            <th class="py-3 px-4 text-right">Actions</th>
+          </tr>
+        `;
       }
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${isHRMember ? 5 : 11}" class="text-center py-6 text-slate-400">No team members found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-slate-400">No team members found.</td></tr>`;
         return;
       }
 
@@ -3143,7 +3232,7 @@
         const memInitials = (m.name || "MB").split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() || "MB";
         const memberAvatarMarkup = `
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex-shrink-0 flex items-center justify-center font-bold text-xs text-[#002244] shadow-xs">
+            <div class="w-9 h-9 rounded-full border border-slate-200 bg-slate-100 flex-shrink-0 flex items-center justify-center font-bold text-xs text-[#002244] shadow-xs">
               ${m.avatar ? `<img src="${m.avatar}" class="w-full h-full object-cover rounded-full block" alt="${m.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span>${memInitials}</span>'">` : `<span>${memInitials}</span>`}
             </div>
             <div>
@@ -3153,21 +3242,22 @@
           </div>
         `;
 
-        if (isHRMember) {
-          return `
-            <tr class="hover:bg-slate-50 transition">
-              <td class="py-3 px-4 whitespace-nowrap">${memberAvatarMarkup}</td>
-              <td class="py-3 px-4 whitespace-nowrap"><span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800">${m.role}</span><span class="text-[10px] text-slate-500 ml-1">(${m.position})</span></td>
-              <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${m.college}</td>
-              <td class="py-3 px-4 whitespace-nowrap"><div class="flex items-center flex-wrap gap-1">${daysBadges}</div></td>
-              <td class="py-3 px-4 text-right whitespace-nowrap">
-                <button onclick="quickRequestWarningForMember('${m.id}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded text-[11px] font-bold transition inline-flex items-center gap-1 shadow-xs" title="Submit Warning Request">
-                  <i class="fa-solid fa-paper-plane text-[10px] text-amber-600"></i>
-                  <span>Request Warning</span>
-                </button>
-              </td>
-            </tr>
+        let actionButtons = '';
+        if (isHeadOrVice) {
+          actionButtons = `
+            <button onclick="quickWriteMonitoringNoteForMember('${m.id}')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold transition" title="Write Monitoring Note"><i class="fa-solid fa-clipboard-check"></i> Note</button>
+            <button onclick="openEditMemberModal('${m.id}')" class="px-2 py-1 bg-blue-50 text-blue-800 rounded text-[11px] font-bold" title="Edit Info"><i class="fa-solid fa-pen"></i> Edit Info</button>
+            <button onclick="quickIssueWarningForMember('${m.id}')" class="px-2 py-1 bg-amber-50 text-amber-800 rounded text-[11px] font-bold" title="Issue Warning"><i class="fa-solid fa-triangle-exclamation"></i> Warning</button>
+            <button onclick="openDischargeModal('${m.id}')" class="px-2 py-1 bg-rose-50 text-rose-700 rounded text-[11px] font-bold" title="Discharge Member"><i class="fa-solid fa-user-minus"></i> Discharge</button>
+            <button onclick="deleteMember('${m.id}')" class="px-2 py-1 bg-slate-100 hover:bg-rose-100 text-slate-600 rounded text-[11px] font-bold" title="Delete Member"><i class="fa-solid fa-trash-can"></i></button>
           `;
+        } else if (isHRMember) {
+          actionButtons = `
+            <button onclick="quickWriteMonitoringNoteForMember('${m.id}')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold transition" title="Write Monitoring Note"><i class="fa-solid fa-clipboard-check"></i> Note</button>
+            <button onclick="quickRequestWarningForMember('${m.id}')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded text-[11px] font-bold transition inline-flex items-center gap-1 shadow-xs" title="Submit Warning Strike Request"><i class="fa-solid fa-paper-plane text-[10px] text-amber-600"></i><span>Request Warning</span></button>
+          `;
+        } else {
+          actionButtons = '<span class="text-slate-400 italic">View only</span>';
         }
 
         return `
@@ -3177,19 +3267,13 @@
             <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${m.college}</td>
             <td class="py-3 px-4 font-mono text-slate-700 whitespace-nowrap">${m.studentId || '2024000'}</td>
             <td class="py-3 px-4 font-medium text-slate-700 whitespace-nowrap">${m.phone || '-'}</td>
-            <td class="py-3 px-4 text-center whitespace-nowrap">${(isHeadOrVice || isDean) ? `<span class="bg-blue-50 border border-blue-200 text-blue-800 font-extrabold px-2.5 py-0.5 rounded-lg">${m.attendanceCount} Sessions</span>` : `<span class="text-slate-400 italic text-[11px] font-medium"><i class="fa-solid fa-lock text-[10px] mr-1"></i>Restricted</span>`}</td>
-            <td class="py-3 px-4 text-center whitespace-nowrap">${(isHeadOrVice || isDean) ? `<span class="font-bold ${rate >= 90 ? 'text-emerald-700' : 'text-blue-700'}">${rate}%</span>` : `<span class="text-slate-400 italic text-[11px] font-medium"><i class="fa-solid fa-lock text-[10px] mr-1"></i>Restricted</span>`}</td>
+            <td class="py-3 px-4 text-center whitespace-nowrap"><span class="bg-blue-50 border border-blue-200 text-blue-800 font-extrabold px-2.5 py-0.5 rounded-lg">${m.attendanceCount} Sessions</span></td>
+            <td class="py-3 px-4 text-center whitespace-nowrap"><span class="font-bold ${rate >= 90 ? 'text-emerald-700' : 'text-blue-700'}">${rate}%</span></td>
             <td class="py-3 px-4 whitespace-nowrap"><div class="flex items-center flex-wrap gap-1">${daysBadges} ${extraDaysCtrl}</div></td>
-            <td class="py-3 px-4 text-center whitespace-nowrap">${(isHeadOrVice || isDean) ? `<span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'}">${m.strikes}</span>` : `<span class="text-slate-400 italic text-[11px] font-medium"><i class="fa-solid fa-lock text-[10px] mr-1"></i>Restricted</span>`}</td>
+            <td class="py-3 px-4 text-center whitespace-nowrap"><span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-extrabold ${m.strikes === 0 ? 'bg-slate-100 text-slate-500' : 'bg-rose-100 text-rose-700'}">${m.strikes}</span></td>
             <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-slate-700">${m.score}/100</td>
             <td class="py-3 px-4 text-right whitespace-nowrap space-x-1">
-              ${!isDean ? `
-                <button onclick="quickWriteMonitoringNoteForMember('${m.id}')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold transition" title="Write Monitoring Note"><i class="fa-solid fa-clipboard-check"></i> Note</button>
-                <button onclick="openEditMemberModal('${m.id}')" class="px-2 py-1 bg-blue-50 text-blue-800 rounded text-[11px] font-bold" title="Edit Info"><i class="fa-solid fa-pen"></i> Edit Info</button>
-                <button onclick="quickIssueWarningForMember('${m.id}')" class="px-2 py-1 bg-amber-50 text-amber-800 rounded text-[11px] font-bold" title="Issue Warning"><i class="fa-solid fa-triangle-exclamation"></i> Warning</button>
-                <button onclick="openDischargeModal('${m.id}')" class="px-2 py-1 bg-rose-50 text-rose-700 rounded text-[11px] font-bold" title="Discharge Member"><i class="fa-solid fa-user-minus"></i> Discharge</button>
-                ${isHeadOrVice ? `<button onclick="deleteMember('${m.id}')" class="px-2 py-1 bg-slate-100 hover:bg-rose-100 text-slate-600 rounded text-[11px] font-bold" title="Delete Member"><i class="fa-solid fa-trash-can"></i></button>` : ''}
-              ` : '<span class="text-slate-400 italic">View only</span>'}
+              ${actionButtons}
             </td>
           </tr>
         `;
@@ -3586,8 +3670,10 @@
               <h4 class="font-bold text-sm text-[#002244] mt-1">${s.title}</h4>
             </div>
             <div class="flex items-center gap-1.5">
-              ${isHeadOrVice ? `
+              ${!isDean ? `
                 <button onclick="event.stopPropagation(); inspectSession('${s.id}', true)" class="text-slate-400 hover:text-[#002244] hover:bg-amber-100 transition p-1.5 rounded" title="Edit Session Details & Roll Call"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+              ` : ''}
+              ${isHeadOrVice ? `
                 <button onclick="event.stopPropagation(); deleteAttendanceSession('${s.id}')" class="text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded" title="Delete Session"><i class="fa-solid fa-trash-can text-xs"></i></button>
               ` : ''}
               <i class="fa-solid fa-calendar-day text-slate-400 p-1"></i>
@@ -3631,6 +3717,12 @@
       addDeletedId("sessions", sId);
       attendanceSessions = attendanceSessions.filter(x => x.id !== sId);
       saveAllState();
+
+      if (portalSupabase) {
+        portalSupabase.from('attendance_sessions').delete().eq('id', sId).catch(err => console.warn('Supabase delete session error:', err));
+      }
+      broadcastPortalMutation('DELETE_ATTENDANCE_SESSION', { id: sId });
+
       logActivity(`Deleted attendance session: ${s.title}`, "Attendance", `${s.dayName}, ${s.date}`);
       showToast("Attendance session deleted.");
       document.getElementById("attendanceInspectorBox")?.classList.add("hidden");
@@ -3651,11 +3743,12 @@
       const editForm = document.getElementById("inspectorEditForm");
       const saveBtnContainer = document.getElementById("inspectorSaveBtnContainer");
       const editBtn = document.getElementById("inspectorEditBtn");
-      const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
+      const isDean = currentUser.role === "Admission's Dean";
+      const canEdit = !isDean;
 
-      if (editBtn) editBtn.style.display = isHeadOrVice ? "inline-flex" : "none";
+      if (editBtn) editBtn.style.display = canEdit ? "inline-flex" : "none";
 
-      if (isInspectorEditing && isHeadOrVice) {
+      if (isInspectorEditing && canEdit) {
         editForm.classList.remove("hidden");
         saveBtnContainer.classList.remove("hidden");
         if (document.getElementById("editBtnLabel")) document.getElementById("editBtnLabel").textContent = "Cancel Edit";
@@ -3672,7 +3765,7 @@
       const tbody = document.getElementById("inspectorTableBody");
       const rollCallData = getSessionScheduledRollCall(s);
 
-      if (isInspectorEditing && isHeadOrVice) {
+      if (isInspectorEditing && canEdit) {
         tbody.innerHTML = rollCallData.map((rc, idx) => `
           <tr class="hover:bg-slate-50">
             <td class="py-2.5 px-3">
@@ -3761,6 +3854,21 @@
       s.presentCount = presCount;
       s.absentCount = absCount;
       s.excusedCount = excCount;
+
+      saveAllState();
+
+      if (portalSupabase) {
+        portalSupabase.from('attendance_sessions').update({
+          title: s.title,
+          date: s.date,
+          day_name: s.dayName,
+          session_type: s.type,
+          present_count: s.presentCount,
+          total_count: s.totalCount,
+          roll_call: s.rollCall
+        }).eq('id', s.id).catch(err => console.warn('Supabase update session error:', err));
+      }
+      broadcastPortalMutation('UPDATE_ATTENDANCE_SESSION', { id: s.id, data: s });
 
       logActivity(`Updated attendance session: ${s.title}`, "Attendance", `${s.dayName}, ${s.date} (${s.presentCount}/${s.totalCount} present)`);
       showToast("Attendance session updated successfully!");
@@ -3853,6 +3961,22 @@
       };
 
       attendanceSessions.unshift(newSession);
+      saveAllState();
+
+      if (portalSupabase) {
+        portalSupabase.from('attendance_sessions').upsert({
+          id: newSession.id,
+          title: newSession.title,
+          date: newSession.date,
+          day_name: newSession.dayName,
+          session_type: newSession.type,
+          present_count: newSession.presentCount,
+          total_count: newSession.totalCount,
+          roll_call: newSession.rollCall
+        }, { onConflict: 'id' }).catch(err => console.warn('Supabase create session error:', err));
+      }
+      broadcastPortalMutation('CREATE_ATTENDANCE_SESSION', { session: newSession, updatedMemberIds: rollCall.filter(r => r.isPresent).map(r => r.memberId) });
+
       logActivity(`Created attendance roll call: ${newTitle}`, "Attendance", `${dayName}, ${dVal} (${newSession.presentCount}/${newSession.totalCount} present)`);
       closeModal("addAttendanceModal");
       document.getElementById("attendanceSheetForm").reset();
@@ -4343,9 +4467,117 @@
         </tr>
       `).join("");
     }
-    function saveUserCredentials(uId) { const u = systemUsers.find(x => x.id === uId); if (u) { u.name = document.getElementById(`usr-name-${uId}`).value.trim(); u.username = document.getElementById(`usr-uname-${uId}`).value.trim(); u.role = document.getElementById(`usr-role-${uId}`).value; u.password = document.getElementById(`usr-pwd-${uId}`).value.trim(); if (u.username === currentUser.username) { currentUser.name = u.name; currentUser.role = u.role; applyUserRoleUI(); } saveAllState(); showToast(`Updated credentials.`); renderSystemUsersTable(); } }
-    function handleAddNewUser(e) { e.preventDefault(); const newU = { id: `usr-${Date.now()}`, name: document.getElementById("newUserName").value.trim(), username: document.getElementById("newUserUsername").value.trim(), password: document.getElementById("newUserPassword").value.trim(), role: document.getElementById("newUserRole").value }; removeDeletedId('users', newU.id); systemUsers.push(newU); saveAllState(); document.getElementById("addNewUserForm").reset(); showToast(`Added user.`); renderSystemUsersTable(); }
-    function deleteSystemUser(uId) { addDeletedId('users', uId); systemUsers = systemUsers.filter(u => u.id !== uId); saveAllState(); showToast("User login removed."); renderSystemUsersTable(); }
+    function saveUserCredentials(uId) {
+      const u = systemUsers.find(x => x.id === uId);
+      if (u) {
+        const cleanName = document.getElementById(`usr-name-${uId}`).value.trim();
+        const cleanUname = document.getElementById(`usr-uname-${uId}`).value.trim().toLowerCase();
+        const cleanRole = document.getElementById(`usr-role-${uId}`).value;
+        const cleanPwd = document.getElementById(`usr-pwd-${uId}`).value.trim();
+
+        u.name = cleanName;
+        u.username = cleanUname;
+        u.role = cleanRole;
+        u.password = cleanPwd;
+
+        if (currentUser && (u.username === currentUser.username.toLowerCase().trim() || u.id === currentUser.id)) {
+          currentUser.name = u.name;
+          currentUser.role = u.role;
+          try { localStorage.setItem("aastmt_current_user", JSON.stringify(currentUser)); } catch (err) {}
+          applyUserRoleUI();
+        }
+
+        removeDeletedId('users', u.id);
+        removeDeletedId('users', u.username);
+        saveAllState();
+
+        if (portalSupabase) {
+          portalSupabase.from('system_users').upsert({
+            id: u.id,
+            name: u.name,
+            username: u.username,
+            password: u.password,
+            role: u.role,
+            avatar: u.avatar || null
+          }, { onConflict: 'username' }).catch(err => console.warn('Supabase save user error:', err));
+        }
+
+        broadcastPortalMutation('UPDATE_SYSTEM_USER', { id: u.id, fields: { name: u.name, username: u.username, role: u.role, password: u.password, avatar: u.avatar || null } });
+        showToast(`Updated credentials.`);
+        renderSystemUsersTable();
+      }
+    }
+
+    function handleAddNewUser(e) {
+      e.preventDefault();
+      const cleanName = document.getElementById("newUserName").value.trim();
+      const cleanUsername = document.getElementById("newUserUsername").value.trim().toLowerCase();
+      const cleanPassword = document.getElementById("newUserPassword").value.trim();
+      const role = document.getElementById("newUserRole").value;
+
+      if (!cleanName || !cleanUsername || !cleanPassword) {
+        showToast("Please fill all user credentials fields.", "warning");
+        return;
+      }
+
+      const newU = {
+        id: `usr-${Date.now()}`,
+        name: cleanName,
+        username: cleanUsername,
+        password: cleanPassword,
+        role: role,
+        avatar: ''
+      };
+
+      removeDeletedId('users', newU.id);
+      removeDeletedId('users', newU.username);
+
+      const existingIdx = systemUsers.findIndex(u => u.username.toLowerCase().trim() === cleanUsername);
+      if (existingIdx >= 0) {
+        systemUsers[existingIdx] = { ...systemUsers[existingIdx], ...newU };
+      } else {
+        systemUsers.push(newU);
+      }
+
+      saveAllState();
+
+      if (portalSupabase) {
+        portalSupabase.from('system_users').upsert({
+          id: newU.id,
+          name: newU.name,
+          username: newU.username,
+          password: newU.password,
+          role: newU.role,
+          avatar: null
+        }, { onConflict: 'username' }).catch(err => console.warn('Supabase add user error:', err));
+      }
+
+      broadcastPortalMutation('ADD_SYSTEM_USER', newU);
+      document.getElementById("addNewUserForm").reset();
+      showToast(`Added user.`);
+      renderSystemUsersTable();
+    }
+
+    function deleteSystemUser(uId) {
+      const userToDelete = systemUsers.find(u => u.id === uId);
+      addDeletedId('users', uId);
+      if (userToDelete && userToDelete.username) {
+        addDeletedId('users', userToDelete.username.toLowerCase().trim());
+      }
+      systemUsers = systemUsers.filter(u => u.id !== uId);
+      saveAllState();
+
+      if (portalSupabase) {
+        if (userToDelete?.username) {
+          portalSupabase.from('system_users').delete().eq('username', userToDelete.username.toLowerCase().trim()).catch(err => console.warn(err));
+        }
+        portalSupabase.from('system_users').delete().eq('id', uId).catch(err => console.warn(err));
+      }
+
+      broadcastPortalMutation('DELETE_SYSTEM_USER', { id: uId, username: userToDelete?.username });
+      showToast("User login removed.");
+      renderSystemUsersTable();
+    }
     function updateProfileModalAvatarPreview(avatarUrl) {
       const prev = document.getElementById("profileModalAvatarPreview");
       if (!prev) return;

@@ -904,7 +904,7 @@ export function AuthProvider({ children }) {
       const { data: dbUsers, error: uErr } = await supabase.from('system_users').select('*');
       if (!uErr && dbUsers && dbUsers.length > 0) {
         const validUsers = dbUsers
-          .filter(u => !deletedUserIds.includes(u.id))
+          .filter(u => !deletedUserIds.includes(u.id) && !deletedUserIds.includes(u.username?.toLowerCase()))
           .map(u => ({
             id: u.id,
             name: u.name,
@@ -913,6 +913,18 @@ export function AuthProvider({ children }) {
             role: u.role,
             avatar: u.avatar || null
           }));
+
+        // Preserve any newly added local users that haven't synced to cloud yet
+        const currentLocalUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS)
+          .filter(u => !deletedUserIds.includes(u.id) && !deletedUserIds.includes(u.username?.toLowerCase()));
+
+        currentLocalUsers.forEach(lu => {
+          if (!validUsers.some(vu => vu.username.toLowerCase() === lu.username.toLowerCase())) {
+            validUsers.push(lu);
+            supabase.from('system_users').upsert(lu, { onConflict: 'username' }).catch(() => {});
+          }
+        });
+
         setSystemUsers(validUsers);
         try { localStorage.setItem("aastmt_system_users", JSON.stringify(validUsers)); } catch (e) {}
       } else if (!uErr && (!dbUsers || dbUsers.length === 0)) {
@@ -1294,8 +1306,10 @@ export function AuthProvider({ children }) {
   };
 
   const login = (username, password) => {
-    const user = systemUsers.find(u => u.username.toLowerCase() === username.trim().toLowerCase());
-    if (user && user.password === password) {
+    const cleanUsername = (username || '').trim().toLowerCase();
+    const cleanPassword = (password || '').trim();
+    const user = systemUsers.find(u => u.username.toLowerCase() === cleanUsername);
+    if (user && user.password.trim() === cleanPassword) {
       const userObj = {
         name: user.name,
         username: user.username,
@@ -1307,9 +1321,7 @@ export function AuthProvider({ children }) {
         localStorage.setItem("aastmt_current_user", JSON.stringify(userObj));
         localStorage.setItem("aastmt_login_timestamp", Date.now().toString());
       } catch(e) {}
-      if (userObj.role === "Admission's Dean" || userObj.role === "HR") {
-        setActiveTab("dashboard");
-      }
+      setActiveTab("dashboard");
       setActiveModal(null);
       showToast(`Welcome back, ${userObj.name} (${userObj.role})`);
       return true;
@@ -1330,8 +1342,8 @@ export function AuthProvider({ children }) {
   };
 
   const switchTab = (tabId) => {
-    if (currentUser?.role === "HR" && !["dashboard", "directory", "monitoring"].includes(tabId)) {
-      showToast("HR Members have access to Dashboard, Team Members, and Monitoring only.", "warning");
+    if (currentUser?.role === "HR" && tabId === "activityLog") {
+      showToast("Activity log is restricted to HR Leadership.", "warning");
       return;
     }
     if (currentUser?.role === "Admission's Dean" && !["dashboard", "directory", "attendance"].includes(tabId)) {
@@ -2249,52 +2261,82 @@ export function AuthProvider({ children }) {
   };
 
   const addSystemUser = async (name, username, password, role) => {
-    if (systemUsers.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+    const cleanName = (name || '').trim();
+    const cleanUsername = (username || '').trim().toLowerCase();
+    const cleanPassword = (password || '').trim();
+
+    if (!cleanName || !cleanUsername || !cleanPassword) {
+      showToast("Please fill in all user credential fields.", "danger");
+      return;
+    }
+
+    if (systemUsers.some(u => u.username.toLowerCase() === cleanUsername)) {
       showToast("A user with this username already exists.", "danger");
       return;
     }
-    const newUser = { id: `usr-${Date.now()}`, name, username, password, role };
+
+    const newUser = {
+      id: `usr-${Date.now()}`,
+      name: cleanName,
+      username: cleanUsername,
+      password: cleanPassword,
+      role,
+      avatar: null
+    };
+
     removeDeletedId('users', newUser.id);
+    removeDeletedId('users', newUser.username);
+
     setSystemUsers(prev => {
-      const nextUsers = [...prev, newUser];
+      const nextUsers = [...prev.filter(u => u.username.toLowerCase() !== cleanUsername), newUser];
       try { localStorage.setItem("aastmt_system_users", JSON.stringify(nextUsers)); } catch (e) {}
       return nextUsers;
     });
     broadcastMutation('ADD_SYSTEM_USER', newUser);
 
     if (supabase) {
-      supabase.from('system_users').insert([newUser]).catch(e => console.warn(e));
+      supabase.from('system_users').upsert(newUser, { onConflict: 'username' }).catch(e => console.warn(e));
     }
 
-    showToast(`New user ${name} (${role}) added to credentials database.`);
+    showToast(`New user ${cleanName} (${role}) added to credentials database.`);
   };
 
   const updateSystemUser = async (id, updated) => {
+    const cleanUpdated = {
+      ...updated,
+      name: (updated.name || '').trim(),
+      username: (updated.username || '').trim().toLowerCase(),
+      password: (updated.password || '').trim()
+    };
+
     setSystemUsers(prev => {
-      const nextUsers = prev.map(u => u.id === id ? { ...u, ...updated } : u);
+      const nextUsers = prev.map(u => u.id === id ? { ...u, ...cleanUpdated } : u);
       try { localStorage.setItem("aastmt_system_users", JSON.stringify(nextUsers)); } catch (e) {}
       return nextUsers;
     });
-    broadcastMutation('UPDATE_SYSTEM_USER', { id, fields: updated });
+    broadcastMutation('UPDATE_SYSTEM_USER', { id, fields: cleanUpdated });
 
     if (supabase) {
-      supabase.from('system_users').update(updated).eq('id', id).catch(e => console.warn(e));
+      supabase.from('system_users').upsert({ id, ...cleanUpdated }, { onConflict: 'id' }).catch(e => console.warn(e));
     }
 
-    if (currentUser && currentUser.username === updated.username) {
-      setCurrentUser(prev => ({ ...prev, name: updated.name, role: updated.role }));
+    if (currentUser && currentUser.username === cleanUpdated.username) {
+      setCurrentUser(prev => ({ ...prev, name: cleanUpdated.name, role: cleanUpdated.role }));
     }
-    showToast(`Credentials updated & synced for ${updated.name}.`);
+    showToast(`Credentials updated & synced for ${cleanUpdated.name}.`);
   };
 
   const deleteSystemUser = async (id) => {
+    const target = systemUsers.find(u => u.id === id);
     addDeletedId('users', id);
+    if (target?.username) addDeletedId('users', target.username.toLowerCase());
+
     setSystemUsers(prev => {
       const nextUsers = prev.filter(u => u.id !== id);
       try { localStorage.setItem("aastmt_system_users", JSON.stringify(nextUsers)); } catch (e) {}
       return nextUsers;
     });
-    broadcastMutation('DELETE_SYSTEM_USER', { id });
+    broadcastMutation('DELETE_SYSTEM_USER', { id, username: target?.username });
 
     if (supabase) {
       supabase.from('system_users').delete().eq('id', id).catch(e => console.warn(e));
