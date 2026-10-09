@@ -99,16 +99,74 @@ function isMemberDeleted(m) {
   });
 }
 
+function generateUuid() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+const LEGACY_MEMBER_UUID_MAP = {
+  "mem-1": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+  "mem-2": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12",
+  "mem-3": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13",
+  "mem-4": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14",
+  "mem-5": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15",
+  "mem-6": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a16",
+  "mem-7": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17",
+  "mem-8": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a18",
+  "dis-1": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a18"
+};
+
+function getMemberUuid(id) {
+  if (!id) return id;
+  return LEGACY_MEMBER_UUID_MAP[id] || id;
+}
+
+const LEGACY_USER_UUID_MAP = {
+  "usr-1": "b3f74058-20b8-441c-bcdd-2bd27a302289",
+  "usr-2": "6ddf714f-079e-443a-820c-9a27de6c40bc",
+  "usr-3": "21b6358a-8cb0-43f1-a9e6-4fff0186a529",
+  "usr-4": "2a2b5d87-1fdf-4b54-83b4-4849621a38bb"
+};
+
+function getUserUuid(id) {
+  if (!id) return id;
+  return LEGACY_USER_UUID_MAP[id] || id;
+}
+
+function normalizeWarningLevel(lvl) {
+  if (!lvl) return 'First Verbal Warning';
+  const s = String(lvl).trim();
+  if (s === 'Final Hearing Notice' || s === 'Final Notice' || s === 'Final Strike & Review') return 'Final Strike & Review';
+  if (s === 'Official Written Strike' || s === 'Written Strike') return 'Official Written Strike';
+  return 'First Verbal Warning';
+}
+
+function normalizeSessionType(t) {
+  if (!t) return "Normal Day";
+  const str = String(t).trim();
+  if (str === "Regular Shift" || str === "Normal" || str === "Standard") return "Normal Day";
+  if (str === "EDU Gate Event") return "EDU Gate";
+  if (str === "Urgent Meeting" || str === "Special Duty" || str === "Special Event") return "Event Day";
+  const allowed = ["Normal Day", "Double Attendance", "Triple Attendance", "Orientation Day", "EDU Gate", "Event Day"];
+  if (allowed.includes(str)) return str;
+  return "Normal Day";
+}
+
 const INITIAL_SYSTEM_USERS = [
-  { id: "usr-1", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
-  { id: "usr-2", name: "Tarek Hegazy", username: "tarek.hegazy", password: "123", role: "HR Head", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" },
-  { id: "usr-3", name: "Sarah Mostafa", username: "sarah.hr", password: "123", role: "HR", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80" },
-  { id: "usr-4", name: "Prof. Dr. Admissions Dean", username: "dean", password: "123", role: "Admission's Dean", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80" }
+  { id: "b3f74058-20b8-441c-bcdd-2bd27a302289", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
+  { id: "6ddf714f-079e-443a-820c-9a27de6c40bc", name: "Tarek Hegazy", username: "tarek.hegazy", password: "123", role: "HR Head", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" },
+  { id: "21b6358a-8cb0-43f1-a9e6-4fff0186a529", name: "Sarah Mostafa", username: "sarah.hr", password: "123", role: "HR", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80" },
+  { id: "2a2b5d87-1fdf-4b54-83b4-4849621a38bb", name: "Prof. Dr. Admissions Dean", username: "dean", password: "123", role: "Admission's Dean", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80" }
 ];
 
 const INITIAL_MEMBERS = [
   {
-    id: "mem-1",
+    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
     name: "Youssef El-Sayed",
     role: "Operations",
     position: "Head",
@@ -124,7 +182,7 @@ const INITIAL_MEMBERS = [
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80"
   },
   {
-    id: "mem-2",
+    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12",
     name: "Malak Nour",
     role: "PR",
     position: "Vice Head",
@@ -140,7 +198,7 @@ const INITIAL_MEMBERS = [
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80"
   },
   {
-    id: "mem-3",
+    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13",
     name: "Karim Hassan",
     role: "PR",
     position: "Head",
@@ -156,7 +214,7 @@ const INITIAL_MEMBERS = [
     avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80"
   },
   {
-    id: "mem-4",
+    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14",
     name: "Farida Ahmed",
     role: "Operations",
     position: "Member",
@@ -172,7 +230,7 @@ const INITIAL_MEMBERS = [
     avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&q=80"
   },
   {
-    id: "mem-5",
+    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15",
     name: "Ahmed Sherif",
     role: "Digital Transformation",
     position: "Head",
@@ -188,7 +246,7 @@ const INITIAL_MEMBERS = [
     avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80"
   },
   {
-    id: "mem-6",
+    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a16",
     name: "Laila Wael",
     role: "Innovation",
     position: "Member",
@@ -204,7 +262,7 @@ const INITIAL_MEMBERS = [
     avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=256&q=80"
   },
   {
-    id: "mem-7",
+    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17",
     name: "Nour El-Din",
     role: "HR",
     position: "Member",
@@ -223,7 +281,7 @@ const INITIAL_MEMBERS = [
 
 const INITIAL_DISCHARGED_MEMBERS = [
   {
-    id: "dis-1",
+    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a18",
     name: "Hassan Mahmoud",
     role: "PR",
     position: "Member",
@@ -241,7 +299,7 @@ const INITIAL_STAR_AMBASSADORS = [];
 
 const INITIAL_ATTENDANCE_SESSIONS = [
   {
-    id: "att-1",
+    id: "c1000000-0000-4000-8000-000000000001",
     title: "Registration Hall Shift",
     date: "2026-09-20",
     dayName: "Sunday",
@@ -249,14 +307,14 @@ const INITIAL_ATTENDANCE_SESSIONS = [
     presentCount: 3,
     totalCount: 4,
     rollCall: [
-      { memberId: "mem-1", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-      { memberId: "mem-3", name: "Karim Hassan", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
-      { memberId: "mem-4", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-      { memberId: "mem-7", name: "Nour El-Din", role: "HR", isPresent: false, isExcused: true, excuseReason: "Midterm exam preparation" }
+      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13", name: "Karim Hassan", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
+      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17", name: "Nour El-Din", role: "HR", isPresent: false, isExcused: true, excuseReason: "Midterm exam preparation" }
     ]
   },
   {
-    id: "att-2",
+    id: "c1000000-0000-4000-8000-000000000002",
     title: "EDU Gate Campus Fair",
     date: "2026-09-17",
     dayName: "Thursday",
@@ -264,13 +322,13 @@ const INITIAL_ATTENDANCE_SESSIONS = [
     presentCount: 3,
     totalCount: 3,
     rollCall: [
-      { memberId: "mem-1", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-      { memberId: "mem-4", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-      { memberId: "mem-5", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" }
+      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" }
     ]
   },
   {
-    id: "att-3",
+    id: "c1000000-0000-4000-8000-000000000003",
     title: "AASTMT Open Orientation Day",
     date: "2026-09-12",
     dayName: "Saturday",
@@ -278,9 +336,9 @@ const INITIAL_ATTENDANCE_SESSIONS = [
     presentCount: 3,
     totalCount: 3,
     rollCall: [
-      { memberId: "mem-2", name: "Malak Nour", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
-      { memberId: "mem-5", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" },
-      { memberId: "mem-7", name: "Nour El-Din", role: "HR", isPresent: true, isExcused: false, excuseReason: "" }
+      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12", name: "Malak Nour", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
+      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" },
+      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17", name: "Nour El-Din", role: "HR", isPresent: true, isExcused: false, excuseReason: "" }
     ]
   }
 ];
@@ -326,8 +384,8 @@ const INITIAL_ACTIVITY_LOGS = [
 
 const INITIAL_WARNINGS = [
   {
-    id: "wrn-1",
-    memberId: "mem-6",
+    id: "d1000000-0000-4000-8000-000000000001",
+    memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a16",
     memberName: "Laila Wael",
     level: "Official Written Strike",
     reason: "Unexcused absence from assigned registration desk during peak admission hours.",
@@ -336,8 +394,8 @@ const INITIAL_WARNINGS = [
     status: "Confirmed Strike"
   },
   {
-    id: "wrn-2",
-    memberId: "mem-3",
+    id: "d1000000-0000-4000-8000-000000000002",
+    memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13",
     memberName: "Karim Hassan",
     level: "First Verbal Warning",
     reason: "Leaving shift 30 minutes prior to official scheduled handover.",
@@ -346,8 +404,8 @@ const INITIAL_WARNINGS = [
     status: "Pending HR Approval"
   },
   {
-    id: "wrn-3",
-    memberId: "mem-5",
+    id: "d1000000-0000-4000-8000-000000000003",
+    memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15",
     memberName: "Ahmed Sherif",
     level: "First Verbal Warning",
     reason: "Late arrival for 3 consecutive morning registration briefings without notification.",
@@ -986,10 +1044,17 @@ export function AuthProvider({ children }) {
         setStarAmbassadors(localStars);
       }
 
-      // 4. Attendance Sessions
+      // 4. Attendance Sessions & Relational Attendance Records
       const deletedSessionIds = getDeletedIds('sessions');
-      const { data: dbSessions, error: aErr } = await supabase.from('attendance_sessions').select('*');
-      if (!aErr && dbSessions && dbSessions.length > 0) {
+      const [sessRes, recRes] = await Promise.all([
+        supabase.from('attendance_sessions').select('*'),
+        supabase.from('attendance_records').select('*')
+      ]);
+
+      const { data: dbSessions, error: aErr } = sessRes;
+      const { data: dbRecords } = recRes;
+
+      if (!aErr && dbSessions) {
         if (deletedSessionIds.length > 0) {
           deletedSessionIds.forEach(delId => {
             if (dbSessions.some(s => s.id === delId)) {
@@ -997,40 +1062,43 @@ export function AuthProvider({ children }) {
             }
           });
         }
+        const allKnownMembers = [...activeMems, ...disMems, ...members];
         const validSessions = dbSessions
           .filter(s => !deletedSessionIds.includes(s.id))
-          .map(s => ({
-            id: s.id,
-            title: s.title,
-            date: s.date,
-            dayName: s.day_name,
-            type: s.session_type,
-            presentCount: s.present_count,
-            totalCount: s.total_count,
-            rollCall: s.roll_call || []
-          }));
+          .map(s => {
+            const matchedRecords = (dbRecords || []).filter(r => r.session_id === s.id);
+            const rollCall = matchedRecords.map(r => {
+              const m = allKnownMembers.find(mem => mem.id === r.member_id || getMemberUuid(mem.id) === r.member_id || mem.id === getMemberUuid(r.member_id));
+              return {
+                memberId: r.member_id,
+                name: m ? m.name : 'Ambassador',
+                role: m ? m.role : 'Operations',
+                isPresent: Boolean(r.is_present),
+                isExcused: Boolean(r.is_excused),
+                excuseReason: r.excuse_reason || ''
+              };
+            });
+
+            return {
+              id: s.id,
+              title: s.title,
+              date: s.date,
+              dayName: s.day_name,
+              type: s.session_type,
+              presentCount: s.present_count,
+              totalCount: s.total_count || rollCall.length,
+              rollCall: rollCall
+            };
+          });
 
         setAttendanceSessions(validSessions);
         try { localStorage.setItem("aastmt_attendance_sessions", JSON.stringify(validSessions)); } catch (e) {}
-      } else if (!aErr && (!dbSessions || dbSessions.length === 0)) {
-        const currentSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS)
-          .filter(s => !deletedSessionIds.includes(s.id));
-        runDb(supabase.from('attendance_sessions').insert(currentSessions.map(s => ({
-          id: s.id,
-          title: s.title,
-          date: s.date,
-          day_name: s.dayName,
-          session_type: s.type,
-          present_count: s.presentCount,
-          total_count: s.totalCount,
-          roll_call: s.rollCall
-        }))));
       }
 
       // 5. Warnings
       const deletedWarningIds = getDeletedIds('warnings');
       const { data: dbWarnings, error: wErr } = await supabase.from('disciplinary_warnings').select('*');
-      if (!wErr && dbWarnings && dbWarnings.length > 0) {
+      if (!wErr && dbWarnings) {
         if (deletedWarningIds.length > 0) {
           deletedWarningIds.forEach(delId => {
             if (dbWarnings.some(w => w.id === delId)) {
@@ -1038,18 +1106,22 @@ export function AuthProvider({ children }) {
             }
           });
         }
+        const allKnownMembers = [...activeMems, ...disMems, ...members];
         const validWarnings = dbWarnings
           .filter(w => !deletedWarningIds.includes(w.id))
-          .map(w => ({
-            id: w.id,
-            memberId: w.member_id,
-            memberName: w.member_name || '',
-            level: w.level,
-            reason: w.reason,
-            reportedBy: w.reported_by,
-            date: w.date,
-            status: w.status
-          }));
+          .map(w => {
+            const m = allKnownMembers.find(mem => mem.id === w.member_id || getMemberUuid(mem.id) === w.member_id || mem.id === getMemberUuid(w.member_id));
+            return {
+              id: w.id,
+              memberId: w.member_id,
+              memberName: m ? m.name : (w.member_name || 'Ambassador'),
+              level: normalizeWarningLevel(w.level),
+              reason: w.reason,
+              reportedBy: w.reported_by,
+              date: w.date,
+              status: w.status
+            };
+          });
         setWarnings(validWarnings);
         try { localStorage.setItem("aastmt_warnings", JSON.stringify(validWarnings)); } catch (e) {}
       }
@@ -1699,9 +1771,10 @@ export function AuthProvider({ children }) {
       setMembers(prev => prev.map(m => wasPresentIds.includes(m.id) ? { ...m, attendanceCount: Math.max(0, m.attendanceCount - 1) } : m));
       if (supabase) {
         wasPresentIds.forEach(memId => {
-          const memObj = members.find(m => m.id === memId);
+          const normMemId = getMemberUuid(memId);
+          const memObj = members.find(m => m.id === memId || m.id === normMemId);
           if (memObj) {
-            runDb(supabase.from('members').update({ attendance_count: Math.max(0, memObj.attendanceCount - 1) }).eq('id', memId));
+            runDb(supabase.from('members').update({ attendance_count: Math.max(0, (memObj.attendanceCount || 0) - 1) }).eq('id', normMemId));
           }
         });
       }
@@ -1712,6 +1785,7 @@ export function AuthProvider({ children }) {
 
     if (supabase) {
       runDb(supabase.from('attendance_sessions').delete().eq('id', sessionId));
+      runDb(supabase.from('attendance_records').delete().eq('session_id', sessionId));
     }
 
     logActivity(`Deleted attendance session: ${s ? s.title : sessionId}`, "Attendance");
@@ -1733,13 +1807,13 @@ export function AuthProvider({ children }) {
         const isP = newPresent.has(m.id);
         if (!wasP && isP) {
           memberAttendanceDeltas[m.id] = (memberAttendanceDeltas[m.id] || 0) + 1;
-          const newCnt = m.attendanceCount + 1;
-          if (supabase) runDb(supabase.from('members').update({ attendance_count: newCnt }).eq('id', m.id));
+          const newCnt = (m.attendanceCount || 0) + 1;
+          if (supabase) runDb(supabase.from('members').update({ attendance_count: newCnt }).eq('id', getMemberUuid(m.id)));
           return { ...m, attendanceCount: newCnt };
         } else if (wasP && !isP) {
           memberAttendanceDeltas[m.id] = (memberAttendanceDeltas[m.id] || 0) - 1;
-          const newCnt = Math.max(0, m.attendanceCount - 1);
-          if (supabase) runDb(supabase.from('members').update({ attendance_count: newCnt }).eq('id', m.id));
+          const newCnt = Math.max(0, (m.attendanceCount || 0) - 1);
+          if (supabase) runDb(supabase.from('members').update({ attendance_count: newCnt }).eq('id', getMemberUuid(m.id)));
           return { ...m, attendanceCount: newCnt };
         }
         return m;
@@ -1763,11 +1837,25 @@ export function AuthProvider({ children }) {
         title: finalSession.title,
         date: finalSession.date,
         day_name: finalSession.dayName,
-        session_type: finalSession.type,
+        session_type: normalizeSessionType(finalSession.type),
         present_count: finalSession.presentCount,
-        total_count: finalSession.totalCount,
-        roll_call: finalSession.rollCall
+        total_count: finalSession.totalCount
       }).eq('id', sessionId));
+
+      if (updatedData.rollCall) {
+        await runDb(supabase.from('attendance_records').delete().eq('session_id', sessionId));
+        const newRecords = updatedData.rollCall.map(r => ({
+          id: generateUuid(),
+          session_id: sessionId,
+          member_id: getMemberUuid(r.memberId),
+          is_present: Boolean(r.isPresent),
+          is_excused: Boolean(r.isExcused),
+          excuse_reason: r.excuseReason || ''
+        }));
+        if (newRecords.length > 0) {
+          runDb(supabase.from('attendance_records').insert(newRecords));
+        }
+      }
     }
 
     logActivity(`Updated attendance session: ${updatedData.title || sessionId}`, "Attendance");
@@ -1781,24 +1869,34 @@ export function AuthProvider({ children }) {
 
     const presentCount = rollCallRecords.filter(r => r.isPresent).length;
     const presentMemberIds = rollCallRecords.filter(r => r.isPresent).map(r => r.memberId);
+    const sessionUuid = generateUuid();
+    const normalizedType = normalizeSessionType(sessionType);
 
-    // Increment attendance count for present members
+    const formattedRollCall = rollCallRecords.map(r => ({
+      ...r,
+      memberId: getMemberUuid(r.memberId),
+      isPresent: Boolean(r.isPresent),
+      isExcused: Boolean(r.isExcused),
+      excuseReason: r.excuseReason || ''
+    }));
+
+    // Increment attendance count for present members locally
     setMembers(prev => prev.map(m => {
       if (presentMemberIds.includes(m.id)) {
-        return { ...m, attendanceCount: m.attendanceCount + 1 };
+        return { ...m, attendanceCount: (m.attendanceCount || 0) + 1 };
       }
       return m;
     }));
 
     const session = {
-      id: `att-${Date.now()}`,
+      id: sessionUuid,
       title,
       date,
       dayName,
-      type: sessionType,
+      type: normalizedType,
       presentCount,
       totalCount: rollCallRecords.length,
-      rollCall: rollCallRecords
+      rollCall: formattedRollCall
     };
 
     removeDeletedId('sessions', session.id);
@@ -1807,22 +1905,36 @@ export function AuthProvider({ children }) {
     broadcastMutation('CREATE_ATTENDANCE_SESSION', { session, updatedMemberIds: presentMemberIds });
 
     if (supabase) {
+      // 1. Insert session metadata into attendance_sessions (without roll_call)
       runDb(supabase.from('attendance_sessions').insert([{
-        id: session.id,
+        id: sessionUuid,
         title: session.title,
         date: session.date,
         day_name: session.dayName,
         session_type: session.type,
         present_count: session.presentCount,
-        total_count: session.totalCount,
-        roll_call: session.rollCall
+        total_count: session.totalCount
       }]));
 
-      // Update members attendance count in DB
+      // 2. Insert roll call records into attendance_records
+      const recordsPayload = formattedRollCall.map(r => ({
+        id: generateUuid(),
+        session_id: sessionUuid,
+        member_id: r.memberId,
+        is_present: r.isPresent,
+        is_excused: r.isExcused,
+        excuse_reason: r.excuseReason || ''
+      }));
+      if (recordsPayload.length > 0) {
+        runDb(supabase.from('attendance_records').insert(recordsPayload));
+      }
+
+      // 3. Update members attendance count in DB
       presentMemberIds.forEach(memId => {
-        const memObj = members.find(m => m.id === memId);
+        const normId = getMemberUuid(memId);
+        const memObj = members.find(m => m.id === memId || m.id === normId);
         if (memObj) {
-          runDb(supabase.from('members').update({ attendance_count: memObj.attendanceCount + 1 }).eq('id', memId));
+          runDb(supabase.from('members').update({ attendance_count: (memObj.attendanceCount || 0) + 1 }).eq('id', normId));
         }
       });
     }
@@ -1836,23 +1948,26 @@ export function AuthProvider({ children }) {
       showToast("Dean profile has read-only access.", "warning");
       return;
     }
-    const mem = members.find(m => m.id === memberId);
+    const mem = members.find(m => m.id === memberId || m.id === getMemberUuid(memberId));
     if (!mem) return;
 
     const isLeadership = currentUser?.role === "HR Head" || currentUser?.role === "HR Vice Head";
+    const normMemberId = getMemberUuid(mem.id);
+    const normLevel = normalizeWarningLevel(level);
+    const newWrnId = generateUuid();
 
     if (isLeadership) {
-      setMembers(prev => prev.map(m => m.id === memberId ? {
+      setMembers(prev => prev.map(m => m.id === mem.id ? {
         ...m,
-        strikes: m.strikes + 1,
-        score: Math.max(50, m.score - 8)
+        strikes: (m.strikes || 0) + 1,
+        score: Math.max(50, (m.score || 90) - 8)
       } : m));
 
       const wrn = {
-        id: `wrn-${Date.now()}`,
-        memberId: mem.id,
+        id: newWrnId,
+        memberId: normMemberId,
         memberName: mem.name,
-        level,
+        level: normLevel,
         reason,
         reportedBy: `${currentUser.name} (${currentUser.role})`,
         date: new Date().toISOString().split("T")[0],
@@ -1862,12 +1977,12 @@ export function AuthProvider({ children }) {
       removeDeletedId('warnings', wrn.id);
 
       setWarnings(prev => [wrn, ...prev]);
-      broadcastMutation('SUBMIT_WARNING', { warning: wrn, memberId: mem.id, incrementStrikes: true });
+      broadcastMutation('SUBMIT_WARNING', { warning: wrn, memberId: normMemberId, incrementStrikes: true });
 
       if (supabase) {
-        supabase.from('disciplinary_warnings').insert([{
+        runDb(supabase.from('disciplinary_warnings').insert([{
           id: wrn.id,
-          member_id: wrn.memberId,
+          member_id: normMemberId,
           level: wrn.level,
           reason: wrn.reason,
           reported_by: wrn.reportedBy,
@@ -1876,19 +1991,19 @@ export function AuthProvider({ children }) {
         }]));
 
         runDb(supabase.from('members').update({
-          strikes: mem.strikes + 1,
-          score: Math.max(50, mem.score - 8)
-        }).eq('id', mem.id));
+          strikes: (mem.strikes || 0) + 1,
+          score: Math.max(50, (mem.score || 90) - 8)
+        }).eq('id', normMemberId));
       }
 
-      logActivity(`Issued warning to: ${mem.name}`, "Warnings", `${level} - ${reason}`);
+      logActivity(`Issued warning to: ${mem.name}`, "Warnings", `${normLevel} - ${reason}`);
       showToast(`Warning recorded for ${mem.name}.`);
     } else {
       const wrn = {
-        id: `wrn-${Date.now()}`,
-        memberId: mem.id,
+        id: newWrnId,
+        memberId: normMemberId,
         memberName: mem.name,
-        level,
+        level: normLevel,
         reason,
         reportedBy: `${currentUser.name} (HR Request)`,
         date: new Date().toISOString().split("T")[0],
@@ -1898,12 +2013,12 @@ export function AuthProvider({ children }) {
       removeDeletedId('warnings', wrn.id);
 
       setWarnings(prev => [wrn, ...prev]);
-      broadcastMutation('SUBMIT_WARNING', { warning: wrn, memberId: mem.id, incrementStrikes: false });
+      broadcastMutation('SUBMIT_WARNING', { warning: wrn, memberId: normMemberId, incrementStrikes: false });
 
       if (supabase) {
         runDb(supabase.from('disciplinary_warnings').insert([{
           id: wrn.id,
-          member_id: wrn.memberId,
+          member_id: normMemberId,
           level: wrn.level,
           reason: wrn.reason,
           reported_by: wrn.reportedBy,
@@ -1912,7 +2027,7 @@ export function AuthProvider({ children }) {
         }]));
       }
 
-      logActivity(`Submitted warning request for: ${mem.name}`, "Warnings", `${level} - ${reason}`);
+      logActivity(`Submitted warning request for: ${mem.name}`, "Warnings", `${normLevel} - ${reason}`);
       showToast(`Warning request submitted for ${mem.name}.`);
     }
   };
@@ -1925,23 +2040,25 @@ export function AuthProvider({ children }) {
     const wrn = warnings.find(w => w.id === warningId);
     if (!wrn) return;
 
-    setMembers(prev => prev.map(m => m.id === wrn.memberId ? {
+    const normMemberId = getMemberUuid(wrn.memberId);
+
+    setMembers(prev => prev.map(m => (m.id === wrn.memberId || m.id === normMemberId) ? {
       ...m,
-      strikes: m.strikes + 1,
-      score: Math.max(50, m.score - 8)
+      strikes: (m.strikes || 0) + 1,
+      score: Math.max(50, (m.score || 90) - 8)
     } : m));
 
     setWarnings(prev => prev.map(w => w.id === warningId ? { ...w, status: "Confirmed Strike" } : w));
-    broadcastMutation('APPROVE_WARNING', { id: warningId, memberId: wrn.memberId });
+    broadcastMutation('APPROVE_WARNING', { id: warningId, memberId: normMemberId });
 
     if (supabase) {
       runDb(supabase.from('disciplinary_warnings').update({ status: 'Confirmed Strike' }).eq('id', warningId));
-      const targetMem = members.find(m => m.id === wrn.memberId);
+      const targetMem = members.find(m => m.id === wrn.memberId || m.id === normMemberId);
       if (targetMem) {
         runDb(supabase.from('members').update({
-          strikes: targetMem.strikes + 1,
-          score: Math.max(50, targetMem.score - 8)
-        }).eq('id', wrn.memberId));
+          strikes: (targetMem.strikes || 0) + 1,
+          score: Math.max(50, (targetMem.score || 90) - 8)
+        }).eq('id', normMemberId));
       }
     }
 
@@ -1957,28 +2074,28 @@ export function AuthProvider({ children }) {
     addDeletedId('warnings', warningId);
     const wrn = warnings.find(w => w.id === warningId);
     const wasConfirmed = wrn && wrn.status === 'Confirmed Strike';
-    const memberId = wrn?.memberId;
+    const normMemberId = wrn?.memberId ? getMemberUuid(wrn.memberId) : null;
 
-    if (wasConfirmed && memberId) {
-      setMembers(prev => prev.map(m => m.id === memberId ? {
+    if (wasConfirmed && normMemberId) {
+      setMembers(prev => prev.map(m => (m.id === wrn.memberId || m.id === normMemberId) ? {
         ...m,
-        strikes: Math.max(0, m.strikes - 1),
-        score: Math.min(100, m.score + 8)
+        strikes: Math.max(0, (m.strikes || 1) - 1),
+        score: Math.min(100, (m.score || 90) + 8)
       } : m));
 
       if (supabase) {
-        const targetMem = members.find(m => m.id === memberId);
+        const targetMem = members.find(m => m.id === wrn.memberId || m.id === normMemberId);
         if (targetMem) {
           runDb(supabase.from('members').update({
-            strikes: Math.max(0, targetMem.strikes - 1),
-            score: Math.min(100, targetMem.score + 8)
-          }).eq('id', memberId));
+            strikes: Math.max(0, (targetMem.strikes || 1) - 1),
+            score: Math.min(100, (targetMem.score || 90) + 8)
+          }).eq('id', normMemberId));
         }
       }
     }
 
     setWarnings(prev => prev.filter(w => w.id !== warningId));
-    broadcastMutation('DISMISS_WARNING', { id: warningId, memberId, wasConfirmed });
+    broadcastMutation('DISMISS_WARNING', { id: warningId, memberId: normMemberId, wasConfirmed });
 
     if (supabase) {
       runDb(supabase.from('disciplinary_warnings').delete().eq('id', warningId));
@@ -1993,11 +2110,14 @@ export function AuthProvider({ children }) {
       showToast("Only HR Leadership can edit warnings.", "warning");
       return;
     }
-    setWarnings(prev => prev.map(w => w.id === id ? { ...w, ...updatedFields } : w));
-    broadcastMutation('UPDATE_WARNING', { id, fields: updatedFields });
+    const cleanFields = { ...updatedFields };
+    if (cleanFields.level) cleanFields.level = normalizeWarningLevel(cleanFields.level);
+
+    setWarnings(prev => prev.map(w => w.id === id ? { ...w, ...cleanFields } : w));
+    broadcastMutation('UPDATE_WARNING', { id, fields: cleanFields });
 
     if (supabase) {
-      runDb(supabase.from('disciplinary_warnings').update(updatedFields).eq('id', id));
+      runDb(supabase.from('disciplinary_warnings').update(cleanFields).eq('id', id));
     }
 
     logActivity(`Updated warning details #${id}`, "Warnings");
@@ -2328,7 +2448,7 @@ export function AuthProvider({ children }) {
     }
 
     const newUser = {
-      id: `usr-${Date.now()}`,
+      id: generateUuid(),
       name: cleanName,
       username: cleanUsername,
       password: cleanPassword,
@@ -2354,44 +2474,51 @@ export function AuthProvider({ children }) {
   };
 
   const updateSystemUser = async (id, updated) => {
+    const cleanId = getUserUuid(id);
     const cleanUpdated = {
       ...updated,
+      id: cleanId,
       name: (updated.name || '').trim(),
       username: (updated.username || '').trim().toLowerCase(),
       password: (updated.password || '').trim()
     };
 
     setSystemUsers(prev => {
-      const nextUsers = prev.map(u => u.id === id ? { ...u, ...cleanUpdated } : u);
+      const nextUsers = prev.map(u => (u.id === id || u.id === cleanId) ? { ...u, ...cleanUpdated } : u);
       try { localStorage.setItem("aastmt_system_users", JSON.stringify(nextUsers)); } catch (e) {}
       return nextUsers;
     });
-    broadcastMutation('UPDATE_SYSTEM_USER', { id, fields: cleanUpdated });
+    broadcastMutation('UPDATE_SYSTEM_USER', { id: cleanId, fields: cleanUpdated });
 
     if (supabase) {
-      runDb(supabase.from('system_users').upsert({ id, ...cleanUpdated }, { onConflict: 'id' }));
+      runDb(supabase.from('system_users').upsert(cleanUpdated, { onConflict: 'username' }));
     }
 
-    if (currentUser && currentUser.username === cleanUpdated.username) {
+    if (currentUser && (currentUser.username === cleanUpdated.username || currentUser.id === cleanId || currentUser.id === id)) {
       setCurrentUser(prev => ({ ...prev, name: cleanUpdated.name, role: cleanUpdated.role }));
     }
     showToast(`Credentials updated & synced for ${cleanUpdated.name}.`);
   };
 
   const deleteSystemUser = async (id) => {
-    const target = systemUsers.find(u => u.id === id);
+    const cleanId = getUserUuid(id);
+    const target = systemUsers.find(u => u.id === id || u.id === cleanId);
     addDeletedId('users', id);
+    addDeletedId('users', cleanId);
     if (target?.username) addDeletedId('users', target.username.toLowerCase());
 
     setSystemUsers(prev => {
-      const nextUsers = prev.filter(u => u.id !== id);
+      const nextUsers = prev.filter(u => u.id !== id && u.id !== cleanId);
       try { localStorage.setItem("aastmt_system_users", JSON.stringify(nextUsers)); } catch (e) {}
       return nextUsers;
     });
-    broadcastMutation('DELETE_SYSTEM_USER', { id, username: target?.username });
+    broadcastMutation('DELETE_SYSTEM_USER', { id: cleanId, username: target?.username });
 
     if (supabase) {
-      runDb(supabase.from('system_users').delete().eq('id', id));
+      runDb(supabase.from('system_users').delete().eq('id', cleanId));
+      if (target?.username) {
+        runDb(supabase.from('system_users').delete().eq('username', target.username.toLowerCase()));
+      }
     }
 
     showToast("User login removed across all systems.");

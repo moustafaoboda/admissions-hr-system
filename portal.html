@@ -493,11 +493,12 @@
                 <div>
                   <label class="block font-semibold text-slate-600 mb-1">Type</label>
                   <select id="editSessionTypeSelect" class="w-full px-2 py-1 border rounded text-slate-800">
-                    <option value="Regular Shift">Regular Shift</option>
+                    <option value="Normal Day">Normal Day</option>
                     <option value="Orientation Day">Orientation Day</option>
-                    <option value="EDU Gate Event">EDU Gate Event</option>
-                    <option value="Urgent Meeting">Urgent Meeting</option>
-                    <option value="Special Duty">Special Duty</option>
+                    <option value="EDU Gate">EDU Gate</option>
+                    <option value="Event Day">Event Day</option>
+                    <option value="Double Attendance">Double Attendance</option>
+                    <option value="Triple Attendance">Triple Attendance</option>
                   </select>
                 </div>
               </div>
@@ -1577,7 +1578,7 @@
           <select id="warningLevelSelect" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
             <option value="First Verbal Warning">First Verbal Warning</option>
             <option value="Official Written Strike">Official Written Strike</option>
-            <option value="Final Hearing Notice">Final Hearing Notice</option>
+            <option value="Final Strike & Review">Final Strike & Review</option>
           </select>
         </div>
         <div>
@@ -1612,9 +1613,8 @@
             <label class="block font-bold text-slate-700 mb-1">Disciplinary Level</label>
             <select id="editWarningLevel" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-semibold">
               <option value="First Verbal Warning">First Verbal Warning</option>
-              <option value="Second Verbal Notice">Second Verbal Notice</option>
               <option value="Official Written Strike">Official Written Strike</option>
-              <option value="Disciplinary Review Warning">Disciplinary Review Warning</option>
+              <option value="Final Strike & Review">Final Strike & Review</option>
             </select>
           </div>
           <div>
@@ -1622,8 +1622,6 @@
             <select id="editWarningStatus" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-semibold">
               <option value="Confirmed Strike">Confirmed Strike</option>
               <option value="Pending HR Approval">Pending HR Approval</option>
-              <option value="Under Appeal">Under Appeal</option>
-              <option value="Resolved">Resolved</option>
             </select>
           </div>
         </div>
@@ -1914,32 +1912,90 @@
       return null;
     }
 
+    function generateUuid() {
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+      }
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    const LEGACY_MEMBER_UUID_MAP = {
+      "mem-1": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      "mem-2": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12",
+      "mem-3": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13",
+      "mem-4": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14",
+      "mem-5": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15",
+      "mem-6": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a16",
+      "mem-7": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17",
+      "mem-8": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a18",
+      "dis-1": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a18"
+    };
+
+    function getMemberUuid(id) {
+      if (!id) return id;
+      return LEGACY_MEMBER_UUID_MAP[id] || id;
+    }
+
+    const LEGACY_USER_UUID_MAP = {
+      "usr-1": "b3f74058-20b8-441c-bcdd-2bd27a302289",
+      "usr-2": "6ddf714f-079e-443a-820c-9a27de6c40bc",
+      "usr-3": "21b6358a-8cb0-43f1-a9e6-4fff0186a529",
+      "usr-4": "2a2b5d87-1fdf-4b54-83b4-4849621a38bb"
+    };
+
+    function getUserUuid(id) {
+      if (!id) return id;
+      return LEGACY_USER_UUID_MAP[id] || id;
+    }
+
+    function normalizeWarningLevel(lvl) {
+      if (!lvl) return 'First Verbal Warning';
+      const s = String(lvl).trim();
+      if (s === 'Final Hearing Notice' || s === 'Final Notice' || s === 'Final Strike & Review') return 'Final Strike & Review';
+      if (s === 'Official Written Strike' || s === 'Written Strike') return 'Official Written Strike';
+      return 'First Verbal Warning';
+    }
+
+    function normalizeSessionType(t) {
+      if (!t) return "Normal Day";
+      const str = String(t).trim();
+      if (str === "Regular Shift" || str === "Normal" || str === "Standard") return "Normal Day";
+      if (str === "EDU Gate Event") return "EDU Gate";
+      if (str === "Urgent Meeting" || str === "Special Duty" || str === "Special Event") return "Event Day";
+      const allowed = ["Normal Day", "Double Attendance", "Triple Attendance", "Orientation Day", "EDU Gate", "Event Day"];
+      if (allowed.includes(str)) return str;
+      return "Normal Day";
+    }
+
     const INITIAL_SYSTEM_USERS = [
-      { id: "usr-1", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
-      { id: "usr-2", name: "Tarek Hegazy", username: "tarek.hegazy", password: "123", role: "HR Head", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" },
-      { id: "usr-3", name: "Sarah Mostafa", username: "sarah.hr", password: "123", role: "HR", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80" },
-      { id: "usr-4", name: "Prof. Dr. Admissions Dean", username: "dean", password: "123", role: "Admission's Dean", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80" }
+      { id: "b3f74058-20b8-441c-bcdd-2bd27a302289", name: "Omar Farouk", username: "omar.farouk", password: "123", role: "HR Vice Head", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
+      { id: "6ddf714f-079e-443a-820c-9a27de6c40bc", name: "Tarek Hegazy", username: "tarek.hegazy", password: "123", role: "HR Head", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" },
+      { id: "21b6358a-8cb0-43f1-a9e6-4fff0186a529", name: "Sarah Mostafa", username: "sarah.hr", password: "123", role: "HR", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=256&q=80" },
+      { id: "2a2b5d87-1fdf-4b54-83b4-4849621a38bb", name: "Prof. Dr. Admissions Dean", username: "dean", password: "123", role: "Admission's Dean", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80" }
     ];
 
     const INITIAL_MEMBERS = [
-      { id: "mem-1", name: "Youssef El-Sayed", role: "Operations", position: "Head", college: "Engineering & Tech", studentId: "2023101", phone: "+20 100 111 2233", attendanceCount: 14, officialDays: ["Sunday", "Tuesday", "Thursday"], strikes: 0, score: 95, status: "Active", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80" },
-      { id: "mem-2", name: "Malak Nour", role: "PR", position: "Vice Head", college: "Management & Tech", studentId: "2023102", phone: "+20 101 222 3344", attendanceCount: 12, officialDays: ["Saturday", "Monday", "Wednesday"], strikes: 0, score: 92, status: "Active", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
-      { id: "mem-3", name: "Karim Hassan", role: "PR", position: "Head", college: "Computing & IT", studentId: "2023103", phone: "+20 102 333 4455", attendanceCount: 10, officialDays: ["Sunday", "Monday", "Wednesday"], strikes: 0, score: 87, status: "Active", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80" },
-      { id: "mem-4", name: "Farida Ahmed", role: "Operations", position: "Member", college: "Logistics & Transport", studentId: "2024104", phone: "+20 103 444 5566", attendanceCount: 11, officialDays: ["Sunday", "Tuesday", "Thursday"], strikes: 0, score: 90, status: "Active", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&q=80" },
-      { id: "mem-5", name: "Ahmed Sherif", role: "Digital Transformation", position: "Head", college: "Computing & IT", studentId: "2023105", phone: "+20 104 555 6677", attendanceCount: 9, officialDays: ["Saturday", "Tuesday", "Thursday"], strikes: 1, score: 84, status: "Active", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80" },
-      { id: "mem-6", name: "Laila Wael", role: "Innovation", position: "Member", college: "Law", studentId: "2024106", phone: "+20 105 666 7788", attendanceCount: 7, officialDays: ["Monday", "Wednesday"], strikes: 1, score: 74, status: "Active", avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=256&q=80" },
-      { id: "mem-7", name: "Nour El-Din", role: "HR", position: "Member", college: "Arts & Design", studentId: "2024107", phone: "+20 106 777 8899", attendanceCount: 8, officialDays: ["Saturday", "Sunday", "Tuesday"], strikes: 0, score: 89, status: "Active", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=256&q=80" }
+      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", name: "Youssef El-Sayed", role: "Operations", position: "Head", college: "Engineering & Tech", studentId: "2023101", phone: "+20 100 111 2233", attendanceCount: 14, officialDays: ["Sunday", "Tuesday", "Thursday"], strikes: 0, score: 95, status: "Active", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80" },
+      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12", name: "Malak Nour", role: "PR", position: "Vice Head", college: "Management & Tech", studentId: "2023102", phone: "+20 101 222 3344", attendanceCount: 12, officialDays: ["Saturday", "Monday", "Wednesday"], strikes: 0, score: 92, status: "Active", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
+      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13", name: "Karim Hassan", role: "PR", position: "Head", college: "Computing & IT", studentId: "2023103", phone: "+20 102 333 4455", attendanceCount: 10, officialDays: ["Sunday", "Monday", "Wednesday"], strikes: 0, score: 87, status: "Active", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80" },
+      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14", name: "Farida Ahmed", role: "Operations", position: "Member", college: "Logistics & Transport", studentId: "2024104", phone: "+20 103 444 5566", attendanceCount: 11, officialDays: ["Sunday", "Tuesday", "Thursday"], strikes: 0, score: 90, status: "Active", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&q=80" },
+      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15", name: "Ahmed Sherif", role: "Digital Transformation", position: "Head", college: "Computing & IT", studentId: "2023105", phone: "+20 104 555 6677", attendanceCount: 9, officialDays: ["Saturday", "Tuesday", "Thursday"], strikes: 1, score: 84, status: "Active", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80" },
+      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a16", name: "Laila Wael", role: "Innovation", position: "Member", college: "Law", studentId: "2024106", phone: "+20 105 666 7788", attendanceCount: 7, officialDays: ["Monday", "Wednesday"], strikes: 1, score: 74, status: "Active", avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=256&q=80" },
+      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17", name: "Nour El-Din", role: "HR", position: "Member", college: "Arts & Design", studentId: "2024107", phone: "+20 106 777 8899", attendanceCount: 8, officialDays: ["Saturday", "Sunday", "Tuesday"], strikes: 0, score: 89, status: "Active", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=256&q=80" }
     ];
 
     const INITIAL_DISCHARGED_MEMBERS = [
-      { id: "dis-1", name: "Hassan Mahmoud", role: "PR", position: "Member", college: "Management & Tech", studentId: "2022099", phone: "+20 109 888 7766", dischargeType: "Voluntary Left", dischargeReason: "Graduated and relocated to Alexandria.", date: "2026-08-30", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" }
+      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a18", name: "Hassan Mahmoud", role: "PR", position: "Member", college: "Management & Tech", studentId: "2022099", phone: "+20 109 888 7766", dischargeType: "Voluntary Left", dischargeReason: "Graduated and relocated to Alexandria.", date: "2026-08-30", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" }
     ];
 
     const INITIAL_STAR_AMBASSADORS = [];
 
     const INITIAL_ATTENDANCE_SESSIONS = [
       {
-        id: "att-1",
+        id: "c1000000-0000-4000-8000-000000000001",
         title: "Registration Hall Shift",
         date: "2026-09-20",
         dayName: "Sunday",
@@ -1947,14 +2003,14 @@
         presentCount: 3,
         totalCount: 4,
         rollCall: [
-          { memberId: "mem-1", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-          { memberId: "mem-3", name: "Karim Hassan", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
-          { memberId: "mem-4", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-          { memberId: "mem-7", name: "Nour El-Din", role: "HR", isPresent: false, isExcused: true, excuseReason: "Midterm exam preparation" }
+          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13", name: "Karim Hassan", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
+          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17", name: "Nour El-Din", role: "HR", isPresent: false, isExcused: true, excuseReason: "Midterm exam preparation" }
         ]
       },
       {
-        id: "att-2",
+        id: "c1000000-0000-4000-8000-000000000002",
         title: "EDU Gate Campus Fair",
         date: "2026-09-17",
         dayName: "Thursday",
@@ -1962,13 +2018,13 @@
         presentCount: 3,
         totalCount: 3,
         rollCall: [
-          { memberId: "mem-1", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-          { memberId: "mem-4", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-          { memberId: "mem-5", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" }
+          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
+          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" }
         ]
       },
       {
-        id: "att-3",
+        id: "c1000000-0000-4000-8000-000000000003",
         title: "AASTMT Open Orientation Day",
         date: "2026-09-12",
         dayName: "Saturday",
@@ -1976,16 +2032,16 @@
         presentCount: 3,
         totalCount: 3,
         rollCall: [
-          { memberId: "mem-2", name: "Malak Nour", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
-          { memberId: "mem-5", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" },
-          { memberId: "mem-7", name: "Nour El-Din", role: "HR", isPresent: true, isExcused: false, excuseReason: "" }
+          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12", name: "Malak Nour", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
+          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" },
+          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17", name: "Nour El-Din", role: "HR", isPresent: true, isExcused: false, excuseReason: "" }
         ]
       }
     ];
 
     const INITIAL_WARNINGS = [
-      { id: "wrn-1", memberId: "mem-6", memberName: "Laila Wael", level: "Official Written Strike", reason: "Unexcused absence from assigned registration desk during peak admission hours.", reportedBy: "Omar Farouk (HR Vice Head)", date: "2026-09-18", status: "Confirmed Strike" },
-      { id: "wrn-2", memberId: "mem-3", memberName: "Karim Hassan", level: "First Verbal Warning", reason: "Failure to wear formal AASTMT admissions pin during parent VIP campus tour.", reportedBy: "Sarah Mostafa (HR)", date: "2026-09-15", status: "Pending HR Approval" }
+      { id: "d1000000-0000-4000-8000-000000000001", memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a16", memberName: "Laila Wael", level: "Official Written Strike", reason: "Unexcused absence from assigned registration desk during peak admission hours.", reportedBy: "Omar Farouk (HR Vice Head)", date: "2026-09-18", status: "Confirmed Strike" },
+      { id: "d1000000-0000-4000-8000-000000000002", memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13", memberName: "Karim Hassan", level: "First Verbal Warning", reason: "Failure to wear formal AASTMT admissions pin during parent VIP campus tour.", reportedBy: "Sarah Mostafa (HR)", date: "2026-09-15", status: "Pending HR Approval" }
     ];
 
     const INITIAL_EVENTS = [
@@ -2158,12 +2214,14 @@
 
     function getPortalMemberAttendanceRate(m) {
       if (!m) return 0;
+      const memId = m.id;
+      const memUuid = getMemberUuid(memId);
       const memSessions = (attendanceSessions || []).filter(s =>
-        Array.isArray(s.rollCall) && s.rollCall.some(rc => rc.memberId === m.id)
+        Array.isArray(s.rollCall) && s.rollCall.some(rc => rc.memberId === memId || rc.memberId === memUuid || getMemberUuid(rc.memberId) === memUuid)
       );
       if (memSessions.length > 0) {
         const presentCount = memSessions.filter(s =>
-          s.rollCall.some(rc => rc.memberId === m.id && rc.isPresent)
+          s.rollCall.some(rc => (rc.memberId === memId || rc.memberId === memUuid || getMemberUuid(rc.memberId) === memUuid) && rc.isPresent)
         ).length;
         return Math.round((presentCount / memSessions.length) * 100);
       }
@@ -2269,22 +2327,42 @@
         }
       }).catch(() => {});
 
-      // 3. Attendance Sessions
-      portalSupabase.from('attendance_sessions').select('*').then(({ data, error }) => {
-        if (!error && data && data.length > 0) {
+      // 3. Attendance Sessions & Relational Attendance Records
+      Promise.all([
+        portalSupabase.from('attendance_sessions').select('*'),
+        portalSupabase.from('attendance_records').select('*')
+      ]).then(([sessRes, recRes]) => {
+        const { data: sData, error: sErr } = sessRes;
+        const { data: rData } = recRes;
+        if (!sErr && sData) {
           const delS = getDeletedIds('sessions');
-          attendanceSessions = data
+          attendanceSessions = sData
             .filter(s => !delS.includes(s.id))
-            .map(s => ({
-              id: s.id,
-              title: s.title,
-              date: s.date,
-              dayName: s.day_name,
-              type: s.session_type,
-              presentCount: s.present_count,
-              totalCount: s.total_count,
-              rollCall: s.roll_call || []
-            }));
+            .map(s => {
+              const matchedRecords = (rData || []).filter(r => r.session_id === s.id);
+              const rollCall = matchedRecords.map(r => {
+                const m = members.find(mem => mem.id === r.member_id || getMemberUuid(mem.id) === r.member_id || mem.id === getMemberUuid(r.member_id)) || dischargedMembers.find(d => d.id === r.member_id || getMemberUuid(d.id) === r.member_id || d.id === getMemberUuid(r.member_id));
+                return {
+                  memberId: r.member_id,
+                  name: m ? m.name : 'Ambassador',
+                  role: m ? m.role : 'Operations',
+                  isPresent: Boolean(r.is_present),
+                  isExcused: Boolean(r.is_excused),
+                  excuseReason: r.excuse_reason || ''
+                };
+              });
+
+              return {
+                id: s.id,
+                title: s.title,
+                date: s.date,
+                dayName: s.day_name,
+                type: s.session_type,
+                presentCount: s.present_count,
+                totalCount: s.total_count || rollCall.length,
+                rollCall: rollCall
+              };
+            });
           try { localStorage.setItem("aastmt_attendance_sessions", JSON.stringify(attendanceSessions)); } catch(e) {}
           renderAllViews();
         }
@@ -2292,20 +2370,23 @@
 
       // 4. Disciplinary Warnings
       portalSupabase.from('disciplinary_warnings').select('*').then(({ data, error }) => {
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           const delW = getDeletedIds('warnings');
           warnings = data
             .filter(w => !delW.includes(w.id))
-            .map(w => ({
-              id: w.id,
-              memberId: w.member_id,
-              memberName: w.member_name || '',
-              level: w.level,
-              reason: w.reason,
-              reportedBy: w.reported_by,
-              date: w.date,
-              status: w.status
-            }));
+            .map(w => {
+              const m = members.find(mem => mem.id === w.member_id || getMemberUuid(mem.id) === w.member_id || mem.id === getMemberUuid(w.member_id)) || dischargedMembers.find(d => d.id === w.member_id || getMemberUuid(d.id) === w.member_id || d.id === getMemberUuid(w.member_id));
+              return {
+                id: w.id,
+                memberId: w.member_id,
+                memberName: m ? m.name : (w.member_name || 'Ambassador'),
+                level: normalizeWarningLevel(w.level),
+                reason: w.reason,
+                reportedBy: w.reported_by,
+                date: w.date,
+                status: w.status
+              };
+            });
           try { localStorage.setItem("aastmt_warnings", JSON.stringify(warnings)); } catch(e) {}
           renderAllViews();
         }
@@ -3215,13 +3296,13 @@
       const passwordInput = document.getElementById("loginPassword").value.trim();
 
       // Ensure freshest system users from cloud before authenticating
+      const deletedUserIds = getDeletedIds('users');
       if (portalSupabase) {
         try {
           const { data: dbUsers, error } = await portalSupabase.from('system_users').select('*');
           if (!error && dbUsers && dbUsers.length > 0) {
-            const deletedU = getDeletedIds('users');
             systemUsers = dbUsers
-              .filter(u => !deletedU.includes(u.id) && !deletedU.includes(u.username?.toLowerCase().trim()))
+              .filter(u => !deletedUserIds.includes(u.id) && !deletedUserIds.includes(u.username?.toLowerCase().trim()))
               .map(u => ({
                 id: u.id,
                 name: u.name,
@@ -3235,10 +3316,10 @@
         } catch(err) {
           console.warn("Cloud credential check error:", err);
         }
+      } else {
+        systemUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS)
+          .filter(u => !deletedUserIds.includes(u.id) && !deletedUserIds.includes(u.username?.toLowerCase().trim()));
       }
-
-      // Reload from storage in case updated
-      systemUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS).filter(u => !getDeletedIds("users").includes(u.id));
 
       const user = systemUsers.find(u => u.username.toLowerCase().trim() === usernameInput);
       if (user && user.password.trim() === passwordInput) {
@@ -4020,9 +4101,10 @@
         members = members.map(m => wasPresentIds.includes(m.id) ? { ...m, attendanceCount: Math.max(0, (m.attendanceCount || 0) - 1) } : m);
         if (portalSupabase) {
           wasPresentIds.forEach(memId => {
-            const memObj = members.find(m => m.id === memId);
+            const normId = getMemberUuid(memId);
+            const memObj = members.find(m => m.id === memId || m.id === normId);
             if (memObj) {
-              runPortalDb(portalSupabase.from('members').update({ attendance_count: memObj.attendanceCount }).eq('id', memId));
+              runPortalDb(portalSupabase.from('members').update({ attendance_count: Math.max(0, (memObj.attendanceCount || 0) - 1) }).eq('id', normId));
             }
           });
         }
@@ -4033,6 +4115,7 @@
 
       if (portalSupabase) {
         runPortalDb(portalSupabase.from('attendance_sessions').delete().eq('id', sId));
+        runPortalDb(portalSupabase.from('attendance_records').delete().eq('session_id', sId));
       }
       broadcastPortalMutation('DELETE_ATTENDANCE_SESSION', { id: sId, wasPresentIds });
 
@@ -4133,7 +4216,7 @@
 
       const newTitle = document.getElementById("editSessionTitleInput").value.trim() || s.title;
       const newDate = document.getElementById("editSessionDateInput").value || s.date;
-      const newType = document.getElementById("editSessionTypeSelect").value;
+      const newType = normalizeSessionType(document.getElementById("editSessionTypeSelect").value);
 
       const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
       const newDayName = days[new Date(newDate).getDay()] || s.dayName;
@@ -4148,6 +4231,7 @@
 
         return {
           ...rc,
+          memberId: getMemberUuid(rc.memberId),
           isPresent: isPres,
           isExcused: !isPres && isExc,
           excuseReason: !isPres && isExc ? reason : ''
@@ -4176,9 +4260,22 @@
           day_name: s.dayName,
           session_type: s.type,
           present_count: s.presentCount,
-          total_count: s.totalCount,
-          roll_call: s.rollCall
+          total_count: s.totalCount
         }).eq('id', s.id));
+
+        portalSupabase.from('attendance_records').delete().eq('session_id', s.id).then(() => {
+          const recPayload = updatedRollCall.map(rc => ({
+            id: generateUuid(),
+            session_id: s.id,
+            member_id: getMemberUuid(rc.memberId),
+            is_present: Boolean(rc.isPresent),
+            is_excused: Boolean(rc.isExcused),
+            excuse_reason: rc.excuseReason || ''
+          }));
+          if (recPayload.length > 0) {
+            runPortalDb(portalSupabase.from('attendance_records').insert(recPayload));
+          }
+        }).catch(() => {});
       }
       broadcastPortalMutation('UPDATE_ATTENDANCE_SESSION', { id: s.id, data: s });
 
@@ -4255,14 +4352,16 @@
         const isExcused = excEl ? excEl.checked : false;
         const reasonEl = document.getElementById(`rc-reason-${m.id}`);
         const excuseReason = reasonEl ? reasonEl.value.trim() : "";
-        if (isPresent) m.attendanceCount += 1;
-        return { memberId: m.id, name: m.name, role: m.role, isPresent, isExcused, excuseReason };
+        if (isPresent) m.attendanceCount = (m.attendanceCount || 0) + 1;
+        return { memberId: getMemberUuid(m.id), name: m.name, role: m.role, isPresent, isExcused, excuseReason };
       });
 
       const newTitle = document.getElementById("attSheetTitle").value.trim() || `${dayName} Session`;
-      const newType = document.getElementById("attSheetType").value;
+      const newType = normalizeSessionType(document.getElementById("attSheetType").value);
+      const sessionUuid = generateUuid();
+
       const newSession = {
-        id: `att-${Date.now()}`,
+        id: sessionUuid,
         title: newTitle,
         date: dVal,
         dayName,
@@ -4276,16 +4375,34 @@
       saveAllState();
 
       if (portalSupabase) {
-        runPortalDb(portalSupabase.from('attendance_sessions').upsert({
+        runPortalDb(portalSupabase.from('attendance_sessions').insert([{
           id: newSession.id,
           title: newSession.title,
           date: newSession.date,
           day_name: newSession.dayName,
           session_type: newSession.type,
           present_count: newSession.presentCount,
-          total_count: newSession.totalCount,
-          roll_call: newSession.rollCall
-        }, { onConflict: 'id' }));
+          total_count: newSession.totalCount
+        }]));
+
+        const recordsPayload = rollCall.map(r => ({
+          id: generateUuid(),
+          session_id: sessionUuid,
+          member_id: r.memberId,
+          is_present: Boolean(r.isPresent),
+          is_excused: Boolean(r.isExcused),
+          excuse_reason: r.excuseReason || ''
+        }));
+        if (recordsPayload.length > 0) {
+          runPortalDb(portalSupabase.from('attendance_records').insert(recordsPayload));
+        }
+
+        rollCall.filter(r => r.isPresent).forEach(r => {
+          const memObj = members.find(m => m.id === r.memberId || getMemberUuid(m.id) === r.memberId);
+          if (memObj) {
+            runPortalDb(portalSupabase.from('members').update({ attendance_count: memObj.attendanceCount }).eq('id', r.memberId));
+          }
+        });
       }
       broadcastPortalMutation('CREATE_ATTENDANCE_SESSION', { session: newSession, updatedMemberIds: rollCall.filter(r => r.isPresent).map(r => r.memberId) });
 
@@ -4514,11 +4631,22 @@
       const id = document.getElementById("editWarningTargetId").value;
       const wrn = warnings.find(w => w.id === id);
       if (!wrn) return;
-      wrn.level = document.getElementById("editWarningLevel").value;
+      wrn.level = normalizeWarningLevel(document.getElementById("editWarningLevel").value);
       wrn.status = document.getElementById("editWarningStatus").value;
       wrn.date = document.getElementById("editWarningDate").value;
       wrn.reason = document.getElementById("editWarningReason").value.trim();
       saveAllState();
+
+      if (portalSupabase) {
+        runPortalDb(portalSupabase.from('disciplinary_warnings').update({
+          level: wrn.level,
+          status: wrn.status,
+          date: wrn.date,
+          reason: wrn.reason
+        }).eq('id', id));
+      }
+      broadcastPortalMutation('UPDATE_WARNING', { id, fields: { level: wrn.level, status: wrn.status, date: wrn.date, reason: wrn.reason } });
+
       closeModal("editWarningModal");
       showToast("Warning details updated.");
       renderAllViews();
@@ -4530,20 +4658,8 @@
         return;
       }
       const id = document.getElementById("editWarningTargetId").value;
-      const wrn = warnings.find(w => w.id === id);
-      if (wrn && wrn.status === "Confirmed Strike" && wrn.memberId) {
-        const mem = members.find(m => m.id === wrn.memberId);
-        if (mem) {
-          mem.strikes = Math.max(0, mem.strikes - 1);
-          mem.score = Math.min(100, mem.score + 8);
-        }
-      }
-      addDeletedId("warnings", id);
-      warnings = warnings.filter(w => w.id !== id);
-      saveAllState();
       closeModal("editWarningModal");
-      showToast("Warning dismissed.");
-      renderAllViews();
+      dismissWarning(id);
     }
 
     function openEditDischargedModal(id) {
@@ -4645,33 +4761,68 @@
       const mem = members.find(m => m.id === document.getElementById("warningMemberSelect").value);
       if (!mem) return;
       const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
-      const newWrnId = `wrn-${Date.now()}`;
+      const newWrnId = generateUuid();
+      const normMemId = getMemberUuid(mem.id);
+      const normLevel = normalizeWarningLevel(document.getElementById("warningLevelSelect").value);
       removeDeletedId("warnings", newWrnId);
+
       if (isLeadership) {
-        mem.strikes += 1;
-        mem.score = Math.max(50, mem.score - 8);
-        warnings.unshift({
+        mem.strikes = (mem.strikes || 0) + 1;
+        mem.score = Math.max(50, (mem.score || 90) - 8);
+        const newWrn = {
           id: newWrnId,
-          memberId: mem.id,
+          memberId: normMemId,
           memberName: mem.name,
-          level: document.getElementById("warningLevelSelect").value,
+          level: normLevel,
           reason: document.getElementById("warningReasonText").value.trim(),
           reportedBy: `${currentUser.name} (${currentUser.role})`,
           date: new Date().toISOString().split("T")[0],
           status: "Confirmed Strike"
-        });
+        };
+        warnings.unshift(newWrn);
+
+        if (portalSupabase) {
+          runPortalDb(portalSupabase.from('disciplinary_warnings').insert([{
+            id: newWrn.id,
+            member_id: normMemId,
+            level: newWrn.level,
+            reason: newWrn.reason,
+            reported_by: newWrn.reportedBy,
+            date: newWrn.date,
+            status: newWrn.status
+          }]));
+          runPortalDb(portalSupabase.from('members').update({
+            strikes: mem.strikes,
+            score: mem.score
+          }).eq('id', normMemId));
+        }
+        broadcastPortalMutation('SUBMIT_WARNING', { warning: newWrn, memberId: normMemId, incrementStrikes: true });
         showToast(`Warning recorded for ${mem.name}.`);
       } else {
-        warnings.unshift({
+        const newWrn = {
           id: newWrnId,
-          memberId: mem.id,
+          memberId: normMemId,
           memberName: mem.name,
-          level: document.getElementById("warningLevelSelect").value,
+          level: normLevel,
           reason: document.getElementById("warningReasonText").value.trim(),
           reportedBy: `${currentUser.name} (HR Request)`,
           date: new Date().toISOString().split("T")[0],
           status: "Pending HR Approval"
-        });
+        };
+        warnings.unshift(newWrn);
+
+        if (portalSupabase) {
+          runPortalDb(portalSupabase.from('disciplinary_warnings').insert([{
+            id: newWrn.id,
+            member_id: normMemId,
+            level: newWrn.level,
+            reason: newWrn.reason,
+            reported_by: newWrn.reportedBy,
+            date: newWrn.date,
+            status: newWrn.status
+          }]));
+        }
+        broadcastPortalMutation('SUBMIT_WARNING', { warning: newWrn, memberId: normMemId, incrementStrikes: false });
         showToast(`Warning request submitted.`);
       }
       saveAllState();
@@ -4687,13 +4838,26 @@
       }
       const wrn = warnings.find(w => w.id === wId);
       if (wrn) {
-        const mem = members.find(m => m.id === wrn.memberId);
+        const normMemId = getMemberUuid(wrn.memberId);
+        const mem = members.find(m => m.id === wrn.memberId || m.id === normMemId);
         if (mem) {
-          mem.strikes += 1;
-          mem.score = Math.max(50, mem.score - 8);
+          mem.strikes = (mem.strikes || 0) + 1;
+          mem.score = Math.max(50, (mem.score || 90) - 8);
         }
         wrn.status = "Confirmed Strike";
         saveAllState();
+
+        if (portalSupabase) {
+          runPortalDb(portalSupabase.from('disciplinary_warnings').update({ status: 'Confirmed Strike' }).eq('id', wId));
+          if (mem) {
+            runPortalDb(portalSupabase.from('members').update({
+              strikes: mem.strikes,
+              score: mem.score
+            }).eq('id', normMemId));
+          }
+        }
+        broadcastPortalMutation('APPROVE_WARNING', { id: wId, memberId: normMemId });
+
         showToast(`Warning approved.`);
         renderAllViews();
       }
@@ -4705,16 +4869,31 @@
         return;
       }
       const wrn = warnings.find(w => w.id === wId);
-      if (wrn && wrn.status === "Confirmed Strike" && wrn.memberId) {
-        const mem = members.find(m => m.id === wrn.memberId);
+      const wasConfirmed = wrn && wrn.status === "Confirmed Strike";
+      const normMemId = wrn?.memberId ? getMemberUuid(wrn.memberId) : null;
+
+      if (wasConfirmed && normMemId) {
+        const mem = members.find(m => m.id === wrn.memberId || m.id === normMemId);
         if (mem) {
-          mem.strikes = Math.max(0, mem.strikes - 1);
-          mem.score = Math.min(100, mem.score + 8);
+          mem.strikes = Math.max(0, (mem.strikes || 1) - 1);
+          mem.score = Math.min(100, (mem.score || 90) + 8);
+          if (portalSupabase) {
+            runPortalDb(portalSupabase.from('members').update({
+              strikes: mem.strikes,
+              score: mem.score
+            }).eq('id', normMemId));
+          }
         }
       }
       addDeletedId("warnings", wId);
       warnings = warnings.filter(w => w.id !== wId);
       saveAllState();
+
+      if (portalSupabase) {
+        runPortalDb(portalSupabase.from('disciplinary_warnings').delete().eq('id', wId));
+      }
+      broadcastPortalMutation('DISMISS_WARNING', { id: wId, memberId: normMemId, wasConfirmed });
+
       showToast("Warning dismissed.");
       renderAllViews();
     }
@@ -4787,19 +4966,21 @@
       `).join("");
     }
     function saveUserCredentials(uId) {
-      const u = systemUsers.find(x => x.id === uId);
+      const cleanId = getUserUuid(uId);
+      const u = systemUsers.find(x => x.id === uId || x.id === cleanId);
       if (u) {
         const cleanName = document.getElementById(`usr-name-${uId}`).value.trim();
         const cleanUname = document.getElementById(`usr-uname-${uId}`).value.trim().toLowerCase();
         const cleanRole = document.getElementById(`usr-role-${uId}`).value;
         const cleanPwd = document.getElementById(`usr-pwd-${uId}`).value.trim();
 
+        u.id = cleanId;
         u.name = cleanName;
         u.username = cleanUname;
         u.role = cleanRole;
         u.password = cleanPwd;
 
-        if (currentUser && (u.username === currentUser.username.toLowerCase().trim() || u.id === currentUser.id)) {
+        if (currentUser && (u.username === currentUser.username.toLowerCase().trim() || u.id === currentUser.id || uId === currentUser.id)) {
           currentUser.name = u.name;
           currentUser.role = u.role;
           try { localStorage.setItem("aastmt_current_user", JSON.stringify(currentUser)); } catch (err) {}
@@ -4840,12 +5021,12 @@
       }
 
       const newU = {
-        id: `usr-${Date.now()}`,
+        id: generateUuid(),
         name: cleanName,
         username: cleanUsername,
         password: cleanPassword,
         role: role,
-        avatar: ''
+        avatar: null
       };
 
       removeDeletedId('users', newU.id);
@@ -4878,22 +5059,24 @@
     }
 
     function deleteSystemUser(uId) {
-      const userToDelete = systemUsers.find(u => u.id === uId);
+      const cleanId = getUserUuid(uId);
+      const userToDelete = systemUsers.find(u => u.id === uId || u.id === cleanId);
       addDeletedId('users', uId);
+      addDeletedId('users', cleanId);
       if (userToDelete && userToDelete.username) {
         addDeletedId('users', userToDelete.username.toLowerCase().trim());
       }
-      systemUsers = systemUsers.filter(u => u.id !== uId);
+      systemUsers = systemUsers.filter(u => u.id !== uId && u.id !== cleanId);
       saveAllState();
 
       if (portalSupabase) {
         if (userToDelete?.username) {
           runPortalDb(portalSupabase.from('system_users').delete().eq('username', userToDelete.username.toLowerCase().trim()));
         }
-        runPortalDb(portalSupabase.from('system_users').delete().eq('id', uId));
+        runPortalDb(portalSupabase.from('system_users').delete().eq('id', cleanId));
       }
 
-      broadcastPortalMutation('DELETE_SYSTEM_USER', { id: uId, username: userToDelete?.username });
+      broadcastPortalMutation('DELETE_SYSTEM_USER', { id: cleanId, username: userToDelete?.username });
       showToast("User login removed.");
       renderSystemUsersTable();
     }
@@ -4970,6 +5153,8 @@
       currentUser.avatar = avatarVal;
 
       if (u) {
+        const cleanId = getUserUuid(u.id);
+        u.id = cleanId;
         u.name = name;
         u.username = username;
         u.avatar = avatarVal;
@@ -4980,8 +5165,12 @@
             username: u.username,
             password: u.password,
             avatar: u.avatar
-          }).eq('id', u.id));
+          }).eq('id', cleanId));
         }
+
+        removeDeletedId('users', cleanId);
+        removeDeletedId('users', u.username);
+        broadcastPortalMutation('UPDATE_SYSTEM_USER', { id: cleanId, fields: { name: u.name, username: u.username, role: u.role, password: u.password, avatar: u.avatar } });
       }
 
       saveAllState();
