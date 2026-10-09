@@ -26,14 +26,19 @@ export default function DashboardTab() {
   // KPI calculations
   const totalMembers = activeMembers.length;
 
-  // Real-time dynamic calculation from Attendance Tab sessions
-  const totalEligibleRollCalls = (attendanceSessions || []).reduce((acc, s) => {
-    return acc + (s.totalCount || (s.rollCall ? s.rollCall.length : 0));
-  }, 0);
+  // Real-time dynamic calculation from Attendance Tab sessions roll call logs
+  let totalEligibleRollCalls = 0;
+  let totalPresentRollCalls = 0;
 
-  const totalPresentRollCalls = (attendanceSessions || []).reduce((acc, s) => {
-    return acc + (s.presentCount !== undefined ? s.presentCount : (s.rollCall ? s.rollCall.filter(r => r.isPresent).length : 0));
-  }, 0);
+  (attendanceSessions || []).forEach(s => {
+    if (Array.isArray(s.rollCall) && s.rollCall.length > 0) {
+      totalEligibleRollCalls += s.rollCall.length;
+      totalPresentRollCalls += s.rollCall.filter(r => r.isPresent).length;
+    } else {
+      totalEligibleRollCalls += (s.totalCount || 0);
+      totalPresentRollCalls += (s.presentCount || 0);
+    }
+  });
 
   const avgAttendanceRate = totalEligibleRollCalls > 0
     ? ((totalPresentRollCalls / totalEligibleRollCalls) * 100).toFixed(1)

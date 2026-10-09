@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { MemberAvatar } from '../common/Avatars';
+import { getMemberUuid } from '../../lib/attendanceUtils';
 
 export default function AttendanceTab() {
   const {
@@ -36,8 +37,17 @@ export default function AttendanceTab() {
     );
   };
 
-  // Helper to ensure a session's rollCall contains ONLY scheduled members
+  const isMemberMatch = (m, rc) => {
+    if (!m || !rc) return false;
+    const rcMemId = rc.memberId;
+    if (m.id && rcMemId && (m.id === rcMemId || getMemberUuid(m.id) === getMemberUuid(rcMemId))) return true;
+    if (m.name && rc.name && m.name.toLowerCase().trim() === rc.name.toLowerCase().trim()) return true;
+    return false;
+  };
+
+  // Helper to ensure a session's rollCall contains scheduled members while preserving recorded attendance accurately
   const getSessionScheduledRollCall = (session) => {
+    if (!session) return [];
     const day = session.dayName || 'Sunday';
     const scheduled = getScheduledMembersForDay(day);
 
@@ -52,15 +62,29 @@ export default function AttendanceTab() {
       }));
     }
 
-    // Retain roll call records for scheduled members only
-    const filtered = session.rollCall.filter(rc =>
-      scheduled.some(m => m.id === rc.memberId || m.name === rc.name)
-    );
+    const result = [];
+    const matchedScheduledIds = new Set();
 
-    // Add any newly scheduled member if missing
+    // 1. Preserve existing recorded roll call items, synchronizing latest member display info
+    session.rollCall.forEach(rc => {
+      const match = scheduled.find(m => isMemberMatch(m, rc));
+      if (match) {
+        matchedScheduledIds.add(match.id);
+        result.push({
+          ...rc,
+          memberId: match.id,
+          name: match.name,
+          role: match.role
+        });
+      } else {
+        result.push(rc);
+      }
+    });
+
+    // 2. Add any newly scheduled members missing from the session
     scheduled.forEach(m => {
-      if (!filtered.some(rc => rc.memberId === m.id || rc.name === m.name)) {
-        filtered.push({
+      if (!matchedScheduledIds.has(m.id) && !result.some(rc => isMemberMatch(m, rc))) {
+        result.push({
           memberId: m.id,
           name: m.name,
           role: m.role,
@@ -71,7 +95,7 @@ export default function AttendanceTab() {
       }
     });
 
-    return filtered;
+    return result;
   };
 
   const activeSession = attendanceSessions.find(s => s.id === selectedSessionId);
@@ -86,27 +110,72 @@ export default function AttendanceTab() {
   };
 
   const handleSetStatus = (memberId, isPresent) => {
-    setEditRollCall(prev => prev.map(rc => (rc.memberId === memberId || (rc.name && rc.name === memberId)) ? {
-      ...rc,
-      isPresent,
-      isExcused: isPresent ? false : rc.isExcused,
-      excuseReason: isPresent ? '' : rc.excuseReason
-    } : rc));
+    setEditRollCall(prev => prev.map(rc => {
+      const match = rc.memberId === memberId ||
+                    getMemberUuid(rc.memberId) === getMemberUuid(memberId) ||
+                    (rc.name && rc.name === memberId);
+      return match ? {
+        ...rc,
+        isPresent,
+        isExcused: isPresent ? false : rc.isExcused,
+        excuseReason: isPresent ? '' : rc.excuseReason
+      } : rc;
+    }));
   };
 
   const handleToggleExcuse = (memberId) => {
-    setEditRollCall(prev => prev.map(rc => rc.memberId === memberId ? {
-      ...rc,
-      isExcused: !rc.isExcused,
-      excuseReason: !rc.isExcused ? rc.excuseReason : ''
-    } : rc));
+    setEditRollCall(prev => prev.map(rc => {
+      const match = rc.memberId === memberId ||
+                    getMemberUuid(rc.memberId) === getMemberUuid(memberId) ||
+                    (rc.name && rc.name === memberId);
+      return match ? {
+        ...rc,
+        isExcused: !rc.isExcused,
+        excuseReason: !rc.isExcused ? rc.excuseReason : ''
+      } : rc;
+    }));
   };
 
   const handleUpdateReason = (memberId, reason) => {
-    setEditRollCall(prev => prev.map(rc => rc.memberId === memberId ? {
-      ...rc,
-      excuseReason: reason
-    } : rc));
+    setEditRollCall(prev => prev.map(rc => {
+      const match = rc.memberId === memberId ||
+                    getMemberUuid(rc.memberId) === getMemberUuid(memberId) ||
+                    (rc.name && rc.name === memberId);
+      return match ? {
+        ...rc,
+        excuseReason: reason
+      } : rc;
+    }));
+  };
+
+  const handleQuickToggleStatus = (session, memberId) => {
+    if (!session || !isHeadOrVice) return;
+    const currentRollCall = getSessionScheduledRollCall(session);
+    const updatedRollCall = currentRollCall.map(rc => {
+      const match = rc.memberId === memberId ||
+                    getMemberUuid(rc.memberId) === getMemberUuid(memberId) ||
+                    (rc.name && rc.name === memberId);
+      if (match) {
+        const nextPresent = !rc.isPresent;
+        return {
+          ...rc,
+          isPresent: nextPresent,
+          isExcused: nextPresent ? false : rc.isExcused,
+          excuseReason: nextPresent ? '' : rc.excuseReason
+        };
+      }
+      return rc;
+    });
+
+    const presentCount = updatedRollCall.filter(r => r.isPresent).length;
+    const totalCount = updatedRollCall.length;
+
+    updateAttendanceSession(session.id, {
+      ...session,
+      rollCall: updatedRollCall,
+      presentCount,
+      totalCount
+    });
   };
 
   const handleSaveSessionEdit = () => {
@@ -411,13 +480,25 @@ export default function AttendanceTab() {
                         <select
                           value={rc.isPresent ? 'present' : 'absent'}
                           onChange={(e) => handleSetStatus(rc.memberId, e.target.value === 'present')}
-                          className={`px-2 py-1 border rounded text-xs font-semibold ${
+                          className={`px-2 py-1 border rounded text-xs font-semibold cursor-pointer ${
                             rc.isPresent ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-rose-50 text-rose-800 border-rose-300'
                           }`}
                         >
                           <option value="present">Present</option>
                           <option value="absent">Absent</option>
                         </select>
+                      ) : isHeadOrVice ? (
+                        <button
+                          type="button"
+                          onClick={() => handleQuickToggleStatus(activeSession, rc.memberId)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-bold transition hover:opacity-85 cursor-pointer shadow-xs ${
+                            rc.isPresent ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300' : 'bg-rose-100 text-rose-800 hover:bg-rose-200 border border-rose-300'
+                          }`}
+                          title="Click to toggle Present / Absent"
+                        >
+                          <i className={`fa-solid ${rc.isPresent ? 'fa-check' : 'fa-xmark'}`}></i>
+                          <span>{rc.isPresent ? 'Present' : 'Absent'}</span>
+                        </button>
                       ) : (
                         <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-bold ${
                           rc.isPresent ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'

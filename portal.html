@@ -2250,11 +2250,22 @@
       const memId = m.id;
       const memUuid = getMemberUuid(memId);
       const memSessions = (attendanceSessions || []).filter(s =>
-        Array.isArray(s.rollCall) && s.rollCall.some(rc => rc.memberId === memId || rc.memberId === memUuid || getMemberUuid(rc.memberId) === memUuid)
+        Array.isArray(s.rollCall) && s.rollCall.some(rc =>
+          rc.memberId === memId ||
+          rc.memberId === memUuid ||
+          getMemberUuid(rc.memberId) === memUuid ||
+          (rc.name && m.name && rc.name.toLowerCase().trim() === m.name.toLowerCase().trim())
+        )
       );
       if (memSessions.length > 0) {
         const presentCount = memSessions.filter(s =>
-          s.rollCall.some(rc => (rc.memberId === memId || rc.memberId === memUuid || getMemberUuid(rc.memberId) === memUuid) && rc.isPresent)
+          s.rollCall.some(rc =>
+            (rc.memberId === memId ||
+             rc.memberId === memUuid ||
+             getMemberUuid(rc.memberId) === memUuid ||
+             (rc.name && m.name && rc.name.toLowerCase().trim() === m.name.toLowerCase().trim())
+            ) && rc.isPresent
+          )
         ).length;
         return Math.round((presentCount / memSessions.length) * 100);
       }
@@ -3575,12 +3586,17 @@
       const activeM = members.filter(m => m.status !== "Discharged");
       document.getElementById("kpiTotalMembers").textContent = activeM.length;
 
-      const totalEligibleRollCalls = (attendanceSessions || []).reduce((acc, s) => {
-        return acc + (s.totalCount || (s.rollCall ? s.rollCall.length : 0));
-      }, 0);
-      const totalPresentRollCalls = (attendanceSessions || []).reduce((acc, s) => {
-        return acc + (s.presentCount !== undefined ? s.presentCount : (s.rollCall ? s.rollCall.filter(r => r.isPresent).length : 0));
-      }, 0);
+      let totalEligibleRollCalls = 0;
+      let totalPresentRollCalls = 0;
+      (attendanceSessions || []).forEach(s => {
+        if (Array.isArray(s.rollCall) && s.rollCall.length > 0) {
+          totalEligibleRollCalls += s.rollCall.length;
+          totalPresentRollCalls += s.rollCall.filter(r => r.isPresent).length;
+        } else {
+          totalEligibleRollCalls += (s.totalCount || 0);
+          totalPresentRollCalls += (s.presentCount || 0);
+        }
+      });
       const avgRate = totalEligibleRollCalls > 0
         ? ((totalPresentRollCalls / totalEligibleRollCalls) * 100).toFixed(1)
         : (activeM.length > 0
@@ -3717,7 +3733,7 @@
               <div class="font-bold text-slate-800 text-sm leading-snug flex items-center gap-1.5 flex-wrap">
                 <span>${m.name}</span>
                 ${totalStrikes > 0 ? `<span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300" title="${totalStrikes} Strike(s)"><i class="fa-solid fa-triangle-exclamation text-[9px] text-rose-600"></i>${totalStrikes}</span>` : ''}
-                ${pendingWarns.length > 0 ? `<span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300 animate-pulse" title="Warning Request Pending"><i class="fa-solid fa-clock text-[9px] text-amber-600"></i>Req</span>` : ''}
+                ${pendingWarns.length > 0 ? `<span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 animate-pulse" title="Warning Request Pending Review"><i class="fa-solid fa-clock text-[9px] text-amber-600"></i>${pendingWarns.length > 1 ? `${pendingWarns.length} Warning Requests` : 'Warning Requested'}</span>` : ''}
               </div>
               ${isHRMember ? '' : `<div class="text-[10px] text-slate-400 font-mono">${m.studentId || '2024000'}</div>`}
             </div>
@@ -3736,7 +3752,7 @@
         } else if (isHRMember) {
           actionButtons = `
             <button onclick="quickWriteMonitoringNoteForMember('${m.id}')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold transition inline-flex items-center gap-1 shadow-xs" title="Write Monitoring Note"><i class="fa-solid fa-clipboard-check text-[10px]"></i> Note</button>
-            <button onclick="openWarningModal('request', '${m.id}')" class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded text-[11px] font-bold transition inline-flex items-center gap-1 ml-1" title="Request Warning"><i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Warning</button>
+            <button onclick="openWarningModal('request', '${m.id}')" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-bold transition inline-flex items-center gap-1.5 shadow-sm ml-1" title="Request Warning for Member"><i class="fa-solid fa-triangle-exclamation text-[11px]"></i> Request Warning</button>
           `;
         } else {
           actionButtons = '<span class="text-slate-400 italic">View only</span>';
@@ -4136,6 +4152,7 @@
     }
 
     function getSessionScheduledRollCall(s) {
+      if (!s) return [];
       const day = s.dayName || 'Sunday';
       const scheduledM = getScheduledMembersForDay(day);
       if (!s.rollCall || s.rollCall.length === 0) {
@@ -4147,23 +4164,48 @@
           isExcused: false,
           excuseReason: ''
         }));
-      } else {
-        // Retain roll call records for scheduled members only
-        s.rollCall = s.rollCall.filter(rc => scheduledM.some(m => (rc.name && m.name && m.name.toLowerCase().trim() === rc.name.toLowerCase().trim()) || m.id === rc.memberId || getMemberUuid(m.id) === getMemberUuid(rc.memberId)));
-        // Add any missing scheduled member
-        scheduledM.forEach(m => {
-          if (!s.rollCall.some(rc => (rc.name && m.name && rc.name.toLowerCase().trim() === m.name.toLowerCase().trim()) || rc.memberId === m.id || getMemberUuid(rc.memberId) === getMemberUuid(m.id))) {
-            s.rollCall.push({
-              memberId: m.id,
-              name: m.name,
-              role: m.role,
-              isPresent: true,
-              isExcused: false,
-              excuseReason: ''
-            });
-          }
-        });
+        return s.rollCall;
       }
+
+      const isMemMatch = (m, rc) => {
+        if (!m || !rc) return false;
+        const rcMemId = rc.memberId;
+        if (m.id && rcMemId && (m.id === rcMemId || getMemberUuid(m.id) === getMemberUuid(rcMemId))) return true;
+        if (m.name && rc.name && m.name.toLowerCase().trim() === rc.name.toLowerCase().trim()) return true;
+        return false;
+      };
+
+      const result = [];
+      const matchedIds = new Set();
+      s.rollCall.forEach(rc => {
+        const match = scheduledM.find(m => isMemMatch(m, rc));
+        if (match) {
+          matchedIds.add(match.id);
+          result.push({
+            ...rc,
+            memberId: match.id,
+            name: match.name,
+            role: match.role
+          });
+        } else {
+          result.push(rc);
+        }
+      });
+
+      scheduledM.forEach(m => {
+        if (!matchedIds.has(m.id) && !result.some(rc => isMemMatch(m, rc))) {
+          result.push({
+            memberId: m.id,
+            name: m.name,
+            role: m.role,
+            isPresent: true,
+            isExcused: false,
+            excuseReason: ''
+          });
+        }
+      });
+
+      s.rollCall = result;
       return s.rollCall;
     }
 
@@ -4331,14 +4373,14 @@
             </td>
             <td class="py-2.5 px-3 text-slate-600">${rc.role}</td>
             <td class="py-2.5 px-3 text-center">
-              <select id="edit-status-${idx}" class="px-2 py-1 border rounded text-xs font-semibold ${rc.isPresent ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'}">
+              <select id="edit-status-${idx}" onchange="handlePortalStatusChange(this)" class="px-2 py-1 border rounded text-xs font-semibold cursor-pointer ${rc.isPresent ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-rose-50 text-rose-800 border-rose-300'}">
                 <option value="present" ${rc.isPresent ? 'selected' : ''}>Present</option>
                 <option value="absent" ${!rc.isPresent ? 'selected' : ''}>Absent</option>
               </select>
             </td>
             <td class="py-2.5 px-3">
               <div class="flex items-center gap-2">
-                <label class="flex items-center gap-1 text-slate-600">
+                <label class="flex items-center gap-1 text-slate-600 cursor-pointer">
                   <input type="checkbox" id="edit-excused-${idx}" ${rc.isExcused ? 'checked' : ''} class="rounded text-amber-600"> Excused
                 </label>
                 <input type="text" id="edit-reason-${idx}" value="${rc.excuseReason || ''}" placeholder="Excuse reason..." class="px-2 py-1 border rounded text-xs w-40 bg-white">
@@ -4356,12 +4398,86 @@
               </div>
             </td>
             <td class="py-2.5 px-3 text-slate-600">${rc.role}</td>
-            <td class="py-2.5 px-3 text-center"><span class="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold ${rc.isPresent ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${rc.isPresent ? 'Present' : 'Absent'}</span></td>
+            <td class="py-2.5 px-3 text-center">
+              ${canEdit ? `
+                <button type="button" onclick="quickTogglePortalSessionStatus('${s.id}', '${rc.memberId || rc.name}')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-bold transition hover:opacity-85 cursor-pointer shadow-xs ${rc.isPresent ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300' : 'bg-rose-100 text-rose-800 hover:bg-rose-200 border border-rose-300'}" title="Click to toggle Present / Absent">
+                  <i class="fa-solid ${rc.isPresent ? 'fa-check' : 'fa-xmark'}"></i>
+                  <span>${rc.isPresent ? 'Present' : 'Absent'}</span>
+                </button>
+              ` : `
+                <span class="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold ${rc.isPresent ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${rc.isPresent ? 'Present' : 'Absent'}</span>
+              `}
+            </td>
             <td class="py-2.5 px-3 text-slate-600">${!rc.isPresent ? (rc.isExcused ? `<span class="bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded text-[10px] font-bold">Excused: ${rc.excuseReason || 'Recorded'}</span>` : `<span class="text-rose-600 font-bold">Unexcused</span>`) : '-'}</td>
           </tr>
         `).join("");
       }
       document.getElementById("attendanceInspectorBox").classList.remove("hidden");
+    }
+
+    function handlePortalStatusChange(el) {
+      if (!el) return;
+      if (el.value === "present") {
+        el.className = "px-2 py-1 border rounded text-xs font-semibold cursor-pointer bg-emerald-50 text-emerald-800 border-emerald-300";
+      } else {
+        el.className = "px-2 py-1 border rounded text-xs font-semibold cursor-pointer bg-rose-50 text-rose-800 border-rose-300";
+      }
+    }
+
+    function quickTogglePortalSessionStatus(sId, memId) {
+      const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
+      if (!isHeadOrVice) return;
+      const s = attendanceSessions.find(x => x.id === sId);
+      if (!s) return;
+      const currentRollCall = getSessionScheduledRollCall(s);
+      const updatedRollCall = currentRollCall.map(rc => {
+        const match = rc.memberId === memId ||
+                      getMemberUuid(rc.memberId) === getMemberUuid(memId) ||
+                      (rc.name && rc.name === memId) ||
+                      (rc.name && memId && rc.name.toLowerCase().trim() === memId.toLowerCase().trim());
+        if (match) {
+          const nextPresent = !rc.isPresent;
+          return {
+            ...rc,
+            isPresent: nextPresent,
+            isExcused: nextPresent ? false : rc.isExcused,
+            excuseReason: nextPresent ? '' : rc.excuseReason
+          };
+        }
+        return rc;
+      });
+
+      s.rollCall = updatedRollCall;
+      s.presentCount = updatedRollCall.filter(r => r.isPresent).length;
+      s.absentCount = updatedRollCall.length - s.presentCount;
+      s.excusedCount = updatedRollCall.filter(r => !r.isPresent && r.isExcused).length;
+
+      saveAllState();
+
+      if (portalSupabase) {
+        runPortalDb(portalSupabase.from('attendance_sessions').update({
+          present_count: s.presentCount,
+          total_count: s.totalCount
+        }).eq('id', s.id));
+
+        runPortalDb(portalSupabase.from('attendance_records').delete().eq('session_id', s.id)).then(() => {
+          const recPayload = updatedRollCall.map(rc => ({
+            id: generateUuid(),
+            session_id: s.id,
+            member_id: getMemberUuid(rc.memberId),
+            is_present: Boolean(rc.isPresent),
+            is_excused: Boolean(rc.isExcused),
+            excuse_reason: rc.excuseReason || ''
+          }));
+          if (recPayload.length > 0) {
+            runPortalDb(portalSupabase.from('attendance_records').insert(recPayload));
+          }
+        });
+      }
+
+      broadcastPortalMutation('UPDATE_ATTENDANCE_SESSION', { id: s.id, data: s });
+      inspectSession(s.id, false);
+      renderAllViews();
     }
 
     function toggleEditInspectorSession() {
@@ -4939,26 +5055,47 @@
       renderAllViews();
     }
 
-    function openWarningModal(mode = "issue") {
-      if (currentUser.role === "HR") {
-        showToast("Warnings are restricted to HR Leadership.", "warning");
+    let currentWarningModalMode = "issue";
+    function openWarningModal(mode = "issue", preselectedMemberId = null) {
+      if (currentUser.role === "Admission's Dean") {
+        showToast("Dean profile has read-only access.", "warning");
         return;
       }
+      currentWarningModalMode = (currentUser.role === "HR") ? "request" : mode;
+      const isReq = currentWarningModalMode === "request";
+
+      const titleEl = document.getElementById("warningModalTitle");
+      if (titleEl) {
+        titleEl.innerHTML = isReq
+          ? `<i class="fa-solid fa-paper-plane text-amber-500 mr-2"></i><span>Request Warning Issuance</span>`
+          : `<i class="fa-solid fa-triangle-exclamation text-rose-500 mr-2"></i><span>Issue Disciplinary Warning</span>`;
+      }
+      const submitBtn = document.getElementById("warningSubmitBtn");
+      if (submitBtn) {
+        submitBtn.textContent = isReq ? "Submit Request to HR Leadership" : "Confirm Action";
+        submitBtn.className = isReq
+          ? "px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg"
+          : "px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg";
+      }
+
       const sel = document.getElementById("warningMemberSelect");
       const activeM = members.filter(m => m.status !== "Discharged");
       sel.innerHTML = activeM.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join("");
+      if (preselectedMemberId) {
+        sel.value = preselectedMemberId;
+      }
       updateWarningMemberPreview();
       openModal("warningModal");
     }
+
     function quickIssueWarningForMember(memberId) {
-      openWarningModal();
-      document.getElementById("warningMemberSelect").value = memberId;
-      updateWarningMemberPreview();
+      openWarningModal("issue", memberId);
     }
+
     function handleWarningSubmit(e) {
       e.preventDefault();
-      if (currentUser.role === "Admission's Dean" || currentUser.role === "HR") {
-        showToast("Warnings are restricted to HR Leadership.", "warning");
+      if (currentUser.role === "Admission's Dean") {
+        showToast("Dean profile has read-only access.", "warning");
         return;
       }
       const mem = members.find(m => m.id === document.getElementById("warningMemberSelect").value);

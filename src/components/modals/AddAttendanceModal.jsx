@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { MemberAvatar } from '../common/Avatars';
+import { getMemberUuid } from '../../lib/attendanceUtils';
 
 export default function AddAttendanceModal() {
   const { members, activeModal, setActiveModal, createAttendanceSession } = useAuth();
@@ -32,7 +33,11 @@ export default function AddAttendanceModal() {
         );
       }
       setRollCall(prev => filtered.map(m => {
-        const existing = prev.find(p => p.memberId === m.id || p.name === m.name);
+        const existing = prev.find(p =>
+          p.memberId === m.id ||
+          getMemberUuid(p.memberId) === getMemberUuid(m.id) ||
+          (p.name && m.name && p.name.toLowerCase().trim() === m.name.toLowerCase().trim())
+        );
         return existing || {
           memberId: m.id,
           name: m.name,
@@ -48,12 +53,17 @@ export default function AddAttendanceModal() {
   if (activeModal !== 'addAttendance') return null;
 
   const togglePresence = (memberId) => {
-    setRollCall(prev => prev.map(item => item.memberId === memberId ? {
-      ...item,
-      isPresent: !item.isPresent,
-      isExcused: !item.isPresent ? false : item.isExcused,
-      excuseReason: !item.isPresent ? '' : item.excuseReason
-    } : item));
+    setRollCall(prev => prev.map(item => {
+      const match = item.memberId === memberId ||
+                    getMemberUuid(item.memberId) === getMemberUuid(memberId) ||
+                    (item.name && item.name === memberId);
+      return match ? {
+        ...item,
+        isPresent: !item.isPresent,
+        isExcused: !item.isPresent ? false : item.isExcused,
+        excuseReason: !item.isPresent ? '' : item.excuseReason
+      } : item;
+    }));
   };
 
   const toggleExcuse = (memberId) => {

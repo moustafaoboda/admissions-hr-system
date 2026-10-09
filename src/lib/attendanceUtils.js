@@ -10,7 +10,7 @@ const LEGACY_MEMBER_UUID_MAP = {
   "dis-1": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a18"
 };
 
-function getMemberUuid(id) {
+export function getMemberUuid(id) {
   if (!id) return id;
   return LEGACY_MEMBER_UUID_MAP[id] || id;
 }
@@ -27,12 +27,23 @@ export function getMemberAttendanceRate(member, attendanceSessions = []) {
   const memUuid = getMemberUuid(memId);
 
   const memSessions = (attendanceSessions || []).filter(s =>
-    Array.isArray(s.rollCall) && s.rollCall.some(rc => rc.memberId === memId || rc.memberId === memUuid || getMemberUuid(rc.memberId) === memUuid)
+    Array.isArray(s.rollCall) && s.rollCall.some(rc =>
+      rc.memberId === memId ||
+      rc.memberId === memUuid ||
+      getMemberUuid(rc.memberId) === memUuid ||
+      (rc.name && member.name && rc.name.toLowerCase().trim() === member.name.toLowerCase().trim())
+    )
   );
 
   if (memSessions.length > 0) {
     const presentCount = memSessions.filter(s =>
-      s.rollCall.some(rc => (rc.memberId === memId || rc.memberId === memUuid || getMemberUuid(rc.memberId) === memUuid) && rc.isPresent)
+      s.rollCall.some(rc =>
+        (rc.memberId === memId ||
+         rc.memberId === memUuid ||
+         getMemberUuid(rc.memberId) === memUuid ||
+         (rc.name && member.name && rc.name.toLowerCase().trim() === member.name.toLowerCase().trim())
+        ) && rc.isPresent
+      )
     ).length;
     return Math.round((presentCount / memSessions.length) * 100);
   }

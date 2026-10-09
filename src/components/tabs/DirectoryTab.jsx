@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { MemberAvatar } from '../common/Avatars';
-import { getMemberAttendanceRate } from '../../lib/attendanceUtils';
+import { getMemberAttendanceRate, getMemberUuid } from '../../lib/attendanceUtils';
 
 export default function DirectoryTab() {
   const {
@@ -132,7 +132,8 @@ export default function DirectoryTab() {
                   const rate = getMemberAttendanceRate(m, attendanceSessions);
                   const memWarns = (warnings || []).filter(w =>
                     w.memberId === m.id ||
-                    (w.memberName && w.memberName.toLowerCase().trim() === m.name.toLowerCase().trim())
+                    getMemberUuid(w.memberId) === getMemberUuid(m.id) ||
+                    (w.memberName && m.name && w.memberName.toLowerCase().trim() === m.name.toLowerCase().trim())
                   );
                   const confirmedWarns = memWarns.filter(w => w.status === 'Confirmed Strike');
                   const pendingWarns = memWarns.filter(w => w.status === 'Pending HR Approval');
@@ -152,9 +153,9 @@ export default function DirectoryTab() {
                               </span>
                             )}
                             {pendingWarns.length > 0 && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300 animate-pulse" title="Warning Request Pending Review">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 animate-pulse" title="Warning Request Pending Review">
                                 <i className="fa-solid fa-clock text-[9px] text-amber-600"></i>
-                                Req
+                                {pendingWarns.length > 1 ? `${pendingWarns.length} Warning Requests` : 'Warning Requested'}
                               </span>
                             )}
                           </div>
@@ -300,10 +301,10 @@ export default function DirectoryTab() {
                                 setModalExtraData({ mode: 'request', preselectedMemberId: m.id });
                                 setActiveModal('warning');
                               }}
-                              className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded text-[11px] font-bold transition inline-flex items-center gap-1 ml-1"
+                              className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-bold transition inline-flex items-center gap-1.5 shadow-sm ml-1"
                               title="Request Warning for Member"
                             >
-                              <i className="fa-solid fa-triangle-exclamation text-[10px]"></i> Warning
+                              <i className="fa-solid fa-triangle-exclamation text-[11px]"></i> Request Warning
                             </button>
                           </>
                         ) : isDean ? (
