@@ -141,7 +141,7 @@ export default function SystemUsersModal() {
             <h4 className="font-bold text-xs text-[#002244] mb-2 uppercase tracking-wide">Active System Accounts</h4>
             <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
               <table className="w-full text-left text-xs">
-                <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
                   <tr>
                     <th className="py-2.5 px-3">Name</th>
                     <th className="py-2.5 px-3">Username</th>
