@@ -121,14 +121,6 @@
     </div>
   </div>
 
-  <!-- PORTAL LOADING OVERLAY (DURING INITIAL DATA HYDRATION) -->
-  <div id="portalLoadingScreen" class="hidden fixed inset-0 z-50 bg-[#001428] flex flex-col justify-center items-center text-white">
-    <div class="flex flex-col items-center gap-4 p-8 bg-[#001b36]/90 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-md">
-      <div class="w-12 h-12 border-4 border-[#c59b27] border-t-transparent rounded-full animate-spin"></div>
-      <p class="text-sm font-semibold tracking-wide text-slate-200">Loading stored records from database...</p>
-    </div>
-  </div>
-
   <!-- SYSTEM WRAPPER (HIDDEN DURING LOGIN) -->
   <div id="systemAppContainer" class="hidden flex flex-col min-h-screen flex-grow">
     <!-- HEADER -->
@@ -2208,7 +2200,6 @@
     let isInitialPortalFetchDone = false;
     function fetchPortalCloudData() {
       if (!portalSupabase) {
-        document.getElementById("portalLoadingScreen")?.classList.add("hidden");
         return Promise.resolve();
       }
 
@@ -2400,7 +2391,6 @@
 
       return Promise.allSettled([p1, p2, p3, p4, p5, p6, p7, p8]).finally(() => {
         isInitialPortalFetchDone = true;
-        document.getElementById("portalLoadingScreen")?.classList.add("hidden");
       });
     }
 
@@ -2554,7 +2544,7 @@
           fetchPortalCloudData();
 
           // Background heartbeat polling ensures zero-lag parity across backgrounded tabs/devices
-          setInterval(fetchPortalCloudData, 3500);
+          setInterval(fetchPortalCloudData, 1500);
           window.addEventListener('focus', fetchPortalCloudData);
           window.addEventListener('online', fetchPortalCloudData);
         }
@@ -2564,7 +2554,7 @@
       }
     }
     if (typeof window !== 'undefined') {
-      setTimeout(initPortalSupabase, 500);
+      initPortalSupabase();
     }
 
     window.addEventListener('storage', (e) => {
@@ -5650,15 +5640,11 @@
       if (currentUser) {
         document.getElementById("loginScreen").classList.add("hidden");
         document.getElementById("systemAppContainer").classList.remove("hidden");
-        if (!isInitialPortalFetchDone) {
-          document.getElementById("portalLoadingScreen")?.classList.remove("hidden");
-        }
         applyUserRoleUI();
         renderAllViews();
       } else {
         document.getElementById("systemAppContainer").classList.add("hidden");
         document.getElementById("loginScreen").classList.remove("hidden");
-        document.getElementById("portalLoadingScreen")?.classList.add("hidden");
       }
     };
 

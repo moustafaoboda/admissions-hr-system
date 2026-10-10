@@ -985,10 +985,10 @@ export function AuthProvider({ children }) {
       refreshDataFromCloud();
     }
 
-    // 4. Background Sync Heartbeat (Polling every 2s ensures parity across all devices even if backgrounded)
+    // 4. Background Sync Heartbeat (Polling every 1.5s ensures instant parity across all devices even if backgrounded)
     const heartbeatTimer = setInterval(() => {
       scheduleRefresh(0);
-    }, 2000);
+    }, 1500);
 
     // 5. Re-sync immediately when tab gains focus, becomes visible, or reconnects to network
     const handleActiveResume = () => {

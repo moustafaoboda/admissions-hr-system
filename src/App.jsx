@@ -50,18 +50,6 @@ export default function App() {
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="bg-[#001428] bg-pattern min-h-screen flex flex-col justify-center items-center text-white">
-        <Toast />
-        <div className="flex flex-col items-center gap-4 p-8 bg-[#001b36]/80 rounded-2xl border border-white/10 backdrop-blur-md shadow-2xl">
-          <div className="w-12 h-12 border-4 border-[#0284c7] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm font-semibold tracking-wide text-slate-300">Loading stored records from database...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-pattern flex flex-col min-h-screen">
       <Toast />
