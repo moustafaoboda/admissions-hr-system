@@ -991,8 +991,10 @@ export function AuthProvider({ children }) {
           }
         })
         .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-          // Automatic DB row changes trigger instant parity refresh across all connected devices
-          scheduleRefresh(50);
+          if (Date.now() < pauseCloudSyncUntilRef.current || (Date.now() - lastMutationTimeRef.current < 5000)) {
+            return;
+          }
+          scheduleRefresh(500);
         })
         .on('presence', { event: 'sync' }, () => {
           const presenceState = channel.presenceState();
@@ -1122,6 +1124,7 @@ export function AuthProvider({ children }) {
   };
 
   const updateSystemIcon = (newIconConfig) => {
+    pauseCloudSync(5000);
     setSystemIcon(newIconConfig);
     try {
       localStorage.setItem("aastmt_system_icon", JSON.stringify(newIconConfig));
@@ -1209,6 +1212,7 @@ export function AuthProvider({ children }) {
 
   // Helper State Modifiers
   const addMember = async (newMem) => {
+    pauseCloudSync(5000);
     const mem = {
       id: generateUuid(),
       name: newMem.name,
@@ -1256,6 +1260,7 @@ export function AuthProvider({ children }) {
   };
 
   const editMemberInfo = (id, updatedFields) => {
+    pauseCloudSync(5000);
     const target = members.find(m => m.id === id) || dischargedMembers.find(d => d.id === id);
     setMembers(prev => prev.map(m => m.id === id ? { ...m, ...updatedFields } : m));
     setDischargedMembers(prev => prev.map(d => d.id === id ? { ...d, ...updatedFields } : d));
@@ -1267,25 +1272,20 @@ export function AuthProvider({ children }) {
     broadcastMutation('UPDATE_MEMBER', { id, fields: updatedFields });
 
     if (supabase && target) {
-      const fullMem = {
-        id: target.id,
-        name: updatedFields.name !== undefined ? updatedFields.name : target.name,
-        role: updatedFields.role !== undefined ? updatedFields.role : target.role,
-        position: updatedFields.position !== undefined ? updatedFields.position : target.position,
-        college: updatedFields.college !== undefined ? updatedFields.college : target.college,
-        student_id: updatedFields.studentId !== undefined ? updatedFields.studentId : (target.studentId || null),
-        phone: updatedFields.phone !== undefined ? updatedFields.phone : (target.phone || null),
-        attendance_count: target.attendanceCount || 0,
-        official_days: updatedFields.officialDays !== undefined ? updatedFields.officialDays : target.officialDays,
-        avatar: updatedFields.avatar !== undefined ? updatedFields.avatar : (target.avatar || null),
-        score: updatedFields.score !== undefined ? updatedFields.score : target.score,
-        strikes: updatedFields.strikes !== undefined ? updatedFields.strikes : target.strikes,
-        status: target.status || 'Active',
-        discharge_type: target.dischargeType || null,
-        discharge_reason: target.dischargeReason || null
-      };
+      const cleanUpdate = {};
+      if (updatedFields.name !== undefined) cleanUpdate.name = updatedFields.name;
+      if (updatedFields.role !== undefined) cleanUpdate.role = updatedFields.role;
+      if (updatedFields.position !== undefined) cleanUpdate.position = updatedFields.position;
+      if (updatedFields.college !== undefined) cleanUpdate.college = updatedFields.college;
+      if (updatedFields.studentId !== undefined) cleanUpdate.student_id = updatedFields.studentId;
+      if (updatedFields.phone !== undefined) cleanUpdate.phone = updatedFields.phone;
+      if (updatedFields.officialDays !== undefined) cleanUpdate.official_days = updatedFields.officialDays;
+      if (updatedFields.avatar !== undefined) cleanUpdate.avatar = updatedFields.avatar;
+      if (updatedFields.score !== undefined) cleanUpdate.score = updatedFields.score;
+      if (updatedFields.strikes !== undefined) cleanUpdate.strikes = updatedFields.strikes;
+      if (updatedFields.status !== undefined) cleanUpdate.status = updatedFields.status;
 
-      runDb(supabase.from('members').upsert(fullMem, { onConflict: 'id' }));
+      runDb(supabase.from('members').update(cleanUpdate).eq('id', target.id));
     }
 
     logActivity(`Updated info for: ${target ? target.name : 'member'}`, "Members");
@@ -1325,6 +1325,7 @@ export function AuthProvider({ children }) {
   };
 
   const deleteMember = (id) => {
+    pauseCloudSync(5000);
     const mem = members.find(m => m.id === id);
     if (id) addDeletedId("members", id);
     if (mem?.studentId) addDeletedId("members", mem.studentId);
@@ -1346,6 +1347,7 @@ export function AuthProvider({ children }) {
   };
 
   const dischargeMember = (id, dischargeType, reason) => {
+    pauseCloudSync(5000);
     const mem = members.find(m => m.id === id);
     if (!mem) return;
 
@@ -1380,6 +1382,7 @@ export function AuthProvider({ children }) {
   };
 
   const updateMemberPerformance = (id, newScore) => {
+    pauseCloudSync(5000);
     const scoreVal = Math.max(0, Math.min(100, Number(newScore)));
     const mem = members.find(m => m.id === id);
     setMembers(prev => prev.map(m => m.id === id ? { ...m, score: scoreVal } : m));
@@ -1394,7 +1397,7 @@ export function AuthProvider({ children }) {
   };
 
   const addStarAmbassador = async (memberId, awardTitle, citation) => {
-    pauseCloudSync(3500);
+    pauseCloudSync(5000);
     const normMemId = getMemberUuid(memberId);
     const mem = members.find(m => m.id === memberId || m.id === normMemId || getMemberUuid(m.id) === normMemId);
     if (!mem) return;
@@ -1455,6 +1458,7 @@ export function AuthProvider({ children }) {
   };
 
   const removeStarAmbassador = async (starId, memberId, starName) => {
+    pauseCloudSync(5000);
     const target = starAmbassadors.find(s =>
       (starId && s.id === starId) ||
       (memberId && (s.memberId === memberId || s.member_id === memberId)) ||
@@ -1493,6 +1497,7 @@ export function AuthProvider({ children }) {
   };
 
   const deleteAttendanceSession = async (sessionId) => {
+    pauseCloudSync(5000);
     addDeletedId('sessions', sessionId);
     const s = attendanceSessions.find(x => x.id === sessionId);
     const wasPresentIds = s?.rollCall ? s.rollCall.filter(r => r.isPresent).map(r => r.memberId) : [];
@@ -1610,6 +1615,7 @@ export function AuthProvider({ children }) {
   };
 
   const createAttendanceSession = async (title, date, sessionType, rollCallRecords) => {
+    pauseCloudSync(5000);
     const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const d = new Date(date);
     const dayName = daysOfWeek[d.getDay()] || "Sunday";
@@ -1695,6 +1701,7 @@ export function AuthProvider({ children }) {
       showToast("Dean profile has read-only access.", "warning");
       return;
     }
+    pauseCloudSync(5000);
     const mem = members.find(m => m.id === memberId || m.id === getMemberUuid(memberId));
     if (!mem) return;
 
@@ -1784,6 +1791,7 @@ export function AuthProvider({ children }) {
       showToast("Only HR Leadership can approve warnings.", "warning");
       return;
     }
+    pauseCloudSync(5000);
     const wrn = warnings.find(w => w.id === warningId);
     if (!wrn) return;
 
@@ -1818,6 +1826,7 @@ export function AuthProvider({ children }) {
       showToast("Only HR Leadership can remove warnings.", "warning");
       return;
     }
+    pauseCloudSync(5000);
     addDeletedId('warnings', warningId);
     const wrn = warnings.find(w => w.id === warningId);
     const wasConfirmed = wrn && wrn.status === 'Confirmed Strike';
@@ -1857,6 +1866,7 @@ export function AuthProvider({ children }) {
       showToast("Only HR Leadership can edit warnings.", "warning");
       return;
     }
+    pauseCloudSync(5000);
     const cleanFields = { ...updatedFields };
     if (cleanFields.level) cleanFields.level = normalizeWarningLevel(cleanFields.level);
 
@@ -1872,6 +1882,7 @@ export function AuthProvider({ children }) {
   };
 
   const updateDischargedMember = async (id, updatedFields) => {
+    pauseCloudSync(5000);
     const target = dischargedMembers.find(d => d.id === id);
     setDischargedMembers(prev => prev.map(d => d.id === id ? { ...d, ...updatedFields } : d));
     if (updatedFields.avatar !== undefined) {
@@ -1881,24 +1892,18 @@ export function AuthProvider({ children }) {
     broadcastMutation('UPDATE_DISCHARGED_MEMBER', { id, fields: updatedFields });
 
     if (supabase && target) {
-      const fullMem = {
-        id: target.id,
-        name: updatedFields.name !== undefined ? updatedFields.name : target.name,
-        role: updatedFields.role !== undefined ? updatedFields.role : target.role,
-        position: target.position || 'Member',
-        college: target.college || 'AASTMT',
-        student_id: target.studentId || '2024101',
-        phone: target.phone || '+20 100 000 0000',
-        attendance_count: target.attendanceCount || 0,
-        official_days: target.officialDays || ["Sunday", "Tuesday", "Thursday"],
-        avatar: updatedFields.avatar !== undefined ? updatedFields.avatar : target.avatar,
-        score: target.score || 90,
-        strikes: target.strikes || 0,
-        status: 'Discharged',
-        discharge_type: updatedFields.dischargeType !== undefined ? updatedFields.dischargeType : target.dischargeType,
-        discharge_reason: updatedFields.dischargeReason !== undefined ? updatedFields.dischargeReason : target.dischargeReason
-      };
-      runDb(supabase.from('members').upsert(fullMem, { onConflict: 'id' }));
+      const cleanFields = {};
+      if (updatedFields.name !== undefined) cleanFields.name = updatedFields.name;
+      if (updatedFields.role !== undefined) cleanFields.role = updatedFields.role;
+      if (updatedFields.position !== undefined) cleanFields.position = updatedFields.position;
+      if (updatedFields.college !== undefined) cleanFields.college = updatedFields.college;
+      if (updatedFields.studentId !== undefined) cleanFields.student_id = updatedFields.studentId;
+      if (updatedFields.phone !== undefined) cleanFields.phone = updatedFields.phone;
+      if (updatedFields.avatar !== undefined) cleanFields.avatar = updatedFields.avatar;
+      if (updatedFields.dischargeType !== undefined) cleanFields.discharge_type = updatedFields.dischargeType;
+      if (updatedFields.dischargeReason !== undefined) cleanFields.discharge_reason = updatedFields.dischargeReason;
+
+      runDb(supabase.from('members').update(cleanFields).eq('id', target.id));
     }
 
     logActivity(`Updated discharged record #${id}`, "Members");
@@ -1906,6 +1911,7 @@ export function AuthProvider({ children }) {
   };
 
   const reinstateMember = async (id) => {
+    pauseCloudSync(5000);
     const mem = dischargedMembers.find(d => d.id === id);
     if (!mem) return;
 
@@ -1946,6 +1952,7 @@ export function AuthProvider({ children }) {
   };
 
   const deleteDischargedMember = (id) => {
+    pauseCloudSync(5000);
     const mem = dischargedMembers.find(d => d.id === id);
     if (id) addDeletedId("members", id);
     if (mem?.studentId) addDeletedId("members", mem.studentId);
@@ -1968,6 +1975,7 @@ export function AuthProvider({ children }) {
       showToast("Only HR Leadership can create events.", "warning");
       return;
     }
+    pauseCloudSync(5000);
     const evt = {
       id: `evt-${Date.now()}`,
       title: newEvent.title,
@@ -1995,6 +2003,7 @@ export function AuthProvider({ children }) {
       showToast("Only HR Leadership can edit events.", "warning");
       return;
     }
+    pauseCloudSync(5000);
     setEvents(prev => prev.map(e => e.id === id ? { ...e, ...updatedFields } : e));
     broadcastMutation('UPDATE_EVENT', { id, fields: updatedFields });
 
@@ -2011,6 +2020,7 @@ export function AuthProvider({ children }) {
       showToast("Only HR Leadership can remove events.", "warning");
       return;
     }
+    pauseCloudSync(5000);
     addDeletedId('events', id);
     const evt = events.find(e => e.id === id);
     setEvents(prev => prev.filter(e => e.id !== id));
@@ -2025,6 +2035,7 @@ export function AuthProvider({ children }) {
   };
 
   const addMonitoringNote = async ({ memberId, category, note }) => {
+    pauseCloudSync(5000);
     const mem = members.find(m => m.id === memberId);
     const newNote = {
       id: generateUuid(),
@@ -2065,6 +2076,7 @@ export function AuthProvider({ children }) {
   };
 
   const updateMonitoringNote = async (id, updatedFields) => {
+    pauseCloudSync(5000);
     let finalNote = null;
     setMonitoringNotes(prev => prev.map(n => {
       if (n.id === id) {
@@ -2102,6 +2114,7 @@ export function AuthProvider({ children }) {
   };
 
   const deleteMonitoringNote = async (id) => {
+    pauseCloudSync(5000);
     addDeletedId('notes', id);
     setMonitoringNotes(prev => prev.filter(n => n.id !== id));
     broadcastMutation('DELETE_MONITORING_NOTE', { id });
@@ -2194,6 +2207,7 @@ export function AuthProvider({ children }) {
       return;
     }
 
+    pauseCloudSync(5000);
     const newUser = {
       id: generateUuid(),
       name: cleanName,
@@ -2221,6 +2235,7 @@ export function AuthProvider({ children }) {
   };
 
   const updateSystemUser = async (id, updated) => {
+    pauseCloudSync(5000);
     const cleanId = getUserUuid(id);
     const cleanUpdated = {
       ...updated,
@@ -2248,6 +2263,7 @@ export function AuthProvider({ children }) {
   };
 
   const deleteSystemUser = async (id) => {
+    pauseCloudSync(5000);
     const cleanId = getUserUuid(id);
     const target = systemUsers.find(u => u.id === id || u.id === cleanId);
     addDeletedId('users', id);
@@ -2272,6 +2288,7 @@ export function AuthProvider({ children }) {
   };
 
   const updateProfile = async (name, username, oldPassword, newPassword, avatar = undefined) => {
+    pauseCloudSync(5000);
     const userRecord = systemUsers.find(u => (u.username || '').toLowerCase().trim() === (currentUser?.username || '').toLowerCase().trim() || u.id === currentUser?.id);
     if (!userRecord) {
       showToast("User account not found.", "danger");

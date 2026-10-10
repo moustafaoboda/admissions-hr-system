@@ -2125,7 +2125,12 @@
 
     function runPortalDb(builder) {
       if (!builder) return Promise.resolve(null);
-      return Promise.resolve(builder).catch(err => {
+      return Promise.resolve(builder).then(res => {
+        if (res && res.error) {
+          console.warn('Portal Supabase response error:', res.error);
+        }
+        return res;
+      }).catch(err => {
         console.warn('Portal Supabase error:', err);
         return null;
       });
@@ -2586,6 +2591,7 @@
               }
             })
             .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+              if (isPortalSyncPaused || (Date.now() - portalLastMutationAt < 5000)) return;
               fetchPortalCloudData();
             })
             .subscribe((status) => {
@@ -3169,6 +3175,7 @@
 
     function handleCreateMonitoringNote(e) {
       e.preventDefault();
+      pausePortalSync(5000);
       const mId = document.getElementById("monitoringTargetMember").value;
       const normMemId = getMemberUuid(mId);
       const mem = members.find(m => m.id === mId || m.id === normMemId);
@@ -3253,6 +3260,7 @@
 
     function handleUpdateMonitoringNote(e) {
       e.preventDefault();
+      pausePortalSync(5000);
       const id = document.getElementById("editNoteTargetId").value;
       const note = monitoringNotes.find(n => n.id === id);
       if (!note) return;
@@ -3294,6 +3302,7 @@
     }
 
     function deleteMonitoringNote(id) {
+      pausePortalSync(5000);
       addDeletedId("notes", id);
       monitoringNotes = monitoringNotes.filter(n => n.id !== id);
       saveAllState(true);
@@ -3896,6 +3905,7 @@
 
     function handleSaveEditMember(e) {
       e.preventDefault();
+      pausePortalSync(5000);
       const mId = document.getElementById("editMemberTargetId").value;
       const mem = members.find(m => m.id === mId) || dischargedMembers.find(d => d.id === mId);
       if (mem) {
@@ -3917,21 +3927,18 @@
         });
 
         if (portalSupabase) {
-          runPortalDb(portalSupabase.from('members').upsert({
-            id: mem.id,
+          runPortalDb(portalSupabase.from('members').update({
             name: mem.name,
             role: mem.role,
             position: mem.position,
             college: mem.college,
             student_id: mem.studentId,
             phone: mem.phone,
-            attendance_count: mem.attendanceCount || 0,
             official_days: mem.officialDays,
             avatar: mem.avatar,
             score: mem.score,
-            strikes: mem.strikes || 0,
             status: mem.status || 'Active'
-          }, { onConflict: 'id' }));
+          }).eq('id', mem.id));
 
           if (portalSupabaseChannel) {
             try {
@@ -4020,6 +4027,7 @@
 
     function handleConfirmDischarge(e) {
       e.preventDefault();
+      pausePortalSync(5000);
       const mId = document.getElementById("dischargeTargetId").value;
       const normId = getMemberUuid(mId);
       const mem = members.find(m => m.id === mId || m.id === normId);
@@ -4064,6 +4072,7 @@
 
     function handleCreateMember(e) {
       e.preventDefault();
+      pausePortalSync(5000);
       const name = document.getElementById("newMemberName").value.trim();
       const avatar = document.getElementById("addMemberAvatarUrl").value.trim() || null;
       const newId = generateUuid();
@@ -4264,6 +4273,7 @@
     }
 
     function deleteAttendanceSession(sId) {
+      pausePortalSync(5000);
       const s = attendanceSessions.find(x => x.id === sId);
       if (!s) return;
       addDeletedId("sessions", sId);
@@ -4458,7 +4468,7 @@
             is_present: Boolean(targetRc.isPresent),
             is_excused: Boolean(targetRc.isExcused),
             excuse_reason: targetRc.excuseReason || ''
-          }).eq('session_id', s.id).eq('member_id', normMemId)).then(res => {
+          }).eq('session_id', s.id).eq('member_id', normMemId).select('id')).then(res => {
             if (!res || !res.data || res.data.length === 0) {
               runPortalDb(portalSupabase.from('attendance_records').insert([{
                 id: generateUuid(),
@@ -4545,7 +4555,7 @@
             is_present: Boolean(rc.isPresent),
             is_excused: Boolean(rc.isExcused),
             excuse_reason: rc.excuseReason || ''
-          }).eq('session_id', s.id).eq('member_id', normMemId)).then(res => {
+          }).eq('session_id', s.id).eq('member_id', normMemId).select('id')).then(res => {
             if (!res || !res.data || res.data.length === 0) {
               runPortalDb(portalSupabase.from('attendance_records').insert([{
                 id: generateUuid(),
@@ -4638,6 +4648,7 @@
 
     function handleCreateAttendanceSheet(e) {
       e.preventDefault();
+      pausePortalSync(5000);
       const dVal = document.getElementById("attSheetDate").value;
       const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
       const dayName = days[new Date(dVal).getDay()] || "Sunday";
@@ -4935,6 +4946,7 @@
 
     function handleUpdateWarning(e) {
       e.preventDefault();
+      pausePortalSync(5000);
       if (currentUser.role !== "HR Head" && currentUser.role !== "HR Vice Head") {
         showToast("Only HR Leadership can edit warnings.", "warning");
         return;
@@ -4988,6 +5000,7 @@
 
     function handleUpdateDischarged(e) {
       e.preventDefault();
+      pausePortalSync(5000);
       const id = document.getElementById("editDischargedTargetId").value;
       const normId = getMemberUuid(id);
       const d = dischargedMembers.find(m => m.id === id || m.id === normId);
@@ -5011,6 +5024,7 @@
     }
 
     function reinstateCurrentDischargedMember() {
+      pausePortalSync(5000);
       const id = document.getElementById("editDischargedTargetId").value;
       const normId = getMemberUuid(id);
       const d = dischargedMembers.find(m => m.id === id || m.id === normId);
@@ -5059,6 +5073,7 @@
         showToast("Only HR Leadership can delete discharged records.", "warning");
         return;
       }
+      pausePortalSync(5000);
       const normId = getMemberUuid(id);
       const d = dischargedMembers.find(m => m.id === id || m.id === normId);
       const name = d ? d.name : "Member";
@@ -5121,6 +5136,7 @@
 
     function handleWarningSubmit(e) {
       e.preventDefault();
+      pausePortalSync(5000);
       if (currentUser.role === "Admission's Dean") {
         showToast("Dean profile has read-only access.", "warning");
         return;
@@ -5203,6 +5219,7 @@
         showToast("Only HR Leadership can approve warnings.", "warning");
         return;
       }
+      pausePortalSync(5000);
       const wrn = warnings.find(w => w.id === wId);
       if (wrn) {
         const normMemId = getMemberUuid(wrn.memberId);
@@ -5235,6 +5252,7 @@
         showToast("Only HR Leadership can dismiss warnings.", "warning");
         return;
       }
+      pausePortalSync(5000);
       const wrn = warnings.find(w => w.id === wId);
       const wasConfirmed = wrn && wrn.status === "Confirmed Strike";
       const normMemId = wrn?.memberId ? getMemberUuid(wrn.memberId) : null;
@@ -5336,6 +5354,7 @@
     }
 
     function removeStarAmbassador(sId, mId, sName) {
+      pausePortalSync(5000);
       const target = starAmbassadors.find(s =>
         (sId && s.id === sId) ||
         (mId && (s.memberId === mId || s.member_id === mId || getMemberUuid(s.memberId) === getMemberUuid(mId))) ||
@@ -5390,6 +5409,7 @@
       `).join("");
     }
     function saveUserCredentials(uId) {
+      pausePortalSync(5000);
       const cleanId = getUserUuid(uId);
       const u = systemUsers.find(x => x.id === uId || x.id === cleanId);
       if (u) {
@@ -5433,6 +5453,7 @@
 
     function handleAddNewUser(e) {
       e.preventDefault();
+      pausePortalSync(5000);
       const cleanName = document.getElementById("newUserName").value.trim();
       const cleanUsername = document.getElementById("newUserUsername").value.trim().toLowerCase();
       const cleanPassword = document.getElementById("newUserPassword").value.trim();
@@ -5482,6 +5503,7 @@
     }
 
     function deleteSystemUser(uId) {
+      pausePortalSync(5000);
       const cleanId = getUserUuid(uId);
       const userToDelete = systemUsers.find(u => u.id === uId || u.id === cleanId);
       addDeletedId('users', uId);
@@ -5551,6 +5573,7 @@
 
     function handleProfileUpdate(e) {
       e.preventDefault();
+      pausePortalSync(5000);
       const name = document.getElementById("editProfileName").value.trim();
       const username = document.getElementById("editProfileUsername").value.trim();
       const oldPwd = document.getElementById("editOldPassword").value;
@@ -5739,6 +5762,7 @@
         showToast("Only HR Head and HR Vice Head can change the system branding.", "warning");
         return;
       }
+      pausePortalSync(5000);
       systemIcon = { ...pendingSystemIcon };
       try {
         localStorage.setItem("aastmt_system_icon", JSON.stringify(systemIcon));

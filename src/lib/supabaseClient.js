@@ -60,7 +60,12 @@ export const supabase = isSupabaseConfigured
 // Safe Thenable query runner that prevents "builder.catch is not a function" crashes
 export function runDb(builder) {
   if (!builder) return Promise.resolve(null);
-  return Promise.resolve(builder).catch(err => {
+  return Promise.resolve(builder).then(res => {
+    if (res && res.error) {
+      console.warn('Supabase DB response error:', res.error);
+    }
+    return res;
+  }).catch(err => {
     console.warn('Supabase DB error:', err);
     return null;
   });
