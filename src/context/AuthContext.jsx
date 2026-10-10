@@ -429,6 +429,11 @@ export function AuthProvider({ children }) {
   // Broadcast Channels Refs
   const localBcRef = useRef(null);
   const supabaseChannelRef = useRef(null);
+  const pauseCloudSyncUntilRef = useRef(0);
+
+  const pauseCloudSync = useCallback((ms = 3500) => {
+    pauseCloudSyncUntilRef.current = Date.now() + ms;
+  }, []);
 
   // Unified Remote Mutation Handler
   const handleRemoteMutation = useCallback((type, payload, senderId) => {
@@ -703,6 +708,7 @@ export function AuthProvider({ children }) {
             attendanceCount: row.attendance_count || 0,
             officialDays: row.official_days || ["Sunday", "Tuesday", "Thursday"],
             extraDays: row.extra_days || [],
+            extraDaysCount: row.extra_days_count !== undefined && row.extra_days_count !== null ? row.extra_days_count : (row.extra_days ? row.extra_days.length : 0),
             strikes: row.strikes || 0,
             score: row.score || 90,
             status: row.status,
@@ -902,6 +908,7 @@ export function AuthProvider({ children }) {
     let refreshQueued = false;
     let refreshTimeout = null;
     const runRefresh = async () => {
+      if (Date.now() < pauseCloudSyncUntilRef.current) return;
       if (refreshInFlight) { refreshQueued = true; return; }
       refreshInFlight = true;
       try {
@@ -1265,27 +1272,31 @@ export function AuthProvider({ children }) {
   };
 
   const updateMemberExtraDays = (id, extraDays) => {
-    setMembers(prev => prev.map(m => m.id === id ? { ...m, extraDays } : m));
-    broadcastMutation('UPDATE_MEMBER', { id, fields: { extraDays } });
+    pauseCloudSync(3500);
+    const normId = getMemberUuid(id);
+    setMembers(prev => prev.map(m => (m.id === id || getMemberUuid(m.id) === normId) ? { ...m, extraDays } : m));
+    broadcastMutation('UPDATE_MEMBER', { id: normId, fields: { extraDays } });
     if (supabase) {
-      runDb(supabase.from('members').update({ extra_days: extraDays }).eq('id', id));
+      runDb(supabase.from('members').update({ extra_days: extraDays }).eq('id', normId));
     }
     showToast("Extra attendance days updated.");
   };
 
   const updateExtraDaysCount = (id, delta) => {
+    pauseCloudSync(3500);
+    const normId = getMemberUuid(id);
     let nextCount = 0;
     setMembers(prev => prev.map(m => {
-      if (m.id === id) {
+      if (m.id === id || getMemberUuid(m.id) === normId) {
         const current = m.extraDaysCount !== undefined ? m.extraDaysCount : (m.extraDays ? m.extraDays.length : 0);
         nextCount = Math.max(0, current + delta);
         return { ...m, extraDaysCount: nextCount };
       }
       return m;
     }));
-    broadcastMutation('UPDATE_MEMBER', { id, fields: { extraDaysCount: nextCount } });
+    broadcastMutation('UPDATE_MEMBER', { id: normId, fields: { extraDaysCount: nextCount } });
     if (supabase) {
-      runDb(supabase.from('members').update({ extra_days_count: nextCount }).eq('id', id));
+      runDb(supabase.from('members').update({ extra_days_count: nextCount }).eq('id', normId));
     }
     showToast("Extra days counter updated.");
   };
@@ -1360,6 +1371,7 @@ export function AuthProvider({ children }) {
   };
 
   const addStarAmbassador = async (memberId, awardTitle, citation) => {
+    pauseCloudSync(3500);
     const normMemId = getMemberUuid(memberId);
     const mem = members.find(m => m.id === memberId || m.id === normMemId || getMemberUuid(m.id) === normMemId);
     if (!mem) return;
@@ -1489,6 +1501,7 @@ export function AuthProvider({ children }) {
   };
 
   const updateAttendanceSession = async (sessionId, updatedData) => {
+    pauseCloudSync(3500);
     let finalSession = null;
     const oldSession = attendanceSessions.find(s => s.id === sessionId);
     const memberAttendanceDeltas = {};

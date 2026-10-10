@@ -2198,8 +2198,19 @@
     }
 
     let isInitialPortalFetchDone = false;
+    let isPortalSyncPaused = false;
+    let portalSyncResumeTimeout = null;
+
+    function pausePortalSync(ms = 2500) {
+      isPortalSyncPaused = true;
+      if (portalSyncResumeTimeout) clearTimeout(portalSyncResumeTimeout);
+      portalSyncResumeTimeout = setTimeout(() => {
+        isPortalSyncPaused = false;
+      }, ms);
+    }
+
     function fetchPortalCloudData() {
-      if (!portalSupabase) {
+      if (!portalSupabase || isPortalSyncPaused) {
         return Promise.resolve();
       }
 
@@ -2219,6 +2230,7 @@
               attendanceCount: r.attendance_count || 0,
               officialDays: r.official_days || ["Sunday", "Tuesday", "Thursday"],
               extraDays: r.extra_days || [],
+              extraDaysCount: r.extra_days_count !== undefined && r.extra_days_count !== null ? r.extra_days_count : (r.extra_days ? r.extra_days.length : 0),
               strikes: r.strikes || 0,
               score: r.score || 90,
               status: r.status,
@@ -3699,11 +3711,20 @@
     }
 
     function updateExtraDaysCount(mId, delta) {
-      const mem = members.find(m => m.id === mId);
+      const normId = getMemberUuid(mId);
+      const mem = members.find(m => m.id === mId || getMemberUuid(m.id) === normId);
       if (mem) {
+        pausePortalSync(2500);
         const current = mem.extraDaysCount !== undefined ? mem.extraDaysCount : (mem.extraDays ? mem.extraDays.length : 0);
-        mem.extraDaysCount = Math.max(0, current + delta);
-        saveAllState();
+        const nextCount = Math.max(0, current + delta);
+        mem.extraDaysCount = nextCount;
+        saveAllState(true);
+
+        if (portalSupabase) {
+          runPortalDb(portalSupabase.from('members').update({ extra_days_count: nextCount }).eq('id', normId));
+        }
+        broadcastPortalMutation('UPDATE_MEMBER', { id: normId, fields: { extraDaysCount: nextCount } });
+
         showToast(`Extra days updated for ${mem.name}`);
         renderMembersTable();
       }
@@ -3765,6 +3786,7 @@
       const mId = document.getElementById("extraDaysTargetId").value;
       const mem = members.find(m => m.id === mId || getMemberUuid(m.id) === getMemberUuid(mId));
       if (mem) {
+        pausePortalSync(3500);
         const selected = [];
         document.querySelectorAll('input[name="extraDayCb"]:checked').forEach(cb => {
           if (!cb.disabled) selected.push(cb.value);
@@ -4345,6 +4367,7 @@
     function quickTogglePortalSessionStatus(sId, memId) {
       const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
       if (!isHeadOrVice) return;
+      pausePortalSync(3500);
       const s = attendanceSessions.find(x => x.id === sId);
       if (!s) return;
       const currentRollCall = getSessionScheduledRollCall(s);
@@ -4424,6 +4447,7 @@
 
     function saveInspectorSessionChanges() {
       if (!currentEditingSessionId) return;
+      pausePortalSync(3500);
       const s = attendanceSessions.find(x => x.id === currentEditingSessionId);
       if (!s) return;
 
@@ -5204,6 +5228,7 @@
     }
     function handleSaveStarAmbassador(e) {
       e.preventDefault();
+      pausePortalSync(3500);
       const memId = document.getElementById("starMemberSelect").value;
       const normMemId = getMemberUuid(memId);
       const mem = members.find(m => m.id === memId || m.id === normMemId);
