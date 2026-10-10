@@ -430,8 +430,10 @@ export function AuthProvider({ children }) {
   const localBcRef = useRef(null);
   const supabaseChannelRef = useRef(null);
   const pauseCloudSyncUntilRef = useRef(0);
+  const lastMutationTimeRef = useRef(0);
 
-  const pauseCloudSync = useCallback((ms = 3500) => {
+  const pauseCloudSync = useCallback((ms = 5000) => {
+    lastMutationTimeRef.current = Date.now();
     pauseCloudSyncUntilRef.current = Date.now() + ms;
   }, []);
 
@@ -687,6 +689,7 @@ export function AuthProvider({ children }) {
   // Fetch initial/latest data from Supabase Cloud Database with auto-seed fallback
   const refreshDataFromCloud = useCallback(async () => {
     if (!supabase) return;
+    const fetchStartTime = Date.now();
 
     try {
       let activeMems = [];
@@ -696,7 +699,18 @@ export function AuthProvider({ children }) {
       // 1. Members
       const { data: dbMembers, error: mErr } = await supabase.from('members').select('*');
       if (!mErr && dbMembers) {
+        if (lastMutationTimeRef.current > fetchStartTime || Date.now() < pauseCloudSyncUntilRef.current) {
+          return;
+        }
         dbMembers.forEach(row => {
+          const extraCount = typeof row.extra_days === 'number' ? row.extra_days : (parseInt(row.extra_days, 10) || 0);
+          let extraArr = Array.isArray(row.extra_days) ? row.extra_days : [];
+          if (extraArr.length === 0) {
+            try {
+              const saved = JSON.parse(localStorage.getItem("aastmt_member_extra_days_" + row.id) || "[]");
+              if (Array.isArray(saved) && saved.length > 0) extraArr = saved;
+            } catch (e) {}
+          }
           const formatted = {
             id: row.id,
             name: row.name,
@@ -707,8 +721,9 @@ export function AuthProvider({ children }) {
             phone: row.phone,
             attendanceCount: row.attendance_count || 0,
             officialDays: row.official_days || ["Sunday", "Tuesday", "Thursday"],
-            extraDays: row.extra_days || [],
-            extraDaysCount: row.extra_days_count !== undefined && row.extra_days_count !== null ? row.extra_days_count : (row.extra_days ? row.extra_days.length : 0),
+            extraDays: extraArr,
+            extraDaysCount: (row.extra_days_count !== undefined && row.extra_days_count !== null) ? Number(row.extra_days_count) : extraCount,
+            extra_days: (row.extra_days_count !== undefined && row.extra_days_count !== null) ? Number(row.extra_days_count) : extraCount,
             strikes: row.strikes || 0,
             score: row.score || 90,
             status: row.status,
@@ -755,6 +770,9 @@ export function AuthProvider({ children }) {
       const { data: dbStars, error: sErr } = await supabase.from('star_ambassadors').select('*');
 
       if (!sErr && dbStars) {
+        if (lastMutationTimeRef.current > fetchStartTime || Date.now() < pauseCloudSyncUntilRef.current) {
+          return;
+        }
         const allKnownMembers = [...activeMems, ...disMems, ...members];
         const validDbStars = dbStars
           .filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isLegacyDemoStar(s))
@@ -790,6 +808,9 @@ export function AuthProvider({ children }) {
       const { data: dbRecords } = recRes;
 
       if (!aErr && dbSessions) {
+        if (lastMutationTimeRef.current > fetchStartTime || Date.now() < pauseCloudSyncUntilRef.current) {
+          return;
+        }
         const allKnownMembers = [...activeMems, ...disMems, ...members];
         const validSessions = dbSessions
           .map(s => {
@@ -992,10 +1013,10 @@ export function AuthProvider({ children }) {
       refreshDataFromCloud();
     }
 
-    // 4. Background Sync Heartbeat (Polling every 1.5s ensures instant parity across all devices even if backgrounded)
+    // 4. Background Sync Heartbeat (Polling fallback ensures parity across backgrounded tabs/devices)
     const heartbeatTimer = setInterval(() => {
       scheduleRefresh(0);
-    }, 1500);
+    }, 6000);
 
     // 5. Re-sync immediately when tab gains focus, becomes visible, or reconnects to network
     const handleActiveResume = () => {
@@ -1272,31 +1293,33 @@ export function AuthProvider({ children }) {
   };
 
   const updateMemberExtraDays = (id, extraDays) => {
-    pauseCloudSync(3500);
+    pauseCloudSync(5000);
     const normId = getMemberUuid(id);
-    setMembers(prev => prev.map(m => (m.id === id || getMemberUuid(m.id) === normId) ? { ...m, extraDays } : m));
-    broadcastMutation('UPDATE_MEMBER', { id: normId, fields: { extraDays } });
+    const count = Array.isArray(extraDays) ? extraDays.length : (parseInt(extraDays, 10) || 0);
+    try { localStorage.setItem("aastmt_member_extra_days_" + normId, JSON.stringify(extraDays)); } catch (e) {}
+    setMembers(prev => prev.map(m => (m.id === id || getMemberUuid(m.id) === normId) ? { ...m, extraDays, extraDaysCount: count, extra_days: count } : m));
+    broadcastMutation('UPDATE_MEMBER', { id: normId, fields: { extraDays, extraDaysCount: count, extra_days: count } });
     if (supabase) {
-      runDb(supabase.from('members').update({ extra_days: extraDays }).eq('id', normId));
+      runDb(supabase.from('members').update({ extra_days: count }).eq('id', normId));
     }
     showToast("Extra attendance days updated.");
   };
 
   const updateExtraDaysCount = (id, delta) => {
-    pauseCloudSync(3500);
+    pauseCloudSync(5000);
     const normId = getMemberUuid(id);
     let nextCount = 0;
     setMembers(prev => prev.map(m => {
       if (m.id === id || getMemberUuid(m.id) === normId) {
-        const current = m.extraDaysCount !== undefined ? m.extraDaysCount : (m.extraDays ? m.extraDays.length : 0);
+        const current = m.extraDaysCount !== undefined ? m.extraDaysCount : (typeof m.extra_days === 'number' ? m.extra_days : (m.extraDays ? m.extraDays.length : 0));
         nextCount = Math.max(0, current + delta);
-        return { ...m, extraDaysCount: nextCount };
+        return { ...m, extraDaysCount: nextCount, extra_days: nextCount };
       }
       return m;
     }));
-    broadcastMutation('UPDATE_MEMBER', { id: normId, fields: { extraDaysCount: nextCount } });
+    broadcastMutation('UPDATE_MEMBER', { id: normId, fields: { extraDaysCount: nextCount, extra_days: nextCount } });
     if (supabase) {
-      runDb(supabase.from('members').update({ extra_days_count: nextCount }).eq('id', normId));
+      runDb(supabase.from('members').update({ extra_days: nextCount }).eq('id', normId));
     }
     showToast("Extra days counter updated.");
   };
@@ -1412,7 +1435,7 @@ export function AuthProvider({ children }) {
         phone: mem.phone,
         attendance_count: mem.attendanceCount || 0,
         official_days: mem.officialDays || ["Sunday", "Tuesday", "Thursday"],
-        extra_days: mem.extraDays || [],
+        extra_days: typeof mem.extraDaysCount === 'number' ? mem.extraDaysCount : (Array.isArray(mem.extraDays) ? mem.extraDays.length : (parseInt(mem.extra_days, 10) || 0)),
         strikes: mem.strikes || 0,
         score: mem.score || 90,
         status: mem.status || 'Active',
@@ -1501,7 +1524,7 @@ export function AuthProvider({ children }) {
   };
 
   const updateAttendanceSession = async (sessionId, updatedData) => {
-    pauseCloudSync(3500);
+    pauseCloudSync(5000);
     let finalSession = null;
     const oldSession = attendanceSessions.find(s => s.id === sessionId);
     const memberAttendanceDeltas = {};
@@ -1512,8 +1535,8 @@ export function AuthProvider({ children }) {
       const newPresent = new Set((updatedData.rollCall || []).filter(r => r.isPresent).map(r => r.memberId));
 
       setMembers(prev => prev.map(m => {
-        const wasP = oldPresent.has(m.id);
-        const isP = newPresent.has(m.id);
+        const wasP = oldPresent.has(m.id) || oldPresent.has(getMemberUuid(m.id));
+        const isP = newPresent.has(m.id) || newPresent.has(getMemberUuid(m.id));
         if (!wasP && isP) {
           memberAttendanceDeltas[m.id] = (memberAttendanceDeltas[m.id] || 0) + 1;
           const newCnt = (m.attendanceCount || 0) + 1;
@@ -1552,17 +1575,32 @@ export function AuthProvider({ children }) {
       }).eq('id', sessionId));
 
       if (updatedData.rollCall) {
-        await runDb(supabase.from('attendance_records').delete().eq('session_id', sessionId));
-        const newRecords = updatedData.rollCall.map(r => ({
-          id: generateUuid(),
-          session_id: sessionId,
-          member_id: getMemberUuid(r.memberId),
-          is_present: Boolean(r.isPresent),
-          is_excused: Boolean(r.isExcused),
-          excuse_reason: r.excuseReason || ''
-        }));
-        if (newRecords.length > 0) {
-          runDb(supabase.from('attendance_records').insert(newRecords));
+        for (const r of updatedData.rollCall) {
+          const normMid = getMemberUuid(r.memberId);
+          if (!normMid) continue;
+          const { data: updatedRecs } = await runDb(
+            supabase.from('attendance_records')
+              .update({
+                is_present: Boolean(r.isPresent),
+                is_excused: Boolean(r.isExcused),
+                excuse_reason: r.excuseReason || ''
+              })
+              .eq('session_id', sessionId)
+              .eq('member_id', normMid)
+              .select('id')
+          ) || {};
+          if (!updatedRecs || updatedRecs.length === 0) {
+            await runDb(
+              supabase.from('attendance_records').insert([{
+                id: generateUuid(),
+                session_id: sessionId,
+                member_id: normMid,
+                is_present: Boolean(r.isPresent),
+                is_excused: Boolean(r.isExcused),
+                excuse_reason: r.excuseReason || ''
+              }])
+            );
+          }
         }
       }
     }

@@ -17,7 +17,14 @@ export default function ExtraDaysModal() {
 
   useEffect(() => {
     if (member) {
-      setSelectedDays(member.extraDays || []);
+      let days = Array.isArray(member.extraDays) ? member.extraDays : [];
+      if (days.length === 0) {
+        try {
+          const saved = JSON.parse(localStorage.getItem("aastmt_member_extra_days_" + member.id) || "[]");
+          if (Array.isArray(saved) && saved.length > 0) days = saved;
+        } catch (e) {}
+      }
+      setSelectedDays(days);
     }
   }, [member, activeModal]);
 
