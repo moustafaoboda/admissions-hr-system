@@ -466,10 +466,10 @@ export function AuthProvider({ children }) {
         break;
 
       case 'UPDATE_MEMBER':
-        setMembers(prev => prev.map(m => m.id === payload.id ? { ...m, ...payload.fields } : m));
-        setDischargedMembers(prev => prev.map(d => d.id === payload.id ? { ...d, ...payload.fields } : d));
+        setMembers(prev => prev.map(m => (m.id === payload.id || getMemberUuid(m.id) === getMemberUuid(payload.id)) ? { ...m, ...payload.fields } : m));
+        setDischargedMembers(prev => prev.map(d => (d.id === payload.id || getMemberUuid(d.id) === getMemberUuid(payload.id)) ? { ...d, ...payload.fields } : d));
         if (payload.fields?.avatar !== undefined) {
-          setStarAmbassadors(prev => prev.map(s => (s.memberId === payload.id || s.member_id === payload.id) ? { ...s, avatar: payload.fields.avatar } : s));
+          setStarAmbassadors(prev => prev.map(s => (s.memberId === payload.id || s.member_id === payload.id || getMemberUuid(s.memberId) === getMemberUuid(payload.id)) ? { ...s, avatar: payload.fields.avatar } : s));
         }
         break;
 
@@ -753,7 +753,7 @@ export function AuthProvider({ children }) {
         const validDbStars = dbStars
           .filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isLegacyDemoStar(s))
           .map(s => {
-            const m = allKnownMembers.find(mem => mem.id === s.member_id);
+            const m = allKnownMembers.find(mem => mem.id === s.member_id || getMemberUuid(mem.id) === s.member_id || mem.id === getMemberUuid(s.member_id));
             return {
               id: s.id,
               memberId: s.member_id,
@@ -1360,25 +1360,29 @@ export function AuthProvider({ children }) {
   };
 
   const addStarAmbassador = async (memberId, awardTitle, citation) => {
-    const mem = members.find(m => m.id === memberId);
+    const normMemId = getMemberUuid(memberId);
+    const mem = members.find(m => m.id === memberId || m.id === normMemId || getMemberUuid(m.id) === normMemId);
     if (!mem) return;
 
+    const starId = generateUuid();
     const star = {
-      id: generateUuid(),
-      memberId: mem.id,
+      id: starId,
+      memberId: normMemId,
       name: mem.name,
       role: mem.role,
       college: mem.college,
+      avatar: mem.avatar || null,
       awardTitle,
       citation
     };
 
     removeDeletedId('stars', star.id);
+    removeDeletedId('stars', normMemId);
     removeDeletedId('stars', mem.id);
     removeDeletedId('stars', mem.name.toLowerCase().trim());
 
     setStarAmbassadors(prev => {
-      const updated = [star, ...prev.filter(s => s.id !== star.id && s.memberId !== mem.id)];
+      const updated = [star, ...prev.filter(s => s.id !== star.id && s.memberId !== normMemId && s.memberId !== mem.id)];
       try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(updated)); } catch (e) {}
       return updated;
     });
@@ -1387,7 +1391,7 @@ export function AuthProvider({ children }) {
     if (supabase) {
       // First ensure the member is in Supabase members table so foreign key constraint is satisfied
       runDb(supabase.from('members').upsert([{
-        id: mem.id,
+        id: normMemId,
         name: mem.name,
         role: mem.role,
         position: mem.position,
@@ -1404,7 +1408,7 @@ export function AuthProvider({ children }) {
       }])).then(() => {
         runDb(supabase.from('star_ambassadors').upsert([{
           id: star.id,
-          member_id: star.memberId,
+          member_id: normMemId,
           award_title: star.awardTitle,
           citation: star.citation
         }]));

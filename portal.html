@@ -2412,12 +2412,13 @@
                   reloadStateFromStorage();
                   fetchPortalCloudData();
                 } else if (mut.type === 'UPDATE_MEMBER' && mut.payload) {
-                  const targetMem = members.find(m => m.id === mut.payload.id) || dischargedMembers.find(d => d.id === mut.payload.id);
+                  const targetMem = members.find(m => m.id === mut.payload.id || getMemberUuid(m.id) === mut.payload.id) ||
+                                    dischargedMembers.find(d => d.id === mut.payload.id || getMemberUuid(d.id) === mut.payload.id);
                   if (targetMem) {
                     Object.assign(targetMem, mut.payload.fields);
                     if (mut.payload.fields?.avatar !== undefined) {
                       starAmbassadors.forEach(s => {
-                        if (s.memberId === mut.payload.id) s.avatar = mut.payload.fields.avatar;
+                        if (s.memberId === mut.payload.id || getMemberUuid(s.memberId) === mut.payload.id) s.avatar = mut.payload.fields.avatar;
                       });
                     }
                     saveAllState();
@@ -2474,6 +2475,14 @@
                   renderAllViews();
                 } else if (mut.type === 'UPDATE_ATTENDANCE_SESSION' && mut.payload) {
                   attendanceSessions = attendanceSessions.map(s => s.id === mut.payload.id ? { ...s, ...mut.payload.data } : s);
+                  if (mut.payload.deltas) {
+                    members.forEach(m => {
+                      const delta = mut.payload.deltas[m.id] !== undefined ? mut.payload.deltas[m.id] : mut.payload.deltas[getMemberUuid(m.id)];
+                      if (delta !== undefined) {
+                        m.attendanceCount = Math.max(0, (m.attendanceCount || 0) + delta);
+                      }
+                    });
+                  }
                   saveAllState();
                   renderAllViews();
                 } else if (mut.type === 'DELETE_ATTENDANCE_SESSION' && mut.payload) {
@@ -2517,11 +2526,25 @@
                   saveAllState();
                   renderAllViews();
                 } else if (mut.type === 'ADD_STAR' && mut.payload) {
-                  starAmbassadors = [mut.payload, ...starAmbassadors.filter(s => s.id !== mut.payload.id)];
+                  if (mut.payload.id) removeDeletedId('stars', mut.payload.id);
+                  if (mut.payload.memberId) removeDeletedId('stars', mut.payload.memberId);
+                  if (mut.payload.name) removeDeletedId('stars', mut.payload.name.toLowerCase().trim());
+                  starAmbassadors = [
+                    mut.payload,
+                    ...starAmbassadors.filter(s => s.id !== mut.payload.id && (!mut.payload.memberId || (s.memberId !== mut.payload.memberId && s.member_id !== mut.payload.memberId && getMemberUuid(s.memberId) !== getMemberUuid(mut.payload.memberId))))
+                  ];
                   saveAllState();
                   renderAllViews();
                 } else if (mut.type === 'REMOVE_STAR' && mut.payload) {
-                  starAmbassadors = starAmbassadors.filter(s => s.id !== mut.payload.id && s.memberId !== mut.payload.memberId);
+                  if (mut.payload.id) addDeletedId('stars', mut.payload.id);
+                  if (mut.payload.memberId) addDeletedId('stars', mut.payload.memberId);
+                  if (mut.payload.name) addDeletedId('stars', mut.payload.name.toLowerCase().trim());
+                  starAmbassadors = starAmbassadors.filter(s => {
+                    if (mut.payload.id && s.id === mut.payload.id) return false;
+                    if (mut.payload.memberId && (s.memberId === mut.payload.memberId || s.member_id === mut.payload.memberId || getMemberUuid(s.memberId) === getMemberUuid(mut.payload.memberId))) return false;
+                    if (mut.payload.name && s.name && s.name.toLowerCase().trim() === String(mut.payload.name).toLowerCase().trim()) return false;
+                    return true;
+                  });
                   saveAllState();
                   renderAllViews();
                 } else if (mut.type === 'UPDATE_SYSTEM_ICON' && mut.payload) {
@@ -3740,14 +3763,21 @@
     function handleSaveExtraDays(e) {
       e.preventDefault();
       const mId = document.getElementById("extraDaysTargetId").value;
-      const mem = members.find(m => m.id === mId);
+      const mem = members.find(m => m.id === mId || getMemberUuid(m.id) === getMemberUuid(mId));
       if (mem) {
         const selected = [];
         document.querySelectorAll('input[name="extraDayCb"]:checked').forEach(cb => {
           if (!cb.disabled) selected.push(cb.value);
         });
+        const normId = getMemberUuid(mem.id);
         mem.extraDays = selected;
-        saveAllState();
+        saveAllState(true);
+
+        if (portalSupabase) {
+          runPortalDb(portalSupabase.from('members').update({ extra_days: selected }).eq('id', normId));
+        }
+        broadcastPortalMutation('UPDATE_MEMBER', { id: normId, fields: { extraDays: selected } });
+
         showToast(`Extra attendance days saved for ${mem.name}`);
         closeModal("extraDaysModal");
         renderAllViews();
@@ -4340,6 +4370,25 @@
       s.absentCount = updatedRollCall.length - s.presentCount;
       s.excusedCount = updatedRollCall.filter(r => !r.isPresent && r.isExcused).length;
 
+      const oldPresent = currentRollCall.find(rc => rc.memberId === memId || getMemberUuid(rc.memberId) === getMemberUuid(memId) || rc.name === memId || (rc.name && memId && rc.name.toLowerCase().trim() === memId.toLowerCase().trim()))?.isPresent;
+      const newPresent = updatedRollCall.find(rc => rc.memberId === memId || getMemberUuid(rc.memberId) === getMemberUuid(memId) || rc.name === memId || (rc.name && memId && rc.name.toLowerCase().trim() === memId.toLowerCase().trim()))?.isPresent;
+
+      const memberAttendanceDeltas = {};
+      if (oldPresent !== undefined && newPresent !== undefined && oldPresent !== newPresent) {
+        const delta = newPresent ? 1 : -1;
+        members.forEach(m => {
+          if (m.id === memId || getMemberUuid(m.id) === getMemberUuid(memId) || (m.name && m.name.toLowerCase().trim() === String(memId).toLowerCase().trim())) {
+            const nextCount = Math.max(0, (m.attendanceCount || 0) + delta);
+            m.attendanceCount = nextCount;
+            memberAttendanceDeltas[m.id] = delta;
+            memberAttendanceDeltas[getMemberUuid(m.id)] = delta;
+            if (portalSupabase) {
+              runPortalDb(portalSupabase.from('members').update({ attendance_count: nextCount }).eq('id', getMemberUuid(m.id)));
+            }
+          }
+        });
+      }
+
       saveAllState();
 
       if (portalSupabase) {
@@ -4363,7 +4412,7 @@
         });
       }
 
-      broadcastPortalMutation('UPDATE_ATTENDANCE_SESSION', { id: s.id, data: s });
+      broadcastPortalMutation('UPDATE_ATTENDANCE_SESSION', { id: s.id, data: s, deltas: memberAttendanceDeltas });
       inspectSession(s.id, false);
       renderAllViews();
     }
@@ -4441,7 +4490,28 @@
           }
         });
       }
-      broadcastPortalMutation('UPDATE_ATTENDANCE_SESSION', { id: s.id, data: s });
+      const memberAttendanceDeltas = {};
+      const oldPresentIds = new Set(currentRollCall.filter(rc => rc.isPresent).map(rc => getMemberUuid(rc.memberId)));
+      const newPresentIds = new Set(updatedRollCall.filter(rc => rc.isPresent).map(rc => getMemberUuid(rc.memberId)));
+
+      members.forEach(m => {
+        const normId = getMemberUuid(m.id);
+        const wasP = oldPresentIds.has(normId);
+        const isP = newPresentIds.has(normId);
+        if (!wasP && isP) {
+          memberAttendanceDeltas[m.id] = 1;
+          memberAttendanceDeltas[normId] = 1;
+          m.attendanceCount = (m.attendanceCount || 0) + 1;
+          if (portalSupabase) runPortalDb(portalSupabase.from('members').update({ attendance_count: m.attendanceCount }).eq('id', normId));
+        } else if (wasP && !isP) {
+          memberAttendanceDeltas[m.id] = -1;
+          memberAttendanceDeltas[normId] = -1;
+          m.attendanceCount = Math.max(0, (m.attendanceCount || 0) - 1);
+          if (portalSupabase) runPortalDb(portalSupabase.from('members').update({ attendance_count: m.attendanceCount }).eq('id', normId));
+        }
+      });
+
+      broadcastPortalMutation('UPDATE_ATTENDANCE_SESSION', { id: s.id, data: s, deltas: memberAttendanceDeltas });
 
       logActivity(`Updated attendance session: ${s.title}`, "Attendance", `${s.dayName}, ${s.date} (${s.presentCount}/${s.totalCount} present)`);
       showToast("Attendance session updated successfully!");
@@ -5163,12 +5233,29 @@
       saveAllState(true);
 
       if (portalSupabase) {
-        runPortalDb(portalSupabase.from('star_ambassadors').insert([{
-          id: starId,
-          member_id: normMemId,
-          award_title: awardTitle,
-          citation: citation
-        }]));
+        runPortalDb(portalSupabase.from('members').upsert([{
+          id: normMemId,
+          name: mem.name,
+          role: mem.role,
+          position: mem.position,
+          college: mem.college,
+          student_id: mem.studentId,
+          phone: mem.phone,
+          attendance_count: mem.attendanceCount || 0,
+          official_days: mem.officialDays || ["Sunday", "Tuesday", "Thursday"],
+          extra_days: mem.extraDays || [],
+          strikes: mem.strikes || 0,
+          score: mem.score || 90,
+          status: mem.status || 'Active',
+          avatar: mem.avatar || null
+        }])).then(() => {
+          runPortalDb(portalSupabase.from('star_ambassadors').upsert([{
+            id: starId,
+            member_id: normMemId,
+            award_title: awardTitle,
+            citation: citation
+          }]));
+        });
       }
       broadcastPortalMutation('ADD_STAR', newStar);
 
