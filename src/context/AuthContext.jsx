@@ -63,6 +63,42 @@ function isLegacyDemoStar(s) {
   return false;
 }
 
+function isDemoSession(s) {
+  if (!s) return true;
+  const id = String(s.id || '').toLowerCase().trim();
+  return id === 'att-1' || id === 'att-2' || id === 'att-3' ||
+         id === 'c1000000-0000-4000-8000-000000000001' ||
+         id === 'c1000000-0000-4000-8000-000000000002' ||
+         id === 'c1000000-0000-4000-8000-000000000003';
+}
+
+function isDemoWarning(w) {
+  if (!w) return true;
+  const id = String(w.id || '').toLowerCase().trim();
+  return id === 'warn-1' || id === 'warn-2' || id === 'warn-3' ||
+         id === 'd1000000-0000-4000-8000-000000000001' ||
+         id === 'd1000000-0000-4000-8000-000000000002' ||
+         id === 'd1000000-0000-4000-8000-000000000003';
+}
+
+function isDemoEvent(e) {
+  if (!e) return true;
+  const id = String(e.id || '').toLowerCase().trim();
+  return id === 'evt-1' || id === 'evt-2' || id === 'evt-3';
+}
+
+function isDemoNote(n) {
+  if (!n) return true;
+  const id = String(n.id || '').toLowerCase().trim();
+  return id === 'note-1' || id === 'note-2' || id === 'note-3';
+}
+
+function isDemoLog(a) {
+  if (!a) return true;
+  const id = String(a.id || '').toLowerCase().trim();
+  return id === 'act-1' || id === 'act-2' || id === 'act-3' || id === 'act-4';
+}
+
 function isStarDeleted(s) {
   if (!s) return true;
   if (isLegacyDemoStar(s)) return true;
@@ -159,322 +195,18 @@ const INITIAL_SYSTEM_USERS = [
   { id: "2a2b5d87-1fdf-4b54-83b4-4849621a38bb", name: "Admissions Dean", username: "dean", password: "111", role: "Admission's Dean", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80" }
 ];
 
-const INITIAL_MEMBERS = [
-  {
-    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-    name: "Youssef El-Sayed",
-    role: "Operations",
-    position: "Head",
-    college: "Engineering & Tech",
-    studentId: "2023101",
-    phone: "+20 100 111 2233",
-    attendanceCount: 14,
-    officialDays: ["Sunday", "Tuesday", "Thursday"],
-    extraDays: [],
-    strikes: 0,
-    score: 95,
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80"
-  },
-  {
-    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12",
-    name: "Malak Nour",
-    role: "PR",
-    position: "Vice Head",
-    college: "Management & Tech",
-    studentId: "2023102",
-    phone: "+20 101 222 3344",
-    attendanceCount: 12,
-    officialDays: ["Saturday", "Monday", "Wednesday"],
-    extraDays: [],
-    strikes: 0,
-    score: 92,
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80"
-  },
-  {
-    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13",
-    name: "Karim Hassan",
-    role: "PR",
-    position: "Head",
-    college: "Computing & IT",
-    studentId: "2023103",
-    phone: "+20 102 333 4455",
-    attendanceCount: 10,
-    officialDays: ["Sunday", "Monday", "Wednesday"],
-    extraDays: [],
-    strikes: 0,
-    score: 87,
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80"
-  },
-  {
-    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14",
-    name: "Farida Ahmed",
-    role: "Operations",
-    position: "Member",
-    college: "Logistics & Transport",
-    studentId: "2024104",
-    phone: "+20 103 444 5566",
-    attendanceCount: 11,
-    officialDays: ["Sunday", "Tuesday", "Thursday"],
-    extraDays: [],
-    strikes: 0,
-    score: 90,
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&q=80"
-  },
-  {
-    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15",
-    name: "Ahmed Sherif",
-    role: "Digital Transformation",
-    position: "Head",
-    college: "Computing & IT",
-    studentId: "2023105",
-    phone: "+20 104 555 6677",
-    attendanceCount: 9,
-    officialDays: ["Saturday", "Tuesday", "Thursday"],
-    extraDays: [],
-    strikes: 1,
-    score: 84,
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80"
-  },
-  {
-    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a16",
-    name: "Laila Wael",
-    role: "Innovation",
-    position: "Member",
-    college: "Law",
-    studentId: "2024106",
-    phone: "+20 105 666 7788",
-    attendanceCount: 7,
-    officialDays: ["Monday", "Wednesday"],
-    extraDays: [],
-    strikes: 1,
-    score: 74,
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=256&q=80"
-  },
-  {
-    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17",
-    name: "Nour El-Din",
-    role: "HR",
-    position: "Member",
-    college: "Arts & Design",
-    studentId: "2024107",
-    phone: "+20 106 777 8899",
-    attendanceCount: 8,
-    officialDays: ["Saturday", "Sunday", "Tuesday"],
-    extraDays: [],
-    strikes: 0,
-    score: 89,
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=256&q=80"
-  }
-];
-
-const INITIAL_DISCHARGED_MEMBERS = [
-  {
-    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a18",
-    name: "Hassan Mahmoud",
-    role: "PR",
-    position: "Member",
-    college: "Management & Tech",
-    studentId: "2022099",
-    phone: "+20 109 888 7766",
-    dischargeType: "Voluntary Left",
-    dischargeReason: "Graduated and relocated to Alexandria.",
-    date: "2026-08-30",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80"
-  }
-];
-
+const INITIAL_MEMBERS = [];
+const INITIAL_DISCHARGED_MEMBERS = [];
 const INITIAL_STAR_AMBASSADORS = [];
-
-const INITIAL_ATTENDANCE_SESSIONS = [
-  {
-    id: "c1000000-0000-4000-8000-000000000001",
-    title: "Registration Hall Shift",
-    date: "2026-09-20",
-    dayName: "Sunday",
-    type: "Normal Day",
-    presentCount: 3,
-    totalCount: 4,
-    rollCall: [
-      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13", name: "Karim Hassan", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
-      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17", name: "Nour El-Din", role: "HR", isPresent: false, isExcused: true, excuseReason: "Midterm exam preparation" }
-    ]
-  },
-  {
-    id: "c1000000-0000-4000-8000-000000000002",
-    title: "EDU Gate Campus Fair",
-    date: "2026-09-17",
-    dayName: "Thursday",
-    type: "EDU Gate",
-    presentCount: 3,
-    totalCount: 3,
-    rollCall: [
-      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" }
-    ]
-  },
-  {
-    id: "c1000000-0000-4000-8000-000000000003",
-    title: "AASTMT Open Orientation Day",
-    date: "2026-09-12",
-    dayName: "Saturday",
-    type: "Orientation Day",
-    presentCount: 3,
-    totalCount: 3,
-    rollCall: [
-      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12", name: "Malak Nour", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
-      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" },
-      { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17", name: "Nour El-Din", role: "HR", isPresent: true, isExcused: false, excuseReason: "" }
-    ]
-  }
-];
-
-const INITIAL_ACTIVITY_LOGS = [
-  {
-    id: "act-1",
-    action: "Recorded field monitoring observation for Youssef El-Sayed",
-    category: "Monitoring",
-    user: "Omar Farouk",
-    role: "HR Vice Head",
-    timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
-    date: "2026-10-06",
-    time: "14:04",
-    isStarred: true,
-    details: "Category: Performance & Quality - Crowd control during rush hours."
-  },
-  {
-    id: "act-2",
-    action: "Submitted disciplinary warning request for Karim Hassan",
-    category: "Warnings",
-    user: "Sarah Mostafa",
-    role: "HR",
-    timestamp: new Date(Date.now() - 3600000 * 20).toISOString(),
-    date: "2026-10-05",
-    time: "16:20",
-    isStarred: false,
-    details: "Level: First Verbal Warning. Reason: Failure to wear admissions pin during VIP tour."
-  },
-  {
-    id: "act-3",
-    action: "Created attendance session: Registration Hall Shift",
-    category: "Attendance",
-    user: "Tarek Hegazy",
-    role: "HR Head",
-    timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
-    date: "2026-10-04",
-    time: "09:30",
-    isStarred: false,
-    details: "Type: Normal Day. Attendance: 3 / 4 Present on Sunday."
-  }
-];
-
-const INITIAL_WARNINGS = [
-  {
-    id: "d1000000-0000-4000-8000-000000000001",
-    memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a16",
-    memberName: "Laila Wael",
-    level: "Official Written Strike",
-    reason: "Unexcused absence from assigned registration desk during peak admission hours.",
-    reportedBy: "Omar Farouk (HR Vice Head)",
-    date: "2026-09-18",
-    status: "Confirmed Strike"
-  },
-  {
-    id: "d1000000-0000-4000-8000-000000000002",
-    memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13",
-    memberName: "Karim Hassan",
-    level: "First Verbal Warning",
-    reason: "Leaving shift 30 minutes prior to official scheduled handover.",
-    reportedBy: "Sarah Mostafa (HR Request)",
-    date: "2026-09-22",
-    status: "Pending HR Approval"
-  },
-  {
-    id: "d1000000-0000-4000-8000-000000000003",
-    memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15",
-    memberName: "Ahmed Sherif",
-    level: "First Verbal Warning",
-    reason: "Late arrival for 3 consecutive morning registration briefings without notification.",
-    reportedBy: "Omar Farouk (HR Vice Head)",
-    date: "2026-09-10",
-    status: "Confirmed Strike"
-  }
-];
-
-const INITIAL_EVENTS = [
-  {
-    id: "evt-1",
-    title: "Engineering & Tech Open Orientation",
-    type: "Orientations",
-    status: "Active",
-    description: "Full-day campus tour, lab presentations and admissions Q&A for prospective engineering applicants.",
-    location: "Main Auditorium, Smart Village",
-    date: "2026-10-15",
-    color: "blue"
-  },
-  {
-    id: "evt-2",
-    title: "Fall Semester Midterm Exam Preparations",
-    type: "Exams",
-    status: "Active",
-    description: "Admissions helpdesk shifted to library entrance during exam study week.",
-    location: "Library Concourse",
-    date: "2026-11-02",
-    color: "amber"
-  },
-  {
-    id: "evt-3",
-    title: "International EDU Gate Education Fair",
-    type: "Exhibitions",
-    status: "Active",
-    description: "Major higher-ed recruitment exhibition booth staffed by Smart Village ambassadors.",
-    location: "Cairo International Convention Centre",
-    date: "2026-11-20",
-    color: "purple"
-  }
-];
-
-const INITIAL_MONITORING_NOTES = [
-  {
-    id: "note-1",
-    memberId: "mem-1",
-    memberName: "Youssef El-Sayed",
-    memberRole: "Operations",
-    memberCollege: "Engineering & Tech",
-    category: "Performance & Quality",
-    note: "Demonstrated exemplary leadership directing crowd flow during rush hours at Registration Hall A.",
-    authorName: "Omar Farouk",
-    authorRole: "HR Vice Head",
-    date: "2026-10-05",
-    time: "14:30"
-  },
-  {
-    id: "note-2",
-    memberId: "mem-5",
-    memberName: "Ahmed Sherif",
-    memberRole: "Digital Transformation",
-    memberCollege: "Computing & IT",
-    category: "Operational Execution",
-    note: "Promptly updated digital kiosk systems and verified barcode scanning readiness before the morning shift.",
-    authorName: "Sarah Mostafa",
-    authorRole: "HR",
-    date: "2026-10-04",
-    time: "11:15"
-  }
-];
+const INITIAL_ATTENDANCE_SESSIONS = [];
+const INITIAL_ACTIVITY_LOGS = [];
+const INITIAL_WARNINGS = [];
+const INITIAL_EVENTS = [];
+const INITIAL_MONITORING_NOTES = [];
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000; // 7 days auto-logout expiration
 
-const SYSTEM_CACHE_VERSION = "v5_oct9_full_sync";
+const SYSTEM_CACHE_VERSION = "v6_live_db_data";
 try {
   if (typeof window !== "undefined" && localStorage.getItem("aastmt_sync_ver") !== SYSTEM_CACHE_VERSION) {
     const keysToRemove = [
@@ -564,33 +296,36 @@ export function AuthProvider({ children }) {
     return loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS).filter(u => !deleted.includes(u.id));
   });
   const [members, setMembers] = useState(() => {
-    return loadStoredState("aastmt_members", INITIAL_MEMBERS).filter(m => !isMemberDeleted(m));
+    return loadStoredState("aastmt_members", []).filter(m => !isMemberDeleted(m));
   });
   const [dischargedMembers, setDischargedMembers] = useState(() => {
-    return loadStoredState("aastmt_discharged_members", INITIAL_DISCHARGED_MEMBERS).filter(m => !isMemberDeleted(m));
+    return loadStoredState("aastmt_discharged_members", []).filter(m => !isMemberDeleted(m));
   });
   const [starAmbassadors, setStarAmbassadors] = useState(() => {
     return loadStoredState("aastmt_star_ambassadors", []).filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isStarDeleted(s));
   });
   const [attendanceSessions, setAttendanceSessions] = useState(() => {
     const deleted = getDeletedIds("sessions");
-    return loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS).filter(s => !deleted.includes(s.id));
+    return loadStoredState("aastmt_attendance_sessions", []).filter(s => !deleted.includes(s.id) && !isDemoSession(s));
   });
   const [warnings, setWarnings] = useState(() => {
     const deleted = getDeletedIds("warnings");
-    return loadStoredState("aastmt_warnings", INITIAL_WARNINGS).filter(w => !deleted.includes(w.id));
+    return loadStoredState("aastmt_warnings", []).filter(w => !deleted.includes(w.id) && !isDemoWarning(w));
   });
   const [events, setEvents] = useState(() => {
     const deleted = getDeletedIds("events");
-    return loadStoredState("aastmt_events", INITIAL_EVENTS).filter(e => !deleted.includes(e.id));
+    return loadStoredState("aastmt_events", []).filter(e => !deleted.includes(e.id) && !isDemoEvent(e));
   });
   const [monitoringNotes, setMonitoringNotes] = useState(() => {
     const deleted = getDeletedIds("notes");
-    return loadStoredState("aastmt_monitoring_notes", INITIAL_MONITORING_NOTES).filter(n => !deleted.includes(n.id));
+    return loadStoredState("aastmt_monitoring_notes", []).filter(n => !deleted.includes(n.id) && !isDemoNote(n));
   });
   const [monitoringSelectedMemberId, setMonitoringSelectedMemberId] = useState("");
   const [recruits, setRecruits] = useState(() => loadStoredState("aastmt_recruits", []));
-  const [activityLogs, setActivityLogs] = useState(() => loadStoredState("aastmt_activity_logs", INITIAL_ACTIVITY_LOGS));
+  const [activityLogs, setActivityLogs] = useState(() => loadStoredState("aastmt_activity_logs", []).filter(a => !isDemoLog(a)));
+
+  // Initial database loading state
+  const [isLoading, setIsLoading] = useState(Boolean(isSupabaseConfigured));
 
   // Sync Status
   const [syncStatus, setSyncStatus] = useState({
@@ -955,7 +690,7 @@ export function AuthProvider({ children }) {
 
       // 1. Members
       const { data: dbMembers, error: mErr } = await supabase.from('members').select('*');
-      if (!mErr && dbMembers && dbMembers.length > 0) {
+      if (!mErr && dbMembers) {
         dbMembers.forEach(row => {
           const formatted = {
             id: row.id,
@@ -987,33 +722,12 @@ export function AuthProvider({ children }) {
         try { localStorage.setItem("aastmt_members", JSON.stringify(activeMems)); } catch (e) {}
         setDischargedMembers(disMems);
         try { localStorage.setItem("aastmt_discharged_members", JSON.stringify(disMems)); } catch (e) {}
-      } else if (!mErr && (!dbMembers || dbMembers.length === 0)) {
-        // First-time sync: Seed current local members into Supabase
-        const currentMems = loadStoredState("aastmt_members", INITIAL_MEMBERS).filter(m => !isMemberDeleted(m));
-        const seedPayload = currentMems.map(m => ({
-          id: m.id,
-          name: m.name,
-          role: m.role,
-          position: m.position,
-          college: m.college,
-          student_id: m.studentId,
-          phone: m.phone,
-          attendance_count: m.attendanceCount || 0,
-          official_days: m.officialDays,
-          strikes: m.strikes || 0,
-          score: m.score || 90,
-          status: m.status || 'Active',
-          avatar: m.avatar || null
-        }));
-        if (seedPayload.length > 0) {
-          runDb(supabase.from('members').insert(seedPayload));
-        }
       }
 
       // 2. System Users
       const deletedUserIds = getDeletedIds('users');
       const { data: dbUsers, error: uErr } = await supabase.from('system_users').select('*');
-      if (!uErr && dbUsers && dbUsers.length > 0) {
+      if (!uErr && dbUsers) {
         const validUsers = dbUsers
           .filter(u => !deletedUserIds.includes(u.id) && !deletedUserIds.includes(u.username?.toLowerCase()))
           .map(u => ({
@@ -1029,11 +743,6 @@ export function AuthProvider({ children }) {
         // (that previously resurrected old/renamed accounts and old passwords on other devices).
         setSystemUsers(validUsers);
         try { localStorage.setItem("aastmt_system_users", JSON.stringify(validUsers)); } catch (e) {}
-      } else if (!uErr && (!dbUsers || dbUsers.length === 0)) {
-        const currentUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS).filter(u => !deletedUserIds.includes(u.id));
-        if (currentUsers.length > 0) {
-          runDb(supabase.from('system_users').insert(currentUsers));
-        }
       }
 
       // 3. Star Ambassadors (Direct Supabase Sync - DB is Single Source of Truth)
@@ -1131,7 +840,7 @@ export function AuthProvider({ children }) {
 
       // 6. Monitoring Notes
       const { data: dbNotes, error: nErr } = await supabase.from('monitoring_notes').select('*');
-      if (!nErr && dbNotes && dbNotes.length > 0) {
+      if (!nErr && dbNotes) {
         const validNotes = dbNotes
           .map(n => ({
             id: n.id,
@@ -1152,7 +861,7 @@ export function AuthProvider({ children }) {
 
       // 7. Events
       const { data: dbEvents, error: eErr } = await supabase.from('events').select('*');
-      if (!eErr && dbEvents && dbEvents.length > 0) {
+      if (!eErr && dbEvents) {
         const validEvents = dbEvents
           .map(e => ({
             id: e.id,
@@ -1181,6 +890,8 @@ export function AuthProvider({ children }) {
       setSyncStatus(prev => ({ ...prev, lastSyncTime: Date.now() }));
     } catch (err) {
       console.warn('Initial Supabase data load error:', err);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -1653,7 +1364,7 @@ export function AuthProvider({ children }) {
     if (!mem) return;
 
     const star = {
-      id: `star-${Date.now()}`,
+      id: generateUuid(),
       memberId: mem.id,
       name: mem.name,
       role: mem.role,
@@ -2261,7 +1972,7 @@ export function AuthProvider({ children }) {
   const addMonitoringNote = async ({ memberId, category, note }) => {
     const mem = members.find(m => m.id === memberId);
     const newNote = {
-      id: `note-${Date.now()}`,
+      id: generateUuid(),
       memberId,
       memberName: mem ? mem.name : 'Unknown Member',
       memberRole: mem ? mem.role : '',
@@ -2560,6 +2271,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         currentUser,
+        isLoading,
         systemIcon,
         updateSystemIcon,
         login,

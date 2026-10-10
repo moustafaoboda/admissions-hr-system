@@ -35,7 +35,7 @@ import CopilotTab from './components/tabs/CopilotTab';
 import ActivityLogTab from './components/tabs/ActivityLogTab';
 
 export default function App() {
-  const { currentUser, activeTab } = useAuth();
+  const { currentUser, activeTab, isLoading } = useAuth();
 
   const isHeadOrVice = currentUser?.role === "HR Head" || currentUser?.role === "HR Vice Head";
   const isHRMember = currentUser?.role === "HR";
@@ -46,6 +46,18 @@ export default function App() {
       <div className="bg-[#001428] bg-pattern min-h-screen flex flex-col justify-center items-center">
         <Toast />
         <LoginModal />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="bg-[#001428] bg-pattern min-h-screen flex flex-col justify-center items-center text-white">
+        <Toast />
+        <div className="flex flex-col items-center gap-4 p-8 bg-[#001b36]/80 rounded-2xl border border-white/10 backdrop-blur-md shadow-2xl">
+          <div className="w-12 h-12 border-4 border-[#0284c7] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm font-semibold tracking-wide text-slate-300">Loading stored records from database...</p>
+        </div>
       </div>
     );
   }

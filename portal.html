@@ -121,6 +121,14 @@
     </div>
   </div>
 
+  <!-- PORTAL LOADING OVERLAY (DURING INITIAL DATA HYDRATION) -->
+  <div id="portalLoadingScreen" class="hidden fixed inset-0 z-50 bg-[#001428] flex flex-col justify-center items-center text-white">
+    <div class="flex flex-col items-center gap-4 p-8 bg-[#001b36]/90 rounded-2xl border border-white/10 shadow-2xl backdrop-blur-md">
+      <div class="w-12 h-12 border-4 border-[#c59b27] border-t-transparent rounded-full animate-spin"></div>
+      <p class="text-sm font-semibold tracking-wide text-slate-200">Loading stored records from database...</p>
+    </div>
+  </div>
+
   <!-- SYSTEM WRAPPER (HIDDEN DURING LOGIN) -->
   <div id="systemAppContainer" class="hidden flex flex-col min-h-screen flex-grow">
     <!-- HEADER -->
@@ -1852,6 +1860,36 @@
       return false;
     }
 
+    function isDemoSession(s) {
+      if (!s || !s.id) return false;
+      const id = String(s.id).toLowerCase();
+      return id.startsWith("c1000000-") || id === "sess-1" || id === "sess-2" || id === "sess-3";
+    }
+
+    function isDemoWarning(w) {
+      if (!w || !w.id) return false;
+      const id = String(w.id).toLowerCase();
+      return id.startsWith("d1000000-") || id === "wrn-1" || id === "wrn-2";
+    }
+
+    function isDemoEvent(e) {
+      if (!e || !e.id) return false;
+      const id = String(e.id).toLowerCase();
+      return id === "evt-1" || id === "evt-2" || id === "evt-3";
+    }
+
+    function isDemoNote(n) {
+      if (!n || !n.id) return false;
+      const id = String(n.id).toLowerCase();
+      return id === "note-1" || id === "note-2";
+    }
+
+    function isDemoLog(a) {
+      if (!a || !a.id) return false;
+      const id = String(a.id).toLowerCase();
+      return id === "act-1" || id === "act-2" || id === "act-3" || id === "act-4";
+    }
+
     function isStarDeleted(s) {
       if (!s) return true;
       if (isLegacyDemoStar(s)) return true;
@@ -1883,7 +1921,7 @@
       });
     }
 
-    const SYSTEM_CACHE_VERSION = "v5_oct9_full_sync";
+    const SYSTEM_CACHE_VERSION = "v6_live_db_data";
     try {
       if (typeof window !== "undefined" && localStorage.getItem("aastmt_sync_ver") !== SYSTEM_CACHE_VERSION) {
         const keysToRemove = [
@@ -2010,158 +2048,14 @@
       { id: "2a2b5d87-1fdf-4b54-83b4-4849621a38bb", name: "Admissions Dean", username: "dean", password: "111", role: "Admission's Dean", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=256&q=80" }
     ];
 
-    const INITIAL_MEMBERS = [
-      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", name: "Youssef El-Sayed", role: "Operations", position: "Head", college: "Engineering & Tech", studentId: "2023101", phone: "+20 100 111 2233", attendanceCount: 14, officialDays: ["Sunday", "Tuesday", "Thursday"], strikes: 0, score: 95, status: "Active", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80" },
-      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12", name: "Malak Nour", role: "PR", position: "Vice Head", college: "Management & Tech", studentId: "2023102", phone: "+20 101 222 3344", attendanceCount: 12, officialDays: ["Saturday", "Monday", "Wednesday"], strikes: 0, score: 92, status: "Active", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" },
-      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13", name: "Karim Hassan", role: "PR", position: "Head", college: "Computing & IT", studentId: "2023103", phone: "+20 102 333 4455", attendanceCount: 10, officialDays: ["Sunday", "Monday", "Wednesday"], strikes: 0, score: 87, status: "Active", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&q=80" },
-      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14", name: "Farida Ahmed", role: "Operations", position: "Member", college: "Logistics & Transport", studentId: "2024104", phone: "+20 103 444 5566", attendanceCount: 11, officialDays: ["Sunday", "Tuesday", "Thursday"], strikes: 0, score: 90, status: "Active", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&q=80" },
-      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15", name: "Ahmed Sherif", role: "Digital Transformation", position: "Head", college: "Computing & IT", studentId: "2023105", phone: "+20 104 555 6677", attendanceCount: 9, officialDays: ["Saturday", "Tuesday", "Thursday"], strikes: 1, score: 84, status: "Active", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&q=80" },
-      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a16", name: "Laila Wael", role: "Innovation", position: "Member", college: "Law", studentId: "2024106", phone: "+20 105 666 7788", attendanceCount: 7, officialDays: ["Monday", "Wednesday"], strikes: 1, score: 74, status: "Active", avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=256&q=80" },
-      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17", name: "Nour El-Din", role: "HR", position: "Member", college: "Arts & Design", studentId: "2024107", phone: "+20 106 777 8899", attendanceCount: 8, officialDays: ["Saturday", "Sunday", "Tuesday"], strikes: 0, score: 89, status: "Active", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=256&q=80" }
-    ];
-
-    const INITIAL_DISCHARGED_MEMBERS = [
-      { id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a18", name: "Hassan Mahmoud", role: "PR", position: "Member", college: "Management & Tech", studentId: "2022099", phone: "+20 109 888 7766", dischargeType: "Voluntary Left", dischargeReason: "Graduated and relocated to Alexandria.", date: "2026-08-30", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80" }
-    ];
-
+    const INITIAL_MEMBERS = [];
+    const INITIAL_DISCHARGED_MEMBERS = [];
     const INITIAL_STAR_AMBASSADORS = [];
-
-    const INITIAL_ATTENDANCE_SESSIONS = [
-      {
-        id: "c1000000-0000-4000-8000-000000000001",
-        title: "Registration Hall Shift",
-        date: "2026-09-20",
-        dayName: "Sunday",
-        type: "Normal Day",
-        presentCount: 3,
-        totalCount: 4,
-        rollCall: [
-          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13", name: "Karim Hassan", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
-          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17", name: "Nour El-Din", role: "HR", isPresent: false, isExcused: true, excuseReason: "Midterm exam preparation" }
-        ]
-      },
-      {
-        id: "c1000000-0000-4000-8000-000000000002",
-        title: "EDU Gate Campus Fair",
-        date: "2026-09-17",
-        dayName: "Thursday",
-        type: "EDU Gate",
-        presentCount: 3,
-        totalCount: 3,
-        rollCall: [
-          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11", name: "Youssef El-Sayed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14", name: "Farida Ahmed", role: "Operations", isPresent: true, isExcused: false, excuseReason: "" },
-          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" }
-        ]
-      },
-      {
-        id: "c1000000-0000-4000-8000-000000000003",
-        title: "AASTMT Open Orientation Day",
-        date: "2026-09-12",
-        dayName: "Saturday",
-        type: "Orientation Day",
-        presentCount: 3,
-        totalCount: 3,
-        rollCall: [
-          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12", name: "Malak Nour", role: "PR", isPresent: true, isExcused: false, excuseReason: "" },
-          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15", name: "Ahmed Sherif", role: "Digital Transformation", isPresent: true, isExcused: false, excuseReason: "" },
-          { memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17", name: "Nour El-Din", role: "HR", isPresent: true, isExcused: false, excuseReason: "" }
-        ]
-      }
-    ];
-
-    const INITIAL_WARNINGS = [
-      { id: "d1000000-0000-4000-8000-000000000001", memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a16", memberName: "Laila Wael", level: "Official Written Strike", reason: "Unexcused absence from assigned registration desk during peak admission hours.", reportedBy: "Omar Farouk (HR Vice Head)", date: "2026-09-18", status: "Confirmed Strike" },
-      { id: "d1000000-0000-4000-8000-000000000002", memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13", memberName: "Karim Hassan", level: "First Verbal Warning", reason: "Failure to wear formal AASTMT admissions pin during parent VIP campus tour.", reportedBy: "Sarah Mostafa (HR)", date: "2026-09-15", status: "Pending HR Approval" }
-    ];
-
-    const INITIAL_EVENTS = [
-      { id: "evt-1", title: "Orientations", type: "Orientations", status: "Active", description: "Campus tours & parent welcome briefings in Hall A.", location: "Hall A, Smart Village", date: "2026-10-10", color: "amber" },
-      { id: "evt-2", title: "EDU Gate", type: "EDU Gate", status: "Scheduled", description: "Annual admissions exhibition & university portal drive.", location: "Exhibition Hall & Booth 4", date: "2026-10-15", color: "blue" },
-      { id: "evt-3", title: "Meetings", type: "Meetings", status: "Weekly", description: "General assembly & committee sync in Meeting Room 007.", location: "Meeting Room 007", date: "Every Wednesday", color: "emerald" }
-    ];
-
-    const INITIAL_MONITORING_NOTES = [
-      {
-        id: "note-1",
-        memberId: "mem-1",
-        memberName: "Youssef El-Sayed",
-        memberRole: "Operations",
-        memberCollege: "Engineering & Tech",
-        category: "Performance & Quality",
-        note: "Demonstrated exemplary leadership directing crowd flow during rush hours at Registration Hall A.",
-        authorName: "Omar Farouk",
-        authorRole: "HR Vice Head",
-        date: "2026-10-05",
-        time: "14:30"
-      },
-      {
-        id: "note-2",
-        memberId: "mem-5",
-        memberName: "Ahmed Sherif",
-        memberRole: "Digital Transformation",
-        memberCollege: "Computing & IT",
-        category: "Operational Execution",
-        note: "Promptly updated digital kiosk systems and verified barcode scanning readiness before the morning shift.",
-        authorName: "Sarah Mostafa",
-        authorRole: "HR",
-        date: "2026-10-04",
-        time: "11:15"
-      }
-    ];
-
-    const INITIAL_ACTIVITY_LOGS = [
-      {
-        id: "act-1",
-        action: "Recorded field monitoring observation for Youssef El-Sayed",
-        category: "Monitoring",
-        user: "Omar Farouk",
-        role: "HR Vice Head",
-        timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
-        date: "2026-10-06",
-        time: "14:04",
-        isStarred: true,
-        details: "Field Log: Performance & Quality"
-      },
-      {
-        id: "act-2",
-        action: "Issued official strike to Laila Wael",
-        category: "Warnings",
-        user: "Omar Farouk",
-        role: "HR Vice Head",
-        timestamp: new Date(Date.now() - 86400000 * 1).toISOString(),
-        date: "2026-10-05",
-        time: "12:00",
-        isStarred: false,
-        details: "Unexcused absence from assigned desk"
-      },
-      {
-        id: "act-3",
-        action: "Verified attendance session roll call for Registration Hall Shift",
-        category: "Attendance",
-        user: "Tarek Hegazy",
-        role: "HR Head",
-        timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
-        date: "2026-10-04",
-        time: "10:15",
-        isStarred: false,
-        details: "Sunday shift attendance updated"
-      },
-      {
-        id: "act-4",
-        action: "Assigned Star Admissions Ambassador commendation to Farida Ahmed",
-        category: "Ambassadors",
-        user: "Omar Farouk",
-        role: "HR Vice Head",
-        timestamp: new Date(Date.now() - 86400000 * 3).toISOString(),
-        date: "2026-10-03",
-        time: "09:00",
-        isStarred: true,
-        details: "Award: Operations Champion"
-      }
-    ];
+    const INITIAL_ATTENDANCE_SESSIONS = [];
+    const INITIAL_WARNINGS = [];
+    const INITIAL_EVENTS = [];
+    const INITIAL_MONITORING_NOTES = [];
+    const INITIAL_ACTIVITY_LOGS = [];
 
     let currentUser = getStoredCurrentUser();
 
@@ -2169,12 +2063,12 @@
     let members = loadStoredState("aastmt_members", INITIAL_MEMBERS).filter(m => !isMemberDeleted(m));
     let dischargedMembers = loadStoredState("aastmt_discharged_members", INITIAL_DISCHARGED_MEMBERS).filter(m => !isMemberDeleted(m));
     let starAmbassadors = loadStoredState("aastmt_star_ambassadors", []).filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isStarDeleted(s));
-    let attendanceSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS).filter(s => !getDeletedIds("sessions").includes(s.id));
-    let warnings = loadStoredState("aastmt_warnings", INITIAL_WARNINGS).filter(w => !getDeletedIds("warnings").includes(w.id));
-    let events = loadStoredState("aastmt_events", INITIAL_EVENTS).filter(e => !getDeletedIds("events").includes(e.id));
-    let monitoringNotes = loadStoredState("aastmt_monitoring_notes", INITIAL_MONITORING_NOTES).filter(n => !getDeletedIds("notes").includes(n.id));
+    let attendanceSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS).filter(s => !getDeletedIds("sessions").includes(s.id) && !isDemoSession(s));
+    let warnings = loadStoredState("aastmt_warnings", INITIAL_WARNINGS).filter(w => !getDeletedIds("warnings").includes(w.id) && !isDemoWarning(w));
+    let events = loadStoredState("aastmt_events", INITIAL_EVENTS).filter(e => !getDeletedIds("events").includes(e.id) && !isDemoEvent(e));
+    let monitoringNotes = loadStoredState("aastmt_monitoring_notes", INITIAL_MONITORING_NOTES).filter(n => !getDeletedIds("notes").includes(n.id) && !isDemoNote(n));
     let recruits = loadStoredState("aastmt_recruits", []);
-    let activityLogs = loadStoredState("aastmt_activity_logs", INITIAL_ACTIVITY_LOGS);
+    let activityLogs = loadStoredState("aastmt_activity_logs", INITIAL_ACTIVITY_LOGS).filter(a => !isDemoLog(a));
 
     let portalBc = null;
     if (typeof window !== 'undefined' && window.BroadcastChannel) {
@@ -2311,12 +2205,15 @@
       }
     }
 
+    let isInitialPortalFetchDone = false;
     function fetchPortalCloudData() {
-      if (!portalSupabase) return;
+      if (!portalSupabase) {
+        document.getElementById("portalLoadingScreen")?.classList.add("hidden");
+        return Promise.resolve();
+      }
 
-      // 1. Members (Active & Discharged)
-      portalSupabase.from('members').select('*').then(({ data, error }) => {
-        if (!error && data && data.length > 0) {
+      const p1 = portalSupabase.from('members').select('*').then(({ data, error }) => {
+        if (!error && data) {
           const act = [];
           const dis = [];
           data.forEach(r => {
@@ -2351,9 +2248,8 @@
         }
       }).catch(() => {});
 
-      // 2. System Users
-      portalSupabase.from('system_users').select('*').then(({ data, error }) => {
-        if (!error && data && data.length > 0) {
+      const p2 = portalSupabase.from('system_users').select('*').then(({ data, error }) => {
+        if (!error && data) {
           const deletedU = getDeletedIds('users');
           systemUsers = data
             .filter(u => !deletedU.includes(u.id) && !deletedU.includes(u.username?.toLowerCase().trim()))
@@ -2370,8 +2266,7 @@
         }
       }).catch(() => {});
 
-      // 3. Attendance Sessions & Relational Attendance Records
-      Promise.all([
+      const p3 = Promise.all([
         portalSupabase.from('attendance_sessions').select('*'),
         portalSupabase.from('attendance_records').select('*')
       ]).then(([sessRes, recRes]) => {
@@ -2409,8 +2304,7 @@
         }
       }).catch(() => {});
 
-      // 4. Disciplinary Warnings
-      portalSupabase.from('disciplinary_warnings').select('*').then(({ data, error }) => {
+      const p4 = portalSupabase.from('disciplinary_warnings').select('*').then(({ data, error }) => {
         if (!error && data) {
           warnings = data
             .map(w => {
@@ -2431,9 +2325,8 @@
         }
       }).catch(() => {});
 
-      // 5. Monitoring Notes
-      portalSupabase.from('monitoring_notes').select('*').then(({ data, error }) => {
-        if (!error && data && data.length > 0) {
+      const p5 = portalSupabase.from('monitoring_notes').select('*').then(({ data, error }) => {
+        if (!error && data) {
           monitoringNotes = data
             .map(n => ({
               id: n.id,
@@ -2453,9 +2346,8 @@
         }
       }).catch(() => {});
 
-      // 6. Events
-      portalSupabase.from('events').select('*').then(({ data, error }) => {
-        if (!error && data && data.length > 0) {
+      const p6 = portalSupabase.from('events').select('*').then(({ data, error }) => {
+        if (!error && data) {
           events = data
             .map(e => ({
               id: e.id,
@@ -2472,8 +2364,7 @@
         }
       }).catch(() => {});
 
-      // 7. Star Ambassadors
-      runPortalDb(portalSupabase.from('star_ambassadors').select('*')).then(({ data, error }) => {
+      const p7 = runPortalDb(portalSupabase.from('star_ambassadors').select('*')).then(({ data, error }) => {
         if (!error && data) {
           const allKnown = [...members, ...dischargedMembers];
           starAmbassadors = data
@@ -2496,8 +2387,7 @@
         }
       });
 
-      // 8. System Settings
-      runPortalDb(portalSupabase.from('system_settings').select('*')).then(({ data, error }) => {
+      const p8 = runPortalDb(portalSupabase.from('system_settings').select('*')).then(({ data, error }) => {
         if (!error && data && data.length > 0) {
           const iconSetting = data.find(s => s.key === 'system_icon');
           if (iconSetting && iconSetting.value) {
@@ -2506,6 +2396,11 @@
             renderSystemIcon();
           }
         }
+      });
+
+      return Promise.allSettled([p1, p2, p3, p4, p5, p6, p7, p8]).finally(() => {
+        isInitialPortalFetchDone = true;
+        document.getElementById("portalLoadingScreen")?.classList.add("hidden");
       });
     }
 
@@ -2683,13 +2578,13 @@
       members = loadStoredState("aastmt_members", INITIAL_MEMBERS).filter(m => !isMemberDeleted(m));
       dischargedMembers = loadStoredState("aastmt_discharged_members", INITIAL_DISCHARGED_MEMBERS).filter(m => !isMemberDeleted(m));
       starAmbassadors = loadStoredState("aastmt_star_ambassadors", []).filter(s => s.id !== 'star-1' && s.id !== 'star-2' && !isStarDeleted(s));
-      attendanceSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS).filter(s => !getDeletedIds("sessions").includes(s.id));
-      warnings = loadStoredState("aastmt_warnings", INITIAL_WARNINGS).filter(w => !getDeletedIds("warnings").includes(w.id));
-      events = loadStoredState("aastmt_events", INITIAL_EVENTS).filter(e => !getDeletedIds("events").includes(e.id));
-      monitoringNotes = loadStoredState("aastmt_monitoring_notes", INITIAL_MONITORING_NOTES).filter(n => !getDeletedIds("notes").includes(n.id));
+      attendanceSessions = loadStoredState("aastmt_attendance_sessions", INITIAL_ATTENDANCE_SESSIONS).filter(s => !getDeletedIds("sessions").includes(s.id) && !isDemoSession(s));
+      warnings = loadStoredState("aastmt_warnings", INITIAL_WARNINGS).filter(w => !getDeletedIds("warnings").includes(w.id) && !isDemoWarning(w));
+      events = loadStoredState("aastmt_events", INITIAL_EVENTS).filter(e => !getDeletedIds("events").includes(e.id) && !isDemoEvent(e));
+      monitoringNotes = loadStoredState("aastmt_monitoring_notes", INITIAL_MONITORING_NOTES).filter(n => !getDeletedIds("notes").includes(n.id) && !isDemoNote(n));
       systemUsers = loadStoredState("aastmt_system_users", INITIAL_SYSTEM_USERS).filter(u => !getDeletedIds("users").includes(u.id));
       recruits = loadStoredState("aastmt_recruits", []);
-      activityLogs = loadStoredState("aastmt_activity_logs", INITIAL_ACTIVITY_LOGS);
+      activityLogs = loadStoredState("aastmt_activity_logs", INITIAL_ACTIVITY_LOGS).filter(a => !isDemoLog(a));
       renderAllViews();
     }
 
@@ -5755,11 +5650,15 @@
       if (currentUser) {
         document.getElementById("loginScreen").classList.add("hidden");
         document.getElementById("systemAppContainer").classList.remove("hidden");
+        if (!isInitialPortalFetchDone) {
+          document.getElementById("portalLoadingScreen")?.classList.remove("hidden");
+        }
         applyUserRoleUI();
         renderAllViews();
       } else {
         document.getElementById("systemAppContainer").classList.add("hidden");
         document.getElementById("loginScreen").classList.remove("hidden");
+        document.getElementById("portalLoadingScreen")?.classList.add("hidden");
       }
     };
 
