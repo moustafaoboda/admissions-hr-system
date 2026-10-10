@@ -1182,7 +1182,7 @@ export function AuthProvider({ children }) {
   // Helper State Modifiers
   const addMember = async (newMem) => {
     const mem = {
-      id: `mem-${Date.now()}`,
+      id: generateUuid(),
       name: newMem.name,
       role: newMem.role || 'Operations',
       position: newMem.position || 'Member',

@@ -2424,6 +2424,9 @@
                     renderAllViews();
                   }
                 } else if (mut.type === 'ADD_MEMBER' && mut.payload) {
+                  if (mut.payload.id) removeDeletedId("members", mut.payload.id);
+                  if (mut.payload.studentId) removeDeletedId("members", mut.payload.studentId);
+                  if (mut.payload.name) removeDeletedId("members", mut.payload.name.toLowerCase().trim());
                   if (!members.some(m => m.id === mut.payload.id)) {
                     members.push(mut.payload);
                     saveAllState();
