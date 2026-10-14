@@ -137,13 +137,6 @@ export default function EditMemberModal() {
                     </button>
                   )}
                 </div>
-                <input
-                  type="text"
-                  placeholder="Or paste image URL (https://...)"
-                  value={avatar.startsWith('data:') ? '' : avatar}
-                  onChange={(e) => setAvatar(e.target.value)}
-                  className="w-full px-2 py-1 text-[11px] bg-white border border-slate-300 rounded focus:ring-1 focus:ring-[#002244] focus:outline-none"
-                />
               </div>
             </div>
           </div>

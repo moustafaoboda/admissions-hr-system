@@ -1119,7 +1119,7 @@
                 <input type="file" id="editMemberAvatarFile" accept="image/*" class="hidden" onchange="handleEditMemberAvatarFile(this)">
                 <button type="button" onclick="clearEditMemberAvatar()" class="px-2 py-1 bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 rounded font-semibold text-xs transition">Clear</button>
               </div>
-              <input type="text" id="editMemberAvatarUrl" oninput="handleEditMemberAvatarUrlChange(this.value)" placeholder="Or paste image URL (https://...)" class="w-full px-2 py-1 text-[11px] bg-white border border-slate-300 rounded focus:ring-1 focus:ring-[#002244] focus:outline-none">
+              <input type="hidden" id="editMemberAvatarUrl">
             </div>
           </div>
         </div>
@@ -1448,7 +1448,7 @@
                 <input type="file" id="addMemberAvatarFile" accept="image/*" class="hidden" onchange="handleAddMemberAvatarFile(this)">
                 <button type="button" onclick="clearAddMemberAvatar()" class="px-2 py-1 bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 rounded font-semibold text-xs transition">Clear</button>
               </div>
-              <input type="text" id="addMemberAvatarUrl" oninput="handleAddMemberAvatarUrlChange(this.value)" placeholder="Or paste image URL (https://...)" class="w-full px-2 py-1 text-[11px] bg-white border border-slate-300 rounded focus:ring-1 focus:ring-[#002244] focus:outline-none">
+              <input type="hidden" id="addMemberAvatarUrl">
             </div>
           </div>
         </div>
@@ -1985,7 +1985,21 @@
 
     function getMemberUuid(id) {
       if (!id) return id;
-      return LEGACY_MEMBER_UUID_MAP[id] || id;
+      if (LEGACY_MEMBER_UUID_MAP[id]) return LEGACY_MEMBER_UUID_MAP[id];
+      if (typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+        return id;
+      }
+      try {
+        if (typeof members !== 'undefined' && Array.isArray(members)) {
+          const m = members.find(x => (x.name && String(x.name).toLowerCase().trim() === String(id).toLowerCase().trim()) ||
+                                      (x.studentId && String(x.studentId).trim() === String(id).trim()));
+          if (m && m.id) {
+            if (LEGACY_MEMBER_UUID_MAP[m.id]) return LEGACY_MEMBER_UUID_MAP[m.id];
+            if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(m.id)) return m.id;
+          }
+        }
+      } catch(e) {}
+      return id;
     }
 
     const LEGACY_USER_UUID_MAP = {
@@ -3921,9 +3935,11 @@
 
     function handleSaveEditMember(e) {
       e.preventDefault();
-      pausePortalSync(5000);
+      pausePortalSync(15000);
       const mId = document.getElementById("editMemberTargetId").value;
-      const mem = members.find(m => m.id === mId) || dischargedMembers.find(d => d.id === mId);
+      const normMemId = getMemberUuid(mId);
+      const mem = members.find(m => m.id === mId || getMemberUuid(m.id) === normMemId) ||
+                  dischargedMembers.find(d => d.id === mId || getMemberUuid(d.id) === normMemId);
       if (mem) {
         mem.name = document.getElementById("editMemberName").value.trim();
         mem.role = document.getElementById("editMemberRole").value;
@@ -3939,10 +3955,11 @@
         mem.officialDays = selectedDays;
 
         starAmbassadors.forEach(s => {
-          if (s.memberId === mem.id) s.avatar = mem.avatar;
+          if (s.memberId === mem.id || getMemberUuid(s.memberId) === normMemId) s.avatar = mem.avatar;
         });
 
         if (portalSupabase) {
+          const finalId = normMemId || mem.id;
           runPortalDb(portalSupabase.from('members').update({
             name: mem.name,
             role: mem.role,
@@ -3954,7 +3971,20 @@
             avatar: mem.avatar,
             score: mem.score,
             status: mem.status || 'Active'
-          }).eq('id', mem.id));
+          }).eq('id', finalId));
+
+          if (mem.studentId) {
+            runPortalDb(portalSupabase.from('members').update({
+              avatar: mem.avatar,
+              name: mem.name,
+              role: mem.role,
+              position: mem.position,
+              college: mem.college,
+              phone: mem.phone,
+              official_days: mem.officialDays,
+              score: mem.score
+            }).eq('student_id', mem.studentId));
+          }
 
           if (portalSupabaseChannel) {
             try {
@@ -3963,7 +3993,7 @@
                 event: 'MUTATION',
                 payload: {
                   type: 'UPDATE_MEMBER',
-                  payload: { id: mem.id, fields: { avatar: mem.avatar, name: mem.name, role: mem.role, position: mem.position, college: mem.college, studentId: mem.studentId, phone: mem.phone, score: mem.score, officialDays: mem.officialDays } },
+                  payload: { id: finalId, fields: { avatar: mem.avatar, name: mem.name, role: mem.role, position: mem.position, college: mem.college, studentId: mem.studentId, phone: mem.phone, score: mem.score, officialDays: mem.officialDays } },
                   senderId: 'portal_tab_' + Date.now(),
                   timestamp: Date.now()
                 }
@@ -4478,19 +4508,28 @@
           total_count: s.totalCount
         }).eq('id', s.id));
 
-        if (targetRc) {
-          const normMemId = getMemberUuid(targetRc.memberId);
-          runPortalDb(portalSupabase.from('attendance_records').delete().eq('session_id', s.id).eq('member_id', normMemId)).then(() => {
-            runPortalDb(portalSupabase.from('attendance_records').insert([{
+        const validMemberUuids = new Set(
+          [...members, ...dischargedMembers].map(m => getMemberUuid(m.id)).filter(Boolean)
+        );
+
+        runPortalDb(portalSupabase.from('attendance_records').delete().eq('session_id', s.id)).then(() => {
+          const recordsPayload = updatedRollCall.map(rc => {
+            const matchedMem = members.find(m => m.id === rc.memberId || getMemberUuid(m.id) === getMemberUuid(rc.memberId) || (m.name && rc.name && m.name.toLowerCase().trim() === rc.name.toLowerCase().trim()));
+            const normMemId = getMemberUuid(rc.memberId) || (matchedMem ? getMemberUuid(matchedMem.id) : null);
+            return {
               id: generateUuid(),
               session_id: s.id,
-              member_id: normMemId,
-              is_present: Boolean(targetRc.isPresent),
-              is_excused: Boolean(targetRc.isExcused),
-              excuse_reason: targetRc.excuseReason || ''
-            }]));
-          });
-        }
+              member_id: getMemberUuid(normMemId),
+              is_present: Boolean(rc.isPresent),
+              is_excused: Boolean(rc.isExcused),
+              excuse_reason: rc.excuseReason || ''
+            };
+          }).filter(r => r.member_id && (validMemberUuids.size === 0 || validMemberUuids.has(r.member_id)));
+
+          if (recordsPayload.length > 0) {
+            runPortalDb(portalSupabase.from('attendance_records').insert(recordsPayload));
+          }
+        });
       }
 
       broadcastPortalMutation('UPDATE_ATTENDANCE_SESSION', { id: s.id, data: s, deltas: memberAttendanceDeltas });
@@ -4559,15 +4598,23 @@
           total_count: s.totalCount
         }, { onConflict: 'id' }));
 
+        const validMemberUuids = new Set(
+          [...members, ...dischargedMembers].map(m => getMemberUuid(m.id)).filter(Boolean)
+        );
+
         runPortalDb(portalSupabase.from('attendance_records').delete().eq('session_id', s.id)).then(() => {
-          const recordsPayload = updatedRollCall.map(rc => ({
-            id: generateUuid(),
-            session_id: s.id,
-            member_id: getMemberUuid(rc.memberId) || rc.memberId,
-            is_present: Boolean(rc.isPresent),
-            is_excused: Boolean(rc.isExcused),
-            excuse_reason: rc.excuseReason || ''
-          })).filter(r => r.member_id);
+          const recordsPayload = updatedRollCall.map(rc => {
+            const matchedMem = members.find(m => m.id === rc.memberId || getMemberUuid(m.id) === getMemberUuid(rc.memberId) || (m.name && rc.name && m.name.toLowerCase().trim() === rc.name.toLowerCase().trim()));
+            const normMemId = getMemberUuid(rc.memberId) || (matchedMem ? getMemberUuid(matchedMem.id) : null);
+            return {
+              id: generateUuid(),
+              session_id: s.id,
+              member_id: getMemberUuid(normMemId),
+              is_present: Boolean(rc.isPresent),
+              is_excused: Boolean(rc.isExcused),
+              excuse_reason: rc.excuseReason || ''
+            };
+          }).filter(r => r.member_id && (validMemberUuids.size === 0 || validMemberUuids.has(r.member_id)));
           if (recordsPayload.length > 0) {
             runPortalDb(portalSupabase.from('attendance_records').insert(recordsPayload));
           }

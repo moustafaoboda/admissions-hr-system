@@ -154,7 +154,11 @@ const LEGACY_MEMBER_UUID_MAP = {
 
 function getMemberUuid(id) {
   if (!id) return id;
-  return LEGACY_MEMBER_UUID_MAP[id] || id;
+  if (LEGACY_MEMBER_UUID_MAP[id]) return LEGACY_MEMBER_UUID_MAP[id];
+  if (typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    return id;
+  }
+  return id;
 }
 
 const LEGACY_USER_UUID_MAP = {
@@ -1236,19 +1240,35 @@ export function AuthProvider({ children }) {
     showToast(`Ambassador ${mem.name} registered and synced live.`);
   };
 
-  const editMemberInfo = (id, updatedFields) => {
-    pauseCloudSync(5000);
-    const target = members.find(m => m.id === id) || dischargedMembers.find(d => d.id === id);
-    setMembers(prev => prev.map(m => m.id === id ? { ...m, ...updatedFields } : m));
-    setDischargedMembers(prev => prev.map(d => d.id === id ? { ...d, ...updatedFields } : d));
+  const editMemberInfo = async (id, updatedFields) => {
+    pauseCloudSync(15000);
+    const normId = getMemberUuid(id);
+    const target = members.find(m => m.id === id || getMemberUuid(m.id) === normId) ||
+                   dischargedMembers.find(d => d.id === id || getMemberUuid(d.id) === normId);
+
+    setMembers(prev => {
+      const updated = prev.map(m => (m.id === id || getMemberUuid(m.id) === normId) ? { ...m, ...updatedFields } : m);
+      try { localStorage.setItem("aastmt_members", JSON.stringify(updated)); } catch(e) {}
+      return updated;
+    });
+
+    setDischargedMembers(prev => {
+      const updated = prev.map(d => (d.id === id || getMemberUuid(d.id) === normId) ? { ...d, ...updatedFields } : d);
+      try { localStorage.setItem("aastmt_discharged_members", JSON.stringify(updated)); } catch(e) {}
+      return updated;
+    });
 
     if (updatedFields.avatar !== undefined) {
-      setStarAmbassadors(prev => prev.map(s => (s.memberId === id || s.member_id === id) ? { ...s, avatar: updatedFields.avatar } : s));
+      setStarAmbassadors(prev => {
+        const updated = prev.map(s => (s.memberId === id || s.member_id === id || getMemberUuid(s.memberId) === normId) ? { ...s, avatar: updatedFields.avatar } : s);
+        try { localStorage.setItem("aastmt_star_ambassadors", JSON.stringify(updated)); } catch(e) {}
+        return updated;
+      });
     }
 
-    broadcastMutation('UPDATE_MEMBER', { id, fields: updatedFields });
+    broadcastMutation('UPDATE_MEMBER', { id: normId || id, fields: updatedFields });
 
-    if (supabase && target) {
+    if (supabase) {
       const cleanUpdate = {};
       if (updatedFields.name !== undefined) cleanUpdate.name = updatedFields.name;
       if (updatedFields.role !== undefined) cleanUpdate.role = updatedFields.role;
@@ -1262,7 +1282,11 @@ export function AuthProvider({ children }) {
       if (updatedFields.strikes !== undefined) cleanUpdate.strikes = updatedFields.strikes;
       if (updatedFields.status !== undefined) cleanUpdate.status = updatedFields.status;
 
-      runDb(supabase.from('members').update(cleanUpdate).eq('id', target.id));
+      const finalId = normId || target?.id || id;
+      await runDb(supabase.from('members').update(cleanUpdate).eq('id', finalId));
+      if (cleanUpdate.student_id || target?.studentId) {
+        await runDb(supabase.from('members').update(cleanUpdate).eq('student_id', cleanUpdate.student_id || target?.studentId));
+      }
     }
 
     logActivity(`Updated info for: ${target ? target.name : 'member'}`, "Members");
@@ -1534,15 +1558,19 @@ export function AuthProvider({ children }) {
       }));
     }
 
-    setAttendanceSessions(prev => prev.map(s => {
-      if (s.id === sessionId) {
-        const presentCount = updatedData.rollCall ? updatedData.rollCall.filter(r => r.isPresent).length : s.presentCount;
-        const totalCount = updatedData.rollCall ? updatedData.rollCall.length : s.totalCount;
-        finalSession = { ...s, ...updatedData, presentCount, totalCount };
-        return finalSession;
-      }
-      return s;
-    }));
+    setAttendanceSessions(prev => {
+      const updated = prev.map(s => {
+        if (s.id === sessionId) {
+          const presentCount = updatedData.rollCall ? updatedData.rollCall.filter(r => r.isPresent).length : s.presentCount;
+          const totalCount = updatedData.rollCall ? updatedData.rollCall.length : s.totalCount;
+          finalSession = { ...s, ...updatedData, presentCount, totalCount };
+          return finalSession;
+        }
+        return s;
+      });
+      try { localStorage.setItem("aastmt_attendance_sessions", JSON.stringify(updated)); } catch(e) {}
+      return updated;
+    });
 
     broadcastMutation('UPDATE_ATTENDANCE_SESSION', { id: sessionId, data: updatedData, deltas: memberAttendanceDeltas });
 
@@ -1559,14 +1587,21 @@ export function AuthProvider({ children }) {
 
       if (updatedData.rollCall) {
         await runDb(supabase.from('attendance_records').delete().eq('session_id', sessionId));
-        const recordsPayload = updatedData.rollCall.map(r => ({
-          id: generateUuid(),
-          session_id: sessionId,
-          member_id: getMemberUuid(r.memberId) || r.memberId,
-          is_present: Boolean(r.isPresent),
-          is_excused: Boolean(r.isExcused),
-          excuse_reason: r.excuseReason || ''
-        })).filter(r => r.member_id);
+        const validMemberUuids = new Set(
+          [...members, ...dischargedMembers].map(m => getMemberUuid(m.id)).filter(Boolean)
+        );
+        const recordsPayload = updatedData.rollCall.map(r => {
+          const matchedMem = members.find(m => m.id === r.memberId || getMemberUuid(m.id) === getMemberUuid(r.memberId) || (m.name && r.name && m.name.toLowerCase().trim() === r.name.toLowerCase().trim()));
+          const normMemId = getMemberUuid(r.memberId) || (matchedMem ? getMemberUuid(matchedMem.id) : null);
+          return {
+            id: generateUuid(),
+            session_id: sessionId,
+            member_id: getMemberUuid(normMemId),
+            is_present: Boolean(r.isPresent),
+            is_excused: Boolean(r.isExcused),
+            excuse_reason: r.excuseReason || ''
+          };
+        }).filter(r => r.member_id && (validMemberUuids.size === 0 || validMemberUuids.has(r.member_id)));
 
         if (recordsPayload.length > 0) {
           await runDb(supabase.from('attendance_records').insert(recordsPayload));
