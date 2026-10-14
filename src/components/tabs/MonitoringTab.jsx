@@ -20,6 +20,7 @@ export default function MonitoringTab() {
   const activeMembers = members.filter(m => m.status !== "Discharged");
   const isDean = currentUser?.role === "Admission's Dean";
   const isHeadOrVice = currentUser?.role === "HR Head" || currentUser?.role === "HR Vice Head";
+  const isHrMember = currentUser?.role === "HR" || (!isDean && !isHeadOrVice);
 
   // Form State
   const [targetMemberId, setTargetMemberId] = useState(monitoringSelectedMemberId || (activeMembers[0]?.id || ''));
@@ -102,12 +103,14 @@ export default function MonitoringTab() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
-            <span className="text-slate-500 font-medium">Total Notes Logged:</span>
-            <span className="font-extrabold text-[#002244] ml-1.5">{monitoringNotes.length}</span>
+        {!isHrMember && (
+          <div className="flex items-center gap-3">
+            <div className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+              <span className="text-slate-500 font-medium">Total Notes Logged:</span>
+              <span className="font-extrabold text-[#002244] ml-1.5">{monitoringNotes.length}</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Main Layout: Form on Left (if not Dean), Feed on Right */}
@@ -228,144 +231,162 @@ export default function MonitoringTab() {
         </div>
         )}
 
-        {/* Right Column: Feed of Saved Monitoring Notes */}
+        {/* Right Column: Feed of Saved Monitoring Notes or Confidential Submission Card */}
         <div className={`${!isDean ? 'lg:col-span-2' : ''} space-y-4`}>
-          {/* Search & Filter Toolbar */}
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center gap-3">
-            <div className="relative flex-grow w-full sm:w-auto">
-              <i className="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search notes, members, or authors..."
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none"
-              />
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <select
-                value={memberFilter}
-                onChange={(e) => setMemberFilter(e.target.value)}
-                className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none"
-              >
-                <option value="">All Members</option>
-                {activeMembers.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none"
-              >
-                <option value="">All Categories</option>
-                <option value="General Observation">General Observation</option>
-                <option value="Performance & Quality">Performance & Quality</option>
-                <option value="Behavior & Professionalism">Behavior & Professionalism</option>
-                <option value="Attendance & Punctuality">Attendance & Punctuality</option>
-                <option value="Operational Execution">Operational Execution</option>
-                <option value="Commendation & Praise">Commendation & Praise</option>
-                <option value="Follow-up Required">Follow-up Required</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Notes Feed Container */}
-          <div className="space-y-3">
-            {filteredNotes.length === 0 ? (
-              <div className="bg-white rounded-xl p-8 border border-slate-200 text-center text-slate-400 text-xs">
-                <i className="fa-solid fa-clipboard-list text-3xl mb-2 text-slate-300"></i>
-                <p className="font-bold text-slate-600">No monitoring notes found.</p>
-                <p className="text-[11px] text-slate-400 mt-1">Select a member on the left to record your first field observation note.</p>
+          {isHrMember ? (
+            <div className="bg-white rounded-xl p-8 border border-slate-200 shadow-sm text-center space-y-3">
+              <div className="w-12 h-12 bg-amber-50 text-[#c59b27] rounded-full flex items-center justify-center mx-auto text-xl shadow-xs border border-amber-200">
+                <i className="fa-solid fa-user-shield"></i>
               </div>
-            ) : (
-              filteredNotes.map(n => {
-                const initials = (n.memberName || 'Member').split(' ').map(x => x[0]).slice(0, 2).join('');
-                return (
-                  <div
-                    key={n.id}
-                    className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:border-[#002244] transition space-y-3"
+              <h3 className="font-bold text-base text-[#002244]">Confidential Monitoring Submission</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                Monitoring notes and field observations are confidential and reviewed directly by HR Leadership and the Admissions Dean. As an HR Member, you can record and submit observations using the form on the left.
+              </p>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-600 font-semibold">
+                <i className="fa-solid fa-lock text-amber-500"></i>
+                <span>Submissions are encrypted & sent directly to HR Leadership</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Search & Filter Toolbar */}
+              <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center gap-3">
+                <div className="relative flex-grow w-full sm:w-auto">
+                  <i className="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search notes, members, or authors..."
+                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <select
+                    value={memberFilter}
+                    onChange={(e) => setMemberFilter(e.target.value)}
+                    className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      {/* Target Member Info */}
-                      <div className="flex items-center gap-3">
-                        <MemberAvatar
-                          memberId={n.memberId}
-                          name={n.memberName}
-                          size="w-10 h-10 text-xs"
-                          className="border-2 border-[#c59b27]"
-                        />
-                        <div>
-                          <div className="flex items-center flex-wrap gap-1.5">
-                            <h4 className="font-extrabold text-sm text-[#002244]">{n.memberName}</h4>
-                            <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded border border-slate-200">
-                              {n.memberRole || 'Member'}
+                    <option value="">All Members</option>
+                    {activeMembers.map(m => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#002244] focus:outline-none"
+                  >
+                    <option value="">All Categories</option>
+                    <option value="General Observation">General Observation</option>
+                    <option value="Performance & Quality">Performance & Quality</option>
+                    <option value="Behavior & Professionalism">Behavior & Professionalism</option>
+                    <option value="Attendance & Punctuality">Attendance & Punctuality</option>
+                    <option value="Operational Execution">Operational Execution</option>
+                    <option value="Commendation & Praise">Commendation & Praise</option>
+                    <option value="Follow-up Required">Follow-up Required</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Notes Feed Container */}
+              <div className="space-y-3">
+                {filteredNotes.length === 0 ? (
+                  <div className="bg-white rounded-xl p-8 border border-slate-200 text-center text-slate-400 text-xs">
+                    <i className="fa-solid fa-clipboard-list text-3xl mb-2 text-slate-300"></i>
+                    <p className="font-bold text-slate-600">No monitoring notes found.</p>
+                    <p className="text-[11px] text-slate-400 mt-1">Select a member on the left to record your first field observation note.</p>
+                  </div>
+                ) : (
+                  filteredNotes.map(n => {
+                    const initials = (n.memberName || 'Member').split(' ').map(x => x[0]).slice(0, 2).join('');
+                    return (
+                      <div
+                        key={n.id}
+                        className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:border-[#002244] transition space-y-3"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          {/* Target Member Info */}
+                          <div className="flex items-center gap-3">
+                            <MemberAvatar
+                              memberId={n.memberId}
+                              name={n.memberName}
+                              size="w-10 h-10 text-xs"
+                              className="border-2 border-[#c59b27]"
+                            />
+                            <div>
+                              <div className="flex items-center flex-wrap gap-1.5">
+                                <h4 className="font-extrabold text-sm text-[#002244]">{n.memberName}</h4>
+                                <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded border border-slate-200">
+                                  {n.memberRole || 'Member'}
+                                </span>
+                                <span className="text-[10px] text-slate-500 font-medium hidden sm:inline">
+                                  • {n.memberCollege || 'SV Campus'}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
+                                <span><i className="fa-regular fa-calendar mr-1"></i>{n.date}</span>
+                                {n.time && <span><i className="fa-regular fa-clock mr-1"></i>{n.time}</span>}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Category Badge & Actions */}
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${getCategoryBadgeClass(n.category)}`}>
+                              {n.category}
                             </span>
-                            <span className="text-[10px] text-slate-500 font-medium hidden sm:inline">
-                              • {n.memberCollege || 'SV Campus'}
+                            {isHeadOrVice && (
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={() => handleEditNote(n)}
+                                  className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[11px] inline-flex items-center gap-1 transition"
+                                  title="Edit Note"
+                                >
+                                  <i className="fa-solid fa-pen-to-square text-[10px]"></i>
+                                  <span className="hidden sm:inline">Edit</span>
+                                </button>
+                                <button
+                                  onClick={() => deleteMonitoringNote(n.id)}
+                                  className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded font-bold text-[11px] inline-flex items-center gap-1 transition"
+                                  title="Remove Note"
+                                >
+                                  <i className="fa-solid fa-trash-can text-[10px]"></i>
+                                  <span className="hidden sm:inline">Remove</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Note Content Text */}
+                        <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs text-slate-800 leading-relaxed whitespace-pre-wrap">
+                          {n.note}
+                        </div>
+
+                        {/* Footer: Prominently Display Author's Name next to the note */}
+                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs flex-wrap gap-2">
+                          <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50/40 border border-amber-200/80 px-2.5 py-1 rounded-lg">
+                            <UserAvatar user={n.authorName} name={n.authorName} size="w-5 h-5 text-[9px]" />
+                            <span className="text-slate-600 text-[11px] font-medium">Written by:</span>
+                            <span className="font-extrabold text-[#002244] text-[11px]">{n.authorName}</span>
+                            <span className="text-[10px] bg-[#002244] text-[#c59b27] font-extrabold px-1.5 py-0.5 rounded shadow-xs">
+                              {n.authorRole}
                             </span>
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
-                            <span><i className="fa-regular fa-calendar mr-1"></i>{n.date}</span>
-                            {n.time && <span><i className="fa-regular fa-clock mr-1"></i>{n.time}</span>}
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            Note #{n.id}
                           </div>
                         </div>
                       </div>
-
-                      {/* Category Badge & Actions */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${getCategoryBadgeClass(n.category)}`}>
-                          {n.category}
-                        </span>
-                        {isHeadOrVice && (
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              onClick={() => handleEditNote(n)}
-                              className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-[#002244] border border-amber-300 rounded font-bold text-[11px] inline-flex items-center gap-1 transition"
-                              title="Edit Note"
-                            >
-                              <i className="fa-solid fa-pen-to-square text-[10px]"></i>
-                              <span className="hidden sm:inline">Edit</span>
-                            </button>
-                            <button
-                              onClick={() => deleteMonitoringNote(n.id)}
-                              className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded font-bold text-[11px] inline-flex items-center gap-1 transition"
-                              title="Remove Note"
-                            >
-                              <i className="fa-solid fa-trash-can text-[10px]"></i>
-                              <span className="hidden sm:inline">Remove</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Note Content Text */}
-                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs text-slate-800 leading-relaxed whitespace-pre-wrap">
-                      {n.note}
-                    </div>
-
-                    {/* Footer: Prominently Display Author's Name next to the note */}
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs flex-wrap gap-2">
-                      <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50/40 border border-amber-200/80 px-2.5 py-1 rounded-lg">
-                        <UserAvatar user={n.authorName} name={n.authorName} size="w-5 h-5 text-[9px]" />
-                        <span className="text-slate-600 text-[11px] font-medium">Written by:</span>
-                        <span className="font-extrabold text-[#002244] text-[11px]">{n.authorName}</span>
-                        <span className="text-[10px] bg-[#002244] text-[#c59b27] font-extrabold px-1.5 py-0.5 rounded shadow-xs">
-                          {n.authorRole}
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-slate-400 font-mono">
-                        Note #{n.id}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+                    );
+                  })
+                )}
+              </div>
+            </>
+          )}
         </div>
 
       </div>

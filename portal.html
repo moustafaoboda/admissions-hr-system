@@ -3078,11 +3078,37 @@
       const catFilter = document.getElementById("monitoringCategoryFilter")?.value || "";
       const container = document.getElementById("monitoringNotesContainer");
       const countEl = document.getElementById("monitoringTotalCount");
+      const isDean = currentUser.role === "Admission's Dean";
+      const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
+      const isHrMember = currentUser.role === "HR" || (!isDean && !isLeadership);
+
+      const headerCountCard = countEl?.parentElement;
+      if (headerCountCard) headerCountCard.style.display = isHrMember ? "none" : "";
+
+      const searchToolbar = document.getElementById("monitoringSearchInput")?.parentElement?.parentElement;
+      if (searchToolbar) searchToolbar.style.display = isHrMember ? "none" : "";
 
       if (countEl) countEl.textContent = monitoringNotes.length;
       if (!container) return;
 
-      const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
+      if (isHrMember) {
+        container.innerHTML = `
+          <div class="bg-white rounded-xl p-8 border border-slate-200 shadow-sm text-center space-y-3">
+            <div class="w-12 h-12 bg-amber-50 text-[#c59b27] rounded-full flex items-center justify-center mx-auto text-xl shadow-xs border border-amber-200">
+              <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <h3 class="font-bold text-base text-[#002244]">Confidential Monitoring Submission</h3>
+            <p class="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+              Monitoring notes and field observations are confidential and reviewed directly by HR Leadership and the Admissions Dean. As an HR Member, you can record and submit observations using the form on the left.
+            </p>
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-600 font-semibold">
+              <i class="fa-solid fa-lock text-amber-500"></i>
+              <span>Submissions are encrypted & sent directly to HR Leadership</span>
+            </div>
+          </div>
+        `;
+        return;
+      }
 
       let filtered = monitoringNotes.filter(n => {
         if (memberFilter && n.memberId !== memberFilter) return false;
@@ -3227,7 +3253,13 @@
       broadcastPortalMutation('ADD_MONITORING_NOTE', newNote);
 
       document.getElementById("monitoringNoteText").value = "";
-      showToast(`Monitoring note logged for ${mem.name}`);
+      const isDean = currentUser.role === "Admission's Dean";
+      const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
+      if (currentUser?.role === 'HR' || (!isDean && !isLeadership)) {
+        showToast("Monitoring note has been successfully submitted.");
+      } else {
+        showToast(`Monitoring note logged for ${mem.name}`);
+      }
       renderMonitoringNotes();
     }
 
@@ -3242,6 +3274,8 @@
     }
 
     function openEditMonitoringNoteModal(noteId) {
+      const isLeadership = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
+      if (!isLeadership) return;
       const note = monitoringNotes.find(n => n.id === noteId);
       if (!note) return;
       populateMonitoringMemberSelect();
@@ -4407,7 +4441,7 @@
     function quickTogglePortalSessionStatus(sId, memId) {
       const isHeadOrVice = currentUser.role === "HR Head" || currentUser.role === "HR Vice Head";
       if (!isHeadOrVice) return;
-      pausePortalSync(5000);
+      pausePortalSync(15000);
       const s = attendanceSessions.find(x => x.id === sId);
       if (!s) return;
       const currentRollCall = getSessionScheduledRollCall(s);
@@ -4464,21 +4498,15 @@
 
         if (targetRc) {
           const normMemId = getMemberUuid(targetRc.memberId);
-          runPortalDb(portalSupabase.from('attendance_records').update({
-            is_present: Boolean(targetRc.isPresent),
-            is_excused: Boolean(targetRc.isExcused),
-            excuse_reason: targetRc.excuseReason || ''
-          }).eq('session_id', s.id).eq('member_id', normMemId).select('id')).then(res => {
-            if (!res || !res.data || res.data.length === 0) {
-              runPortalDb(portalSupabase.from('attendance_records').insert([{
-                id: generateUuid(),
-                session_id: s.id,
-                member_id: normMemId,
-                is_present: Boolean(targetRc.isPresent),
-                is_excused: Boolean(targetRc.isExcused),
-                excuse_reason: targetRc.excuseReason || ''
-              }]));
-            }
+          runPortalDb(portalSupabase.from('attendance_records').delete().eq('session_id', s.id).eq('member_id', normMemId)).then(() => {
+            runPortalDb(portalSupabase.from('attendance_records').insert([{
+              id: generateUuid(),
+              session_id: s.id,
+              member_id: normMemId,
+              is_present: Boolean(targetRc.isPresent),
+              is_excused: Boolean(targetRc.isExcused),
+              excuse_reason: targetRc.excuseReason || ''
+            }]));
           });
         }
       }
@@ -4495,7 +4523,7 @@
 
     function saveInspectorSessionChanges() {
       if (!currentEditingSessionId) return;
-      pausePortalSync(5000);
+      pausePortalSync(15000);
       const s = attendanceSessions.find(x => x.id === currentEditingSessionId);
       if (!s) return;
 
@@ -4539,34 +4567,28 @@
       saveAllState();
 
       if (portalSupabase) {
-        runPortalDb(portalSupabase.from('attendance_sessions').update({
+        runPortalDb(portalSupabase.from('attendance_sessions').upsert({
+          id: s.id,
           title: s.title,
           date: s.date,
           day_name: s.dayName,
           session_type: s.type,
           present_count: s.presentCount,
           total_count: s.totalCount
-        }).eq('id', s.id));
+        }, { onConflict: 'id' }));
 
-        updatedRollCall.forEach(rc => {
-          const normMemId = getMemberUuid(rc.memberId);
-          if (!normMemId) return;
-          runPortalDb(portalSupabase.from('attendance_records').update({
+        runPortalDb(portalSupabase.from('attendance_records').delete().eq('session_id', s.id)).then(() => {
+          const recordsPayload = updatedRollCall.map(rc => ({
+            id: generateUuid(),
+            session_id: s.id,
+            member_id: getMemberUuid(rc.memberId) || rc.memberId,
             is_present: Boolean(rc.isPresent),
             is_excused: Boolean(rc.isExcused),
             excuse_reason: rc.excuseReason || ''
-          }).eq('session_id', s.id).eq('member_id', normMemId).select('id')).then(res => {
-            if (!res || !res.data || res.data.length === 0) {
-              runPortalDb(portalSupabase.from('attendance_records').insert([{
-                id: generateUuid(),
-                session_id: s.id,
-                member_id: normMemId,
-                is_present: Boolean(rc.isPresent),
-                is_excused: Boolean(rc.isExcused),
-                excuse_reason: rc.excuseReason || ''
-              }]));
-            }
-          });
+          })).filter(r => r.member_id);
+          if (recordsPayload.length > 0) {
+            runPortalDb(portalSupabase.from('attendance_records').insert(recordsPayload));
+          }
         });
       }
       const memberAttendanceDeltas = {};

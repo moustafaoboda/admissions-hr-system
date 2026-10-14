@@ -1529,7 +1529,7 @@ export function AuthProvider({ children }) {
   };
 
   const updateAttendanceSession = async (sessionId, updatedData) => {
-    pauseCloudSync(5000);
+    pauseCloudSync(15000);
     let finalSession = null;
     const oldSession = attendanceSessions.find(s => s.id === sessionId);
     const memberAttendanceDeltas = {};
@@ -1570,42 +1570,29 @@ export function AuthProvider({ children }) {
     broadcastMutation('UPDATE_ATTENDANCE_SESSION', { id: sessionId, data: updatedData, deltas: memberAttendanceDeltas });
 
     if (supabase && finalSession) {
-      runDb(supabase.from('attendance_sessions').update({
+      await runDb(supabase.from('attendance_sessions').upsert({
+        id: sessionId,
         title: finalSession.title,
         date: finalSession.date,
         day_name: finalSession.dayName,
         session_type: normalizeSessionType(finalSession.type),
         present_count: finalSession.presentCount,
         total_count: finalSession.totalCount
-      }).eq('id', sessionId));
+      }, { onConflict: 'id' }));
 
       if (updatedData.rollCall) {
-        for (const r of updatedData.rollCall) {
-          const normMid = getMemberUuid(r.memberId);
-          if (!normMid) continue;
-          const { data: updatedRecs } = await runDb(
-            supabase.from('attendance_records')
-              .update({
-                is_present: Boolean(r.isPresent),
-                is_excused: Boolean(r.isExcused),
-                excuse_reason: r.excuseReason || ''
-              })
-              .eq('session_id', sessionId)
-              .eq('member_id', normMid)
-              .select('id')
-          ) || {};
-          if (!updatedRecs || updatedRecs.length === 0) {
-            await runDb(
-              supabase.from('attendance_records').insert([{
-                id: generateUuid(),
-                session_id: sessionId,
-                member_id: normMid,
-                is_present: Boolean(r.isPresent),
-                is_excused: Boolean(r.isExcused),
-                excuse_reason: r.excuseReason || ''
-              }])
-            );
-          }
+        await runDb(supabase.from('attendance_records').delete().eq('session_id', sessionId));
+        const recordsPayload = updatedData.rollCall.map(r => ({
+          id: generateUuid(),
+          session_id: sessionId,
+          member_id: getMemberUuid(r.memberId) || r.memberId,
+          is_present: Boolean(r.isPresent),
+          is_excused: Boolean(r.isExcused),
+          excuse_reason: r.excuseReason || ''
+        })).filter(r => r.member_id);
+
+        if (recordsPayload.length > 0) {
+          await runDb(supabase.from('attendance_records').insert(recordsPayload));
         }
       }
     }
@@ -1615,7 +1602,7 @@ export function AuthProvider({ children }) {
   };
 
   const createAttendanceSession = async (title, date, sessionType, rollCallRecords) => {
-    pauseCloudSync(5000);
+    pauseCloudSync(15000);
     const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const d = new Date(date);
     const dayName = daysOfWeek[d.getDay()] || "Sunday";
@@ -2072,7 +2059,11 @@ export function AuthProvider({ children }) {
     }
 
     logActivity(`Logged monitoring note for: ${mem ? mem.name : 'member'}`, "Monitoring", `Category: ${category}`);
-    showToast(`Monitoring note logged & synced.`);
+    if (currentUser?.role === "HR" || (currentUser?.role !== "HR Head" && currentUser?.role !== "HR Vice Head" && currentUser?.role !== "Admission's Dean")) {
+      showToast("Monitoring note has been successfully submitted.");
+    } else {
+      showToast(`Monitoring note logged & synced.`);
+    }
   };
 
   const updateMonitoringNote = async (id, updatedFields) => {

@@ -10,9 +10,11 @@ export default function EditMonitoringNoteModal() {
     monitoringNotes,
     updateMonitoringNote,
     deleteMonitoringNote,
-    members
+    members,
+    currentUser
   } = useAuth();
 
+  const isHeadOrVice = currentUser?.role === "HR Head" || currentUser?.role === "HR Vice Head";
   const noteId = modalExtraData?.id;
   const currentNote = monitoringNotes.find(n => n.id === noteId);
   const activeMembers = members.filter(m => m.status !== "Discharged");
@@ -29,7 +31,7 @@ export default function EditMonitoringNoteModal() {
     }
   }, [currentNote]);
 
-  if (activeModal !== 'editMonitoringNote' || !currentNote) return null;
+  if (activeModal !== 'editMonitoringNote' || !currentNote || !isHeadOrVice) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
