@@ -1110,16 +1110,16 @@
             <div id="editMemberAvatarPreview" class="w-12 h-12 rounded-full bg-[#002244] text-[#c59b27] font-black flex items-center justify-center text-sm border-2 border-white shadow overflow-hidden flex-shrink-0">
               <i class="fa-solid fa-user text-slate-300 text-base"></i>
             </div>
-            <div class="flex-grow space-y-1.5">
-              <div class="flex items-center gap-2">
+            <div class="flex-grow space-y-1.5 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
                 <label for="editMemberAvatarFile" class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-bold text-xs cursor-pointer transition flex items-center gap-1 shadow-xs">
                   <i class="fa-solid fa-upload text-[10px]"></i>
                   <span>Upload Photo</span>
                 </label>
                 <input type="file" id="editMemberAvatarFile" accept="image/*" class="hidden" onchange="handleEditMemberAvatarFile(this)">
-                <button type="button" onclick="clearEditMemberAvatar()" class="px-2 py-1 bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 rounded font-semibold text-xs transition">Remove</button>
+                <button type="button" onclick="clearEditMemberAvatar()" class="px-2 py-1 bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 rounded font-semibold text-xs transition">Clear</button>
               </div>
-              <input type="hidden" id="editMemberAvatarUrl">
+              <input type="text" id="editMemberAvatarUrl" oninput="handleEditMemberAvatarUrlChange(this.value)" placeholder="Or paste image URL (https://...)" class="w-full px-2 py-1 text-[11px] bg-white border border-slate-300 rounded focus:ring-1 focus:ring-[#002244] focus:outline-none">
             </div>
           </div>
         </div>
@@ -1439,8 +1439,8 @@
             <div id="addMemberAvatarPreview" class="w-12 h-12 rounded-full bg-[#002244] text-[#c59b27] font-black flex items-center justify-center text-sm border-2 border-white shadow overflow-hidden flex-shrink-0">
               <i class="fa-solid fa-user text-slate-300 text-base"></i>
             </div>
-            <div class="flex-grow space-y-1.5">
-              <div class="flex items-center gap-2">
+            <div class="flex-grow space-y-1.5 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
                 <label for="addMemberAvatarFile" class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-bold text-xs cursor-pointer transition flex items-center gap-1 shadow-xs">
                   <i class="fa-solid fa-upload text-[10px]"></i>
                   <span>Upload Photo</span>
@@ -1448,7 +1448,7 @@
                 <input type="file" id="addMemberAvatarFile" accept="image/*" class="hidden" onchange="handleAddMemberAvatarFile(this)">
                 <button type="button" onclick="clearAddMemberAvatar()" class="px-2 py-1 bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 rounded font-semibold text-xs transition">Clear</button>
               </div>
-              <input type="hidden" id="addMemberAvatarUrl">
+              <input type="text" id="addMemberAvatarUrl" oninput="handleAddMemberAvatarUrlChange(this.value)" placeholder="Or paste image URL (https://...)" class="w-full px-2 py-1 text-[11px] bg-white border border-slate-300 rounded focus:ring-1 focus:ring-[#002244] focus:outline-none">
             </div>
           </div>
         </div>
@@ -1955,22 +1955,8 @@
 
     function getStoredCurrentUser() {
       try {
-        const saved = localStorage.getItem("aastmt_current_user");
-        const loginTimeStr = localStorage.getItem("aastmt_login_timestamp");
-        if (saved) {
-          if (loginTimeStr) {
-            const loginTime = Number(loginTimeStr);
-            if (Date.now() - loginTime < ONE_WEEK_MS) {
-              return JSON.parse(saved);
-            } else {
-              localStorage.removeItem("aastmt_current_user");
-              localStorage.removeItem("aastmt_login_timestamp");
-              return null;
-            }
-          }
-          localStorage.setItem("aastmt_login_timestamp", Date.now().toString());
-          return JSON.parse(saved);
-        }
+        localStorage.removeItem("aastmt_current_user");
+        localStorage.removeItem("aastmt_login_timestamp");
       } catch (e) {}
       return null;
     }
@@ -3408,10 +3394,6 @@
       const user = systemUsers.find(u => u.username.toLowerCase().trim() === usernameInput);
       if (user && user.password.trim() === passwordInput) {
         currentUser = { name: user.name, username: user.username, role: user.role, avatar: user.avatar || null };
-        try {
-          localStorage.setItem("aastmt_current_user", JSON.stringify(currentUser));
-          localStorage.setItem("aastmt_login_timestamp", Date.now().toString());
-        } catch(err) {}
         document.getElementById("loginScreen").classList.add("hidden");
         document.getElementById("systemAppContainer").classList.remove("hidden");
         applyUserRoleUI();
@@ -5842,16 +5824,13 @@
     }
 
     window.onload = function() {
-      currentUser = getStoredCurrentUser();
-      if (currentUser) {
-        document.getElementById("loginScreen").classList.add("hidden");
-        document.getElementById("systemAppContainer").classList.remove("hidden");
-        applyUserRoleUI();
-        renderAllViews();
-      } else {
-        document.getElementById("systemAppContainer").classList.add("hidden");
-        document.getElementById("loginScreen").classList.remove("hidden");
-      }
+      currentUser = null;
+      try {
+        localStorage.removeItem("aastmt_current_user");
+        localStorage.removeItem("aastmt_login_timestamp");
+      } catch (e) {}
+      document.getElementById("systemAppContainer").classList.add("hidden");
+      document.getElementById("loginScreen").classList.remove("hidden");
     };
 
     // Auto-logout after 1 week (7 days)

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { compressImageFile } from '../../lib/imageUtils';
 
 export default function EditMemberModal() {
   const { members, activeModal, modalExtraData, setActiveModal, editMemberInfo } = useAuth();
+  const fileInputRef = useRef(null);
 
   const [name, setName] = useState('');
   const [role, setRole] = useState('PR');
@@ -72,6 +73,7 @@ export default function EditMemberModal() {
       avatar: avatar.trim() || null
     });
 
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setActiveModal(null);
   };
 
@@ -95,28 +97,53 @@ export default function EditMemberModal() {
             <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
               <div className="w-12 h-12 rounded-full bg-[#002244] text-[#c59b27] font-black flex items-center justify-center text-sm border-2 border-white shadow overflow-hidden flex-shrink-0">
                 {avatar ? (
-                  <img src={avatar} alt="Member Avatar" className="w-full h-full object-cover rounded-full block" />
+                  <img
+                    src={avatar}
+                    alt="Member Avatar"
+                    className="w-full h-full object-cover rounded-full block"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
                 ) : (
                   <i className="fa-solid fa-user text-slate-300 text-base"></i>
                 )}
               </div>
-              <div className="flex-grow space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <label className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-bold text-xs cursor-pointer transition flex items-center gap-1 shadow-xs">
+              <div className="flex-grow space-y-1.5 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded font-bold text-xs cursor-pointer transition flex items-center gap-1 shadow-xs"
+                  >
                     <i className="fa-solid fa-upload text-[10px]"></i>
                     <span>Upload Photo</span>
-                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarFile} />
-                  </label>
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarFile}
+                  />
                   {avatar && (
                     <button
                       type="button"
-                      onClick={() => setAvatar('')}
+                      onClick={() => {
+                        setAvatar('');
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
                       className="px-2 py-1 bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 rounded font-semibold text-xs transition"
                     >
                       Clear
                     </button>
                   )}
                 </div>
+                <input
+                  type="text"
+                  placeholder="Or paste image URL (https://...)"
+                  value={avatar.startsWith('data:') ? '' : avatar}
+                  onChange={(e) => setAvatar(e.target.value)}
+                  className="w-full px-2 py-1 text-[11px] bg-white border border-slate-300 rounded focus:ring-1 focus:ring-[#002244] focus:outline-none"
+                />
               </div>
             </div>
           </div>

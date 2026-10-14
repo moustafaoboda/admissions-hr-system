@@ -245,32 +245,15 @@ try {
 } catch (e) {}
 
 export function AuthProvider({ children }) {
-  // Persistent login session with 1-week auto-logout expiry
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem("aastmt_current_user");
-      const loginTimeStr = localStorage.getItem("aastmt_login_timestamp");
-      if (saved) {
-        if (loginTimeStr) {
-          const loginTime = Number(loginTimeStr);
-          if (Date.now() - loginTime < ONE_WEEK_MS) {
-            return JSON.parse(saved);
-          } else {
-            // Expired after 1 week
-            localStorage.removeItem("aastmt_current_user");
-            localStorage.removeItem("aastmt_login_timestamp");
-            return null;
-          }
-        }
-        // If saved user exists but timestamp not set yet, initialize timestamp to now
-        localStorage.setItem("aastmt_login_timestamp", Date.now().toString());
-        return JSON.parse(saved);
-      }
-      return null;
-    } catch {
-      return null;
+  try {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("aastmt_current_user");
+      localStorage.removeItem("aastmt_login_timestamp");
     }
-  });
+  } catch (e) {}
+
+  // Session state: user must log in again on every page refresh
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [activeTab, setActiveTab] = useState(() => {
     try {
@@ -390,14 +373,12 @@ export function AuthProvider({ children }) {
   }, [activityLogs]);
 
   useEffect(() => {
+    // Keep user in memory during the active session; clear localStorage so page refresh always requires login
     try {
-      if (currentUser) {
-        localStorage.setItem("aastmt_current_user", JSON.stringify(currentUser));
-      } else {
-        localStorage.removeItem("aastmt_current_user");
-      }
+      localStorage.removeItem("aastmt_current_user");
+      localStorage.removeItem("aastmt_login_timestamp");
     } catch (e) {}
-  }, [currentUser]);
+  }, []);
 
   useEffect(() => {
     try { localStorage.setItem("aastmt_active_tab", activeTab); } catch (e) {}
@@ -1170,10 +1151,6 @@ export function AuthProvider({ children }) {
         avatar: user.avatar || null
       };
       setCurrentUser(userObj);
-      try {
-        localStorage.setItem("aastmt_current_user", JSON.stringify(userObj));
-        localStorage.setItem("aastmt_login_timestamp", Date.now().toString());
-      } catch(e) {}
       setActiveTab("dashboard");
       setActiveModal(null);
       showToast(`Welcome back, ${userObj.name} (${userObj.role})`);
